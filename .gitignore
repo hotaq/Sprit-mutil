@@ -17,3 +17,7 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude & Specify
+.claude/commands
+.specify/
