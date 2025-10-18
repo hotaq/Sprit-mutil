@@ -21,3 +21,7 @@ Thumbs.db
 # Claude & Specify
 .claude/commands
 .specify/
+
+# Project files
+CLAUDE.md
+specs/
