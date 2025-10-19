@@ -3,10 +3,10 @@
 //! This module provides functions for managing tmux sessions, panes,
 //! and layouts needed for multi-agent supervision.
 
-use anyhow::{Context, Result};
 use crate::error::SpriteError;
-use std::process::Command;
+use anyhow::{Context, Result};
 use std::collections::HashMap;
+use std::process::Command;
 
 /// Create a new tmux session.
 pub fn create_session(name: &str) -> Result<()> {
@@ -18,8 +18,9 @@ pub fn create_session(name: &str) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
             format!("Failed to create tmux session '{}'", name),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -45,8 +46,9 @@ pub fn kill_session(name: &str) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
             format!("Failed to kill tmux session '{}'", name),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -62,8 +64,9 @@ pub fn attach_session(name: &str) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
             format!("Failed to attach to tmux session '{}'", name),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -79,8 +82,9 @@ pub fn list_sessions() -> Result<Vec<SessionInfo>> {
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
             "Failed to list tmux sessions",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let sessions_str = String::from_utf8_lossy(&output.stdout);
@@ -131,7 +135,9 @@ fn parse_sessions_list(output: &str) -> Result<Vec<SessionInfo>> {
             .find("(created ")
             .and_then(|i| {
                 let start = i + 9;
-                info_part[start..].find(')').map(|j| info_part[start..j].to_string())
+                info_part[start..]
+                    .find(')')
+                    .map(|j| info_part[start..j].to_string())
             })
             .unwrap_or_else(|| "unknown".to_string());
 
@@ -157,13 +163,22 @@ pub fn create_window(session: &str, window_name: &str) -> Result<String> {
     let output = Command::new("tmux")
         .args(&["new-window", "-t", session, "-n", window_name])
         .output()
-        .with_context(|| format!("Failed to create window '{}' in session '{}'", window_name, session))?;
+        .with_context(|| {
+            format!(
+                "Failed to create window '{}' in session '{}'",
+                window_name, session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to create window '{}' in session '{}'", window_name, session),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            format!(
+                "Failed to create window '{}' in session '{}'",
+                window_name, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     // The window index is in stdout
@@ -181,8 +196,9 @@ pub fn split_window_vertical(session: &str, target: &str) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
             format!("Failed to split window vertically in session '{}'", session),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -193,13 +209,22 @@ pub fn split_window_horizontal(session: &str, target: &str) -> Result<()> {
     let output = Command::new("tmux")
         .args(&["split-window", "-t", session, "-h", "-P", target])
         .output()
-        .with_context(|| format!("Failed to split window horizontally in session '{}'", session))?;
+        .with_context(|| {
+            format!(
+                "Failed to split window horizontally in session '{}'",
+                session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to split window horizontally in session '{}'", session),
-            String::from_utf8_lossy(&output.stderr).into_owned()
-        ).into());
+            format!(
+                "Failed to split window horizontally in session '{}'",
+                session
+            ),
+            String::from_utf8_lossy(&output.stderr).into_owned(),
+        )
+        .into());
     }
 
     Ok(())
@@ -210,13 +235,22 @@ pub fn send_keys(session: &str, target: &str, command: &str) -> Result<()> {
     let output = Command::new("tmux")
         .args(&["send-keys", "-t", session, target, command, "C-m"])
         .output()
-        .with_context(|| format!("Failed to send keys to pane '{}' in session '{}'", target, session))?;
+        .with_context(|| {
+            format!(
+                "Failed to send keys to pane '{}' in session '{}'",
+                target, session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to send keys to pane '{}' in session '{}'", target, session),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            format!(
+                "Failed to send keys to pane '{}' in session '{}'",
+                target, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -227,13 +261,22 @@ pub fn capture_pane(session: &str, target: &str) -> Result<String> {
     let output = Command::new("tmux")
         .args(&["capture-pane", "-p", "-t", session, target])
         .output()
-        .with_context(|| format!("Failed to capture pane '{}' in session '{}'", target, session))?;
+        .with_context(|| {
+            format!(
+                "Failed to capture pane '{}' in session '{}'",
+                target, session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to capture pane '{}' in session '{}'", target, session),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            format!(
+                "Failed to capture pane '{}' in session '{}'",
+                target, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -244,13 +287,22 @@ pub fn select_layout(session: &str, target: &str, layout: &str) -> Result<()> {
     let output = Command::new("tmux")
         .args(&["select-layout", "-t", session, "-P", target, layout])
         .output()
-        .with_context(|| format!("Failed to select layout '{}' for pane '{}' in session '{}'", layout, target, session))?;
+        .with_context(|| {
+            format!(
+                "Failed to select layout '{}' for pane '{}' in session '{}'",
+                layout, target, session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to select layout '{}' for pane '{}' in session '{}'", layout, target, session),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            format!(
+                "Failed to select layout '{}' for pane '{}' in session '{}'",
+                layout, target, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -259,15 +311,31 @@ pub fn select_layout(session: &str, target: &str, layout: &str) -> Result<()> {
 /// Get the layout for a window.
 pub fn get_layout(session: &str, target: &str) -> Result<String> {
     let output = Command::new("tmux")
-        .args(&["display-message", "-p", "-t", session, "-F '#{window_layout}'", target])
+        .args(&[
+            "display-message",
+            "-p",
+            "-t",
+            session,
+            "-F '#{window_layout}'",
+            target,
+        ])
         .output()
-        .with_context(|| format!("Failed to get layout for pane '{}' in session '{}'", target, session))?;
+        .with_context(|| {
+            format!(
+                "Failed to get layout for pane '{}' in session '{}'",
+                target, session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to get layout for pane '{}' in session '{}'", target, session),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            format!(
+                "Failed to get layout for pane '{}' in session '{}'",
+                target, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -301,15 +369,29 @@ pub fn get_tmux_version() -> Result<String> {
 pub fn set_environment(session: &str, env_vars: &HashMap<String, String>) -> Result<()> {
     for (key, value) in env_vars {
         let output = Command::new("tmux")
-            .args(&["set-environment", "-t", session, &format!("{}={}", key, value)])
+            .args(&[
+                "set-environment",
+                "-t",
+                session,
+                &format!("{}={}", key, value),
+            ])
             .output()
-            .with_context(|| format!("Failed to set environment variable '{}' for session '{}'", key, session))?;
+            .with_context(|| {
+                format!(
+                    "Failed to set environment variable '{}' for session '{}'",
+                    key, session
+                )
+            })?;
 
         if !output.status.success() {
             return Err(SpriteError::tmux_with_source(
-                format!("Failed to set environment variable '{}' for session '{}'", key, session),
-                String::from_utf8_lossy(&output.stderr)
-            ).into());
+                format!(
+                    "Failed to set environment variable '{}' for session '{}'",
+                    key, session
+                ),
+                String::from_utf8_lossy(&output.stderr),
+            )
+            .into());
         }
     }
 
@@ -342,7 +424,7 @@ another-session: 1 windows (created Wed Oct 18 09:15:00 2023)
     #[test]
     fn test_is_tmux_available() {
         // This test depends on tmux being installed
-        let result = is_tmux_available();
+        let _result = is_tmux_available();
         // We don't assert the result since it depends on the test environment
     }
 }

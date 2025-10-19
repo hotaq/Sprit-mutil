@@ -6,8 +6,8 @@ mod commands;
 mod config;
 mod error;
 mod models;
-mod validation;
 mod utils;
+mod validation;
 
 #[derive(Parser)]
 #[command(name = "sprite")]
@@ -26,15 +26,15 @@ fn main() -> Result<()> {
             let options = commands::init::InitOptions { force, agents };
             commands::init::execute(options)?;
             Ok(())
-        },
+        }
         cli::Commands::Config { command } => {
             commands::config::execute(command)?;
             Ok(())
-        },
+        }
         cli::Commands::Agents { command } => {
             commands::agents::execute(command)?;
             Ok(())
-        },
+        }
         cli::Commands::Start { .. } => commands::start::execute(),
         cli::Commands::Attach { .. } => commands::attach::execute(),
         cli::Commands::Kill { .. } => commands::kill::execute(),

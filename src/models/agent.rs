@@ -1,10 +1,10 @@
 //! Agent data structures for the Sprite multi-agent workflow toolkit.
 
-use serde::{Deserialize, Serialize};
+use super::{CommandMessage, ExecutionResult};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use super::{CommandMessage, ExecutionResult};
 
 /// Represents an AI coding agent with its workspace configuration and operational parameters.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,8 +93,15 @@ impl Agent {
         }
 
         // Validate ID format (alphanumeric with hyphens/underscores)
-        if !self.id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
-            return Err("Agent ID can only contain alphanumeric characters, hyphens, and underscores".to_string());
+        if !self
+            .id
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+        {
+            return Err(
+                "Agent ID can only contain alphanumeric characters, hyphens, and underscores"
+                    .to_string(),
+            );
         }
 
         // Validate workspace path
@@ -104,8 +111,13 @@ impl Agent {
         }
 
         // Check for path traversal
-        if workspace_path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
-            return Err("Agent workspace path cannot contain parent directory references".to_string());
+        if workspace_path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
+            return Err(
+                "Agent workspace path cannot contain parent directory references".to_string(),
+            );
         }
 
         Ok(())
@@ -219,7 +231,9 @@ impl AgentConfig {
         if other.work_dir.is_some() {
             merged.work_dir = other.work_dir.clone();
         }
-        merged.startup_commands.extend(other.startup_commands.clone());
+        merged
+            .startup_commands
+            .extend(other.startup_commands.clone());
         merged.resource_limits = merged.resource_limits.merge(&other.resource_limits);
 
         if other.shell.is_some() {
@@ -261,8 +275,8 @@ pub struct ResourceLimits {
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {
-            max_memory_mb: Some(1024), // 1GB default
-            max_cpu_percent: Some(80),   // 80% default
+            max_memory_mb: Some(1024),         // 1GB default
+            max_cpu_percent: Some(80),         // 80% default
             operation_timeout_secs: Some(300), // 5 minutes default
             max_concurrent_ops: Some(3),
             max_disk_mb: Some(5120), // 5GB default
@@ -356,11 +370,15 @@ mod tests {
     #[test]
     fn test_agent_config_merge() {
         let mut config1 = AgentConfig::default();
-        config1.env_vars.insert("VAR1".to_string(), "value1".to_string());
+        config1
+            .env_vars
+            .insert("VAR1".to_string(), "value1".to_string());
         config1.auto_sync = false;
 
         let mut config2 = AgentConfig::default();
-        config2.env_vars.insert("VAR2".to_string(), "value2".to_string());
+        config2
+            .env_vars
+            .insert("VAR2".to_string(), "value2".to_string());
         config2.auto_sync = true;
 
         let merged = config1.merge(&config2);

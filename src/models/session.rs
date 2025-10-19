@@ -1,9 +1,9 @@
 //! Session and tmux profile data structures for the Sprite multi-agent workflow toolkit.
 
-use serde::{Deserialize, Serialize};
+use super::{ConflictResolution, LogLevel};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use super::{LogLevel, ConflictResolution};
 
 /// Represents the tmux session that hosts all agent panes and provides supervision interface.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,8 +80,15 @@ impl Session {
         }
 
         // Validate session name format (alphanumeric with hyphens/underscores)
-        if !self.name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
-            return Err("Session name can only contain alphanumeric characters, hyphens, and underscores".to_string());
+        if !self
+            .name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+        {
+            return Err(
+                "Session name can only contain alphanumeric characters, hyphens, and underscores"
+                    .to_string(),
+            );
         }
 
         // Validate profile configuration
@@ -238,7 +245,12 @@ impl ProfileLayout {
         }
 
         // Validate layout type
-        let valid_layouts = ["main-horizontal", "main-vertical", "even-horizontal", "tiled"];
+        let valid_layouts = [
+            "main-horizontal",
+            "main-vertical",
+            "even-horizontal",
+            "tiled",
+        ];
         if !valid_layouts.contains(&self.layout_type.as_str()) {
             return Err(format!(
                 "Invalid layout type '{}'. Valid options: {}",

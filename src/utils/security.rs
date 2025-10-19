@@ -3,52 +3,61 @@
 //! This module provides functions for path validation, input sanitization,
 //! and security checks needed for safe agent operations.
 
+use crate::error::{SecurityViolationType, SpriteError};
 use anyhow::{Context, Result};
-use crate::error::{SpriteError, SecurityViolationType};
 use std::path::{Path, PathBuf};
 
 /// Maximum allowed path length to prevent path traversal attacks
 const MAX_PATH_LENGTH: usize = 4096;
 
 /// List of dangerous characters that should not be in file paths
-const DANGEROUS_CHARS: &[char] = &['\0', '<', '>', '|', '"', ';', '&', '$', '`', '(', ')', '[', ']', '{', '}'];
+const DANGEROUS_CHARS: &[char] = &[
+    '\0', '<', '>', '|', '"', ';', '&', '$', '`', '(', ')', '[', ']', '{', '}',
+];
 
 /// Validate that a path is safe for agent operations.
 pub fn validate_agent_path(path: &Path) -> Result<()> {
     // Check path length
     let path_str = path.to_string_lossy();
     if path_str.len() > MAX_PATH_LENGTH {
-        return Err(SpriteError::security(format!(
-            "Path too long: {} characters (max: {})",
-            path_str.len(),
-            MAX_PATH_LENGTH
-        ), SecurityViolationType::InvalidPath).into());
+        return Err(SpriteError::security(
+            format!(
+                "Path too long: {} characters (max: {})",
+                path_str.len(),
+                MAX_PATH_LENGTH
+            ),
+            SecurityViolationType::InvalidPath,
+        )
+        .into());
     }
 
     // Check for dangerous characters
     for char in DANGEROUS_CHARS.iter() {
         if path_str.contains(*char) {
-            return Err(SpriteError::security(format!(
-                "Path contains dangerous character '{}': {}",
-                char, path_str
-            ), SecurityViolationType::InvalidPath).into());
+            return Err(SpriteError::security(
+                format!("Path contains dangerous character '{}': {}", char, path_str),
+                SecurityViolationType::InvalidPath,
+            )
+            .into());
         }
     }
 
     // Check for path traversal attempts
     if path_str.contains("..") {
-        return Err(SpriteError::security(format!(
-            "Path traversal detected: {}",
-            path_str
-        ), SecurityViolationType::PathTraversal).into());
+        return Err(SpriteError::security(
+            format!("Path traversal detected: {}", path_str),
+            SecurityViolationType::PathTraversal,
+        )
+        .into());
     }
 
     // Check if path is absolute (should be relative to workspace)
     if path.is_absolute() {
-        return Err(SpriteError::security(format!(
-            "Absolute paths not allowed: {}",
-            path_str
-        ), SecurityViolationType::InvalidPath).into());
+        return Err(SpriteError::security(
+            format!("Absolute paths not allowed: {}", path_str),
+            SecurityViolationType::InvalidPath,
+        )
+        .into());
     }
 
     Ok(())
@@ -62,16 +71,24 @@ pub fn validate_directory_path(path: &Path, base_dir: &Path) -> Result<()> {
     let canonical_path = std::fs::canonicalize(path)
         .with_context(|| format!("Failed to canonicalize path: {}", path.display()))?;
 
-    let canonical_base = std::fs::canonicalize(base_dir)
-        .with_context(|| format!("Failed to canonicalize base directory: {}", base_dir.display()))?;
+    let canonical_base = std::fs::canonicalize(base_dir).with_context(|| {
+        format!(
+            "Failed to canonicalize base directory: {}",
+            base_dir.display()
+        )
+    })?;
 
     // Check that the path is within the base directory
     if !canonical_path.starts_with(&canonical_base) {
-        return Err(SpriteError::security(format!(
-            "Path '{}' is outside of allowed base directory '{}'",
-            canonical_path.display(),
-            canonical_base.display()
-        ), SecurityViolationType::PathTraversal).into());
+        return Err(SpriteError::security(
+            format!(
+                "Path '{}' is outside of allowed base directory '{}'",
+                canonical_path.display(),
+                canonical_base.display()
+            ),
+            SecurityViolationType::PathTraversal,
+        )
+        .into());
     }
 
     Ok(())
@@ -80,45 +97,56 @@ pub fn validate_directory_path(path: &Path, base_dir: &Path) -> Result<()> {
 /// Validate agent name for security and proper formatting.
 pub fn validate_agent_name(name: &str) -> Result<()> {
     if name.is_empty() {
-        return Err(SpriteError::security("Agent name cannot be empty", SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            "Agent name cannot be empty",
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     if name.len() > 64 {
-        return Err(SpriteError::security(format!(
-            "Agent name too long: {} characters (max: 64)",
-            name.len()
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("Agent name too long: {} characters (max: 64)", name.len()),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Check for valid characters (alphanumeric, hyphen, underscore)
-    if !name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
-        return Err(SpriteError::security(format!(
-            "Agent name contains invalid characters: {}",
-            name
-        ), SecurityViolationType::InvalidInput).into());
+    if !name
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(SpriteError::security(
+            format!("Agent name contains invalid characters: {}", name),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Name should not start with a hyphen or underscore
     if let Some(first_char) = name.chars().next() {
         if first_char == '-' || first_char == '_' {
-            return Err(SpriteError::security(format!(
-                "Agent name cannot start with '{}': {}",
-                first_char, name
-            ), SecurityViolationType::InvalidInput).into());
+            return Err(SpriteError::security(
+                format!("Agent name cannot start with '{}': {}", first_char, name),
+                SecurityViolationType::InvalidInput,
+            )
+            .into());
         }
     }
 
     // Name should not be a reserved system name
     let reserved_names = &[
-        "root", "admin", "system", "daemon", "nobody", "www-data",
-        "sprite", "control", "master", "main", "default"
+        "root", "admin", "system", "daemon", "nobody", "www-data", "sprite", "control", "master",
+        "main", "default",
     ];
 
     if reserved_names.contains(&name.to_lowercase().as_str()) {
-        return Err(SpriteError::security(format!(
-            "Agent name '{}' is reserved and cannot be used",
-            name
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("Agent name '{}' is reserved and cannot be used", name),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     Ok(())
@@ -131,10 +159,11 @@ pub fn validate_session_name(name: &str) -> Result<()> {
 
     // Additional session-specific validation could be added here
     if name.to_lowercase().contains("control") {
-        return Err(SpriteError::security(format!(
-            "Session name containing 'control' is reserved: {}",
-            name
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("Session name containing 'control' is reserved: {}", name),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     Ok(())
@@ -146,18 +175,23 @@ pub fn validate_tmux_session_name(name: &str) -> Result<()> {
 
     // Tmux has additional restrictions on session names
     if name.len() > 32 {
-        return Err(SpriteError::security(format!(
-            "Tmux session name too long: {} characters (max: 32)",
-            name.len()
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!(
+                "Tmux session name too long: {} characters (max: 32)",
+                name.len()
+            ),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Tmux doesn't allow certain characters in session names
     if name.contains('.') || name.contains('@') || name.contains(':') {
-        return Err(SpriteError::security(format!(
-            "Tmux session name contains invalid characters: {}",
-            name
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("Tmux session name contains invalid characters: {}", name),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     Ok(())
@@ -166,67 +200,96 @@ pub fn validate_tmux_session_name(name: &str) -> Result<()> {
 /// Validate git branch name for compatibility with git requirements.
 pub fn validate_git_branch_name(name: &str) -> Result<()> {
     if name.is_empty() {
-        return Err(SpriteError::security("Git branch name cannot be empty", SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            "Git branch name cannot be empty",
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Git branch name restrictions
     if name.len() > 255 {
-        return Err(SpriteError::security(format!(
-            "Git branch name too long: {} characters (max: 255)",
-            name.len()
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!(
+                "Git branch name too long: {} characters (max: 255)",
+                name.len()
+            ),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Cannot start with a dot or slash
     if let Some(first_char) = name.chars().next() {
         if first_char == '.' || first_char == '/' {
-            return Err(SpriteError::security(format!(
-                "Git branch name cannot start with '{}': {}",
-                first_char, name
-            ), SecurityViolationType::InvalidInput).into());
+            return Err(SpriteError::security(
+                format!(
+                    "Git branch name cannot start with '{}': {}",
+                    first_char, name
+                ),
+                SecurityViolationType::InvalidInput,
+            )
+            .into());
         }
     }
 
     // Cannot end with a slash
     if let Some(last_char) = name.chars().last() {
         if last_char == '/' {
-            return Err(SpriteError::security(format!(
-                "Git branch name cannot end with '{}': {}",
-                last_char, name
-            ), SecurityViolationType::InvalidInput).into());
+            return Err(SpriteError::security(
+                format!("Git branch name cannot end with '{}': {}", last_char, name),
+                SecurityViolationType::InvalidInput,
+            )
+            .into());
         }
     }
 
     // Cannot contain consecutive slashes
     if name.contains("//") {
-        return Err(SpriteError::security(format!(
-            "Git branch name cannot contain consecutive slashes: {}",
-            name
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!(
+                "Git branch name cannot contain consecutive slashes: {}",
+                name
+            ),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Cannot contain certain characters
     let invalid_patterns = &["..", "~", "^", ":", "?", "*", "[", " ", "\t", "\n", "\r"];
     for invalid in invalid_patterns {
         if name.contains(invalid) {
-            return Err(SpriteError::security(format!(
-                "Git branch name contains invalid sequence '{}': {}",
-                invalid, name
-            ), SecurityViolationType::InvalidInput).into());
+            return Err(SpriteError::security(
+                format!(
+                    "Git branch name contains invalid sequence '{}': {}",
+                    invalid, name
+                ),
+                SecurityViolationType::InvalidInput,
+            )
+            .into());
         }
     }
 
     // Cannot be a special git reference
     let reserved_refs = &[
-        "HEAD", "ORIG_HEAD", "FETCH_HEAD", "MERGE_HEAD",
-        "main", "master", "develop", "release", "hotfix"
+        "HEAD",
+        "ORIG_HEAD",
+        "FETCH_HEAD",
+        "MERGE_HEAD",
+        "main",
+        "master",
+        "develop",
+        "release",
+        "hotfix",
     ];
 
     if reserved_refs.contains(&name) {
-        return Err(SpriteError::security(format!(
-            "Git branch name '{}' is reserved",
-            name
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("Git branch name '{}' is reserved", name),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     Ok(())
@@ -248,34 +311,63 @@ pub fn sanitize_input(input: &str) -> String {
 /// Validate that a command is safe to execute.
 pub fn validate_command(command: &str) -> Result<()> {
     if command.is_empty() {
-        return Err(SpriteError::security("Command cannot be empty", SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            "Command cannot be empty",
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Check for dangerous command patterns
     let dangerous_patterns = &[
-        "rm -rf /", "sudo rm", "chmod 777", "chown root",
-        "dd if=", "mkfs", "format", "fdisk", "shutdown", "reboot",
-        "iptables", "ufw", "firewall", "passwd", "su -", "sudo su",
-        "curl | sh", "wget | sh", "eval $(curl", "eval $(wget",
-        "> /dev/", "< /dev/", "&& rm", "; rm", "|| rm",
+        "rm -rf /",
+        "sudo rm",
+        "chmod 777",
+        "chown root",
+        "dd if=",
+        "mkfs",
+        "format",
+        "fdisk",
+        "shutdown",
+        "reboot",
+        "iptables",
+        "ufw",
+        "firewall",
+        "passwd",
+        "su -",
+        "sudo su",
+        "curl | sh",
+        "wget | sh",
+        "eval $(curl",
+        "eval $(wget",
+        "> /dev/",
+        "< /dev/",
+        "&& rm",
+        "; rm",
+        "|| rm",
     ];
 
     let lower_command = command.to_lowercase();
     for pattern in dangerous_patterns.iter() {
         if lower_command.contains(&pattern.to_lowercase()) {
-            return Err(SpriteError::security(format!(
-                "Command contains dangerous pattern '{}': {}",
-                pattern, command
-            ), SecurityViolationType::UnsafeCommand).into());
+            return Err(SpriteError::security(
+                format!(
+                    "Command contains dangerous pattern '{}': {}",
+                    pattern, command
+                ),
+                SecurityViolationType::UnsafeCommand,
+            )
+            .into());
         }
     }
 
     // Check for shell injection attempts
     if lower_command.contains("$(") || lower_command.contains("`") || lower_command.contains("${") {
-        return Err(SpriteError::security(format!(
-            "Command contains potential shell injection: {}",
-            command
-        ), SecurityViolationType::UnsafeCommand).into());
+        return Err(SpriteError::security(
+            format!("Command contains potential shell injection: {}", command),
+            SecurityViolationType::UnsafeCommand,
+        )
+        .into());
     }
 
     Ok(())
@@ -284,36 +376,46 @@ pub fn validate_command(command: &str) -> Result<()> {
 /// Validate that a URL is safe and uses allowed protocols.
 pub fn validate_url(url: &str) -> Result<()> {
     if url.is_empty() {
-        return Err(SpriteError::security("URL cannot be empty", SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            "URL cannot be empty",
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Check URL length
     if url.len() > 2048 {
-        return Err(SpriteError::security(format!(
-            "URL too long: {} characters (max: 2048)",
-            url.len()
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("URL too long: {} characters (max: 2048)", url.len()),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Check for allowed protocols
     let allowed_protocols = &["http://", "https://", "git://", "ssh://"];
-    let has_allowed_protocol = allowed_protocols.iter().any(|protocol| {
-        url.to_lowercase().starts_with(protocol)
-    });
+    let has_allowed_protocol = allowed_protocols
+        .iter()
+        .any(|protocol| url.to_lowercase().starts_with(protocol));
 
     if !has_allowed_protocol {
-        return Err(SpriteError::security(format!(
-            "URL must use allowed protocol (http, https, git, ssh): {}",
-            url
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!(
+                "URL must use allowed protocol (http, https, git, ssh): {}",
+                url
+            ),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     // Check for dangerous URL patterns
     if url.contains("file://") || url.contains("ftp://") || url.contains("data:") {
-        return Err(SpriteError::security(format!(
-            "URL uses disallowed protocol: {}",
-            url
-        ), SecurityViolationType::InvalidInput).into());
+        return Err(SpriteError::security(
+            format!("URL uses disallowed protocol: {}", url),
+            SecurityViolationType::InvalidInput,
+        )
+        .into());
     }
 
     Ok(())
@@ -322,10 +424,11 @@ pub fn validate_url(url: &str) -> Result<()> {
 /// Validate file permissions to ensure they're not too permissive.
 pub fn validate_file_permissions(path: &Path) -> Result<()> {
     if !path.exists() {
-        return Err(SpriteError::security(format!(
-            "File does not exist: {}",
-            path.display()
-        ), SecurityViolationType::InvalidPath).into());
+        return Err(SpriteError::security(
+            format!("File does not exist: {}", path.display()),
+            SecurityViolationType::InvalidPath,
+        )
+        .into());
     }
 
     let metadata = std::fs::metadata(path)
@@ -341,10 +444,14 @@ pub fn validate_file_permissions(path: &Path) -> Result<()> {
 
         // Check if readable or writable by others
         if mode & 0o044 != 0 {
-            return Err(SpriteError::security(format!(
-                "File has overly permissive permissions (readable by others): {}",
-                path.display()
-            ), SecurityViolationType::InsecurePermissions).into());
+            return Err(SpriteError::security(
+                format!(
+                    "File has overly permissive permissions (readable by others): {}",
+                    path.display()
+                ),
+                SecurityViolationType::InsecurePermissions,
+            )
+            .into());
         }
     }
 
@@ -357,8 +464,12 @@ pub fn create_secure_temp_dir(prefix: &str) -> Result<PathBuf> {
     let secure_name = format!("{}_{}", sanitize_input(prefix), uuid::Uuid::new_v4());
     let temp_path = temp_dir.join(secure_name);
 
-    std::fs::create_dir(&temp_path)
-        .with_context(|| format!("Failed to create temporary directory: {}", temp_path.display()))?;
+    std::fs::create_dir(&temp_path).with_context(|| {
+        format!(
+            "Failed to create temporary directory: {}",
+            temp_path.display()
+        )
+    })?;
 
     // Set secure permissions (only owner can read/write/execute)
     #[cfg(unix)]
@@ -381,8 +492,9 @@ pub fn check_environment_security() -> Result<()> {
         if unsafe { libc::getuid() } == 0 {
             return Err(SpriteError::security(
                 "Running as root is not recommended for security reasons",
-                SecurityViolationType::InsecureEnvironment
-            ).into());
+                SecurityViolationType::InsecureEnvironment,
+            )
+            .into());
         }
     }
 
@@ -395,10 +507,14 @@ pub fn check_environment_security() -> Result<()> {
                 use std::os::unix::fs::PermissionsExt;
                 let mode = metadata.permissions().mode();
                 if mode & 0o022 != 0 {
-                    return Err(SpriteError::security(format!(
-                        "Home directory has overly permissive permissions: {:o}",
-                        mode
-                    ), SecurityViolationType::InsecureEnvironment).into());
+                    return Err(SpriteError::security(
+                        format!(
+                            "Home directory has overly permissive permissions: {:o}",
+                            mode
+                        ),
+                        SecurityViolationType::InsecureEnvironment,
+                    )
+                    .into());
                 }
             }
         }

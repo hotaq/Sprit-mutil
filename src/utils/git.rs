@@ -3,8 +3,8 @@
 //! This module provides functions for managing git repositories, worktrees,
 //! branches, and other git operations needed for agent workspace management.
 
-use anyhow::{Context, Result};
 use crate::error::SpriteError;
+use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -18,8 +18,9 @@ pub fn get_git_root() -> Result<PathBuf> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to get git repository root",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let root_str = String::from_utf8_lossy(&output.stdout);
@@ -42,8 +43,9 @@ pub fn get_current_branch_at(path: &Path) -> Result<String> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to get current branch at {}", path.display()),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let branch = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -79,8 +81,9 @@ pub fn create_branch_from(branch: &str, from: &str) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to create branch '{}' from '{}'", branch, from),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -101,13 +104,24 @@ pub fn switch_branch_at(path: &Path, branch: &str) -> Result<()> {
         .current_dir(path)
         .args(&["checkout", branch])
         .output()
-        .with_context(|| format!("Failed to switch to branch '{}' at {}", branch, path.display()))?;
+        .with_context(|| {
+            format!(
+                "Failed to switch to branch '{}' at {}",
+                branch,
+                path.display()
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
-            format!("Failed to switch to branch '{}' at {}", branch, path.display()),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            format!(
+                "Failed to switch to branch '{}' at {}",
+                branch,
+                path.display()
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -122,8 +136,12 @@ pub fn checkout_branch(path: &Path, branch: &str) -> Result<()> {
 pub fn create_worktree(path: &Path, branch: &str) -> Result<()> {
     // Ensure the parent directory exists
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .with_context(|| format!("Failed to create parent directory for worktree: {}", parent.display()))?;
+        std::fs::create_dir_all(parent).with_context(|| {
+            format!(
+                "Failed to create parent directory for worktree: {}",
+                parent.display()
+            )
+        })?;
     }
 
     // Check if branch exists first
@@ -132,15 +150,22 @@ pub fn create_worktree(path: &Path, branch: &str) -> Result<()> {
     }
 
     let output = Command::new("git")
-        .args(&["worktree", "add", "-b", branch, path.to_string_lossy().as_ref()])
+        .args(&[
+            "worktree",
+            "add",
+            "-b",
+            branch,
+            path.to_string_lossy().as_ref(),
+        ])
         .output()
         .with_context(|| format!("Failed to create worktree at '{}'", path.display()))?;
 
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to create worktree at '{}'", path.display()),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -150,7 +175,9 @@ pub fn create_worktree(path: &Path, branch: &str) -> Result<()> {
 pub fn remove_worktree(path: &Path) -> Result<()> {
     // Check if path exists and is a worktree
     if !path.exists() {
-        return Err(SpriteError::git(format!("Worktree path does not exist: {}", path.display())).into());
+        return Err(
+            SpriteError::git(format!("Worktree path does not exist: {}", path.display())).into(),
+        );
     }
 
     let output = Command::new("git")
@@ -161,8 +188,9 @@ pub fn remove_worktree(path: &Path) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to remove worktree at '{}'", path.display()),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     // Try to remove the directory if it still exists
@@ -184,8 +212,9 @@ pub fn list_worktrees() -> Result<Vec<WorktreeInfo>> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to list worktrees",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let worktrees_str = String::from_utf8_lossy(&output.stdout);
@@ -224,10 +253,16 @@ fn parse_worktree_list(output: &str) -> Result<Vec<WorktreeInfo>> {
         let path = PathBuf::from(parts[0]);
         let (branch, id) = if parts.len() > 1 {
             let branch_part = parts[1].trim_start_matches('[').trim_end_matches(']');
-            let branch = branch_part.split('(').next().unwrap_or(branch_part).trim().to_string();
+            let branch = branch_part
+                .split('(')
+                .next()
+                .unwrap_or(branch_part)
+                .trim()
+                .to_string();
 
-            let id = branch_part.find('(')
-                .and_then(|i| branch_part[i+1..].strip_suffix(')'))
+            let id = branch_part
+                .find('(')
+                .and_then(|i| branch_part[i + 1..].strip_suffix(')'))
                 .map(|s| s.to_string());
 
             (branch, id)
@@ -268,8 +303,9 @@ pub fn is_git_repository_at(path: &Path) -> Result<bool> {
 pub fn validate_git_repository() -> Result<()> {
     if !is_git_repository()? {
         return Err(SpriteError::config(
-            "Not a git repository. Sprite must be run from within a git repository."
-        ).into());
+            "Not a git repository. Sprite must be run from within a git repository.",
+        )
+        .into());
     }
     Ok(())
 }
@@ -295,8 +331,9 @@ pub fn get_status_at(path: &Path) -> Result<GitStatus> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to get git status at {}", path.display()),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let status_str = String::from_utf8_lossy(&output.stdout);
@@ -314,8 +351,9 @@ pub fn get_status_string_at(path: &Path) -> Result<String> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to get git status string at {}", path.display()),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let status_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -379,8 +417,9 @@ pub fn pull() -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to pull changes",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -401,8 +440,9 @@ pub fn push(branch: Option<&str>) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to push changes",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -418,8 +458,9 @@ pub fn commit(message: &str) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to commit changes",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -440,8 +481,9 @@ pub fn add(files: &[&Path]) -> Result<()> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to add files to git",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -450,7 +492,12 @@ pub fn add(files: &[&Path]) -> Result<()> {
 /// Check if a file has uncommitted changes.
 pub fn has_uncommitted_changes(path: &Path) -> Result<bool> {
     let output = Command::new("git")
-        .args(&["diff", "--quiet", "--exit-code", path.to_string_lossy().as_ref()])
+        .args(&[
+            "diff",
+            "--quiet",
+            "--exit-code",
+            path.to_string_lossy().as_ref(),
+        ])
         .output()
         .with_context(|| "Failed to check for uncommitted changes")?;
 
@@ -468,8 +515,9 @@ pub fn get_current_commit() -> Result<String> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to get current commit hash",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -488,8 +536,9 @@ pub fn get_remote_url(remote: Option<&str>) -> Result<String> {
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             format!("Failed to get remote URL for '{}'", remote_name),
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -499,8 +548,7 @@ pub fn get_remote_url(remote: Option<&str>) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
-
+    
     #[test]
     fn test_parse_worktree_list() {
         let input = r#"
@@ -547,7 +595,7 @@ A src/new_file.rs
     fn test_validate_git_repository() {
         // This test depends on being run in a git repository
         // In actual usage, this would be tested in a proper git repository
-        let result = is_git_repository();
+        let _result = is_git_repository();
         // We don't assert the result since it depends on the test environment
     }
 }

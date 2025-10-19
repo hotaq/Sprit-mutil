@@ -7,12 +7,7 @@
 //! - security: Path validation and security checks
 
 pub mod git;
-pub mod tmux;
 pub mod logging;
 pub mod security;
+pub mod tmux;
 
-// Re-export commonly used utilities
-pub use git::*;
-pub use tmux::*;
-pub use logging::*;
-pub use security::*;

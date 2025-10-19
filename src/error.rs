@@ -261,11 +261,7 @@ impl SpriteError {
     }
 
     /// Create a YAML parsing error.
-    pub fn yaml(
-        message: impl Into<String>,
-        line: Option<usize>,
-        column: Option<usize>,
-    ) -> Self {
+    pub fn yaml(message: impl Into<String>, line: Option<usize>, column: Option<usize>) -> Self {
         Self::Yaml {
             message: message.into(),
             line,
@@ -274,10 +270,7 @@ impl SpriteError {
     }
 
     /// Create a security error.
-    pub fn security(
-        message: impl Into<String>,
-        violation_type: SecurityViolationType,
-    ) -> Self {
+    pub fn security(message: impl Into<String>, violation_type: SecurityViolationType) -> Self {
         Self::Security {
             message: message.into(),
             violation_type,
@@ -320,69 +313,83 @@ impl SpriteError {
             }
             Self::Agent { agent_id, .. } => {
                 if let Some(id) = agent_id {
-                    Some(format!("Check if agent '{}' exists and is properly configured.", id))
+                    Some(format!(
+                        "Check if agent '{}' exists and is properly configured.",
+                        id
+                    ))
                 } else {
                     Some("Verify your agent configuration in agents.yaml.".to_string())
                 }
             }
             Self::Session { session_name, .. } => {
                 if let Some(name) = session_name {
-                    Some(format!("Use 'sprite attach {}' to connect to the session.", name))
+                    Some(format!(
+                        "Use 'sprite attach {}' to connect to the session.",
+                        name
+                    ))
                 } else {
                     Some("Use 'sprite start' to create a new session.".to_string())
                 }
             }
-            Self::FileSystem { operation, path, .. } => {
+            Self::FileSystem {
+                operation, path, ..
+            } => {
                 if operation.contains("create") || operation.contains("write") {
-                    Some(format!("Check permissions for path '{}' and parent directories.", path))
+                    Some(format!(
+                        "Check permissions for path '{}' and parent directories.",
+                        path
+                    ))
                 } else {
                     Some(format!("Verify that '{}' exists and is accessible.", path))
                 }
             }
             Self::Validation { field, .. } => {
                 if let Some(f) = field {
-                    Some(format!("Check the value of field '{}' in your configuration.", f))
+                    Some(format!(
+                        "Check the value of field '{}' in your configuration.",
+                        f
+                    ))
                 } else {
                     Some("Review your configuration for invalid values.".to_string())
                 }
             }
-            Self::Process { command, .. } => {
-                Some(format!("Check if '{}' is installed and in your PATH.", command))
-            }
-            Self::Security { violation_type, .. } => {
-                match violation_type {
-                    SecurityViolationType::PathTraversal => {
-                        Some("Use relative paths within the project directory only.".to_string())
-                    }
-                    SecurityViolationType::InvalidPath => {
-                        Some("Check that the path is valid and within allowed boundaries.".to_string())
-                    }
-                    SecurityViolationType::UnauthorizedAccess => {
-                        Some("Check file permissions and access rights.".to_string())
-                    }
-                    SecurityViolationType::CommandInjection => {
-                        Some("Avoid special shell characters in agent names and commands.".to_string())
-                    }
-                    SecurityViolationType::UnsafeCommand => {
-                        Some("Use only safe, approved commands. Avoid shell metacharacters.".to_string())
-                    }
-                    SecurityViolationType::InvalidInput => {
-                        Some("Check that input contains only allowed characters and formats.".to_string())
-                    }
-                    SecurityViolationType::MalformedSessionName => {
-                        Some("Use alphanumeric session names with hyphens only.".to_string())
-                    }
-                    SecurityViolationType::WorkspaceValidation => {
-                        Some("Ensure all workspaces are within the agents/ directory.".to_string())
-                    }
-                    SecurityViolationType::InsecurePermissions => {
-                        Some("Restrict file permissions to prevent unauthorized access.".to_string())
-                    }
-                    SecurityViolationType::InsecureEnvironment => {
-                        Some("Run with appropriate user permissions and secure environment settings.".to_string())
-                    }
+            Self::Process { command, .. } => Some(format!(
+                "Check if '{}' is installed and in your PATH.",
+                command
+            )),
+            Self::Security { violation_type, .. } => match violation_type {
+                SecurityViolationType::PathTraversal => {
+                    Some("Use relative paths within the project directory only.".to_string())
                 }
-            }
+                SecurityViolationType::InvalidPath => {
+                    Some("Check that the path is valid and within allowed boundaries.".to_string())
+                }
+                SecurityViolationType::UnauthorizedAccess => {
+                    Some("Check file permissions and access rights.".to_string())
+                }
+                SecurityViolationType::CommandInjection => {
+                    Some("Avoid special shell characters in agent names and commands.".to_string())
+                }
+                SecurityViolationType::UnsafeCommand => Some(
+                    "Use only safe, approved commands. Avoid shell metacharacters.".to_string(),
+                ),
+                SecurityViolationType::InvalidInput => Some(
+                    "Check that input contains only allowed characters and formats.".to_string(),
+                ),
+                SecurityViolationType::MalformedSessionName => {
+                    Some("Use alphanumeric session names with hyphens only.".to_string())
+                }
+                SecurityViolationType::WorkspaceValidation => {
+                    Some("Ensure all workspaces are within the agents/ directory.".to_string())
+                }
+                SecurityViolationType::InsecurePermissions => {
+                    Some("Restrict file permissions to prevent unauthorized access.".to_string())
+                }
+                SecurityViolationType::InsecureEnvironment => Some(
+                    "Run with appropriate user permissions and secure environment settings."
+                        .to_string(),
+                ),
+            },
             Self::Communication { target, .. } => {
                 if let Some(t) = target {
                     Some(format!("Check if agent '{}' is running and accessible.", t))
@@ -390,9 +397,10 @@ impl SpriteError {
                     Some("Verify that all agents are running and responsive.".to_string())
                 }
             }
-            Self::Io { operation, .. } => {
-                Some(format!("Check file permissions and disk space for operation: {}", operation))
-            }
+            Self::Io { operation, .. } => Some(format!(
+                "Check file permissions and disk space for operation: {}",
+                operation
+            )),
             Self::Yaml { line, column, .. } => {
                 let mut suggestion = "Check your YAML syntax.".to_string();
                 if let Some(l) = line {
@@ -485,10 +493,7 @@ mod tests {
 
     #[test]
     fn test_security_violation_types() {
-        let err = SpriteError::security(
-            "Path contains '..'",
-            SecurityViolationType::PathTraversal,
-        );
+        let err = SpriteError::security("Path contains '..'", SecurityViolationType::PathTraversal);
         assert!(matches!(err, SpriteError::Security { .. }));
         assert_eq!(err.exit_code(), 12);
 
@@ -500,7 +505,14 @@ mod tests {
     #[test]
     fn test_yaml_error_with_location() {
         let err = SpriteError::yaml("Invalid mapping", Some(10), Some(5));
-        assert!(matches!(err, SpriteError::Yaml { line: Some(10), column: Some(5), .. }));
+        assert!(matches!(
+            err,
+            SpriteError::Yaml {
+                line: Some(10),
+                column: Some(5),
+                ..
+            }
+        ));
 
         let suggestion = err.suggestion();
         assert!(suggestion.is_some());

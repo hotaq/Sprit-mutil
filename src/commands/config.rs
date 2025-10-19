@@ -1,11 +1,11 @@
-use anyhow::{Context, Result};
-use crate::error::SpriteError;
 use crate::cli::ConfigCommands;
+use crate::error::SpriteError;
 use crate::utils::git;
-use std::path::PathBuf;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::path::PathBuf;
+use std::time::UNIX_EPOCH;
 
 /// Simple agent configuration matching the YAML format from init command
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -57,6 +57,7 @@ pub struct SyncConfig {
     pub exclude_branches: Vec<String>,
 }
 
+#[allow(dead_code)]
 impl SpriteConfig {
     /// Create a new default configuration
     pub fn new() -> Self {
@@ -86,18 +87,20 @@ impl SpriteConfig {
             return Err(SpriteError::config(format!(
                 "Configuration file not found: {}",
                 path.display()
-            )).into());
+            ))
+            .into());
         }
 
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read configuration file: {}", path.display()))?;
 
-        let mut config: SpriteConfig = serde_yaml::from_str(&content)
-            .map_err(|e| SpriteError::config(format!(
+        let mut config: SpriteConfig = serde_yaml::from_str(&content).map_err(|e| {
+            SpriteError::config(format!(
                 "Failed to parse configuration file {}: {}",
                 path.display(),
                 e
-            )))?;
+            ))
+        })?;
 
         // Update metadata
         config.update_metadata(path, &content)?;
@@ -118,12 +121,14 @@ impl SpriteConfig {
 
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
+            std::fs::create_dir_all(parent).with_context(|| {
+                format!("Failed to create config directory: {}", parent.display())
+            })?;
         }
 
-        let content = serde_yaml::to_string(self)
-            .map_err(|e| SpriteError::config(format!("Failed to serialize configuration: {}", e)))?;
+        let content = serde_yaml::to_string(self).map_err(|e| {
+            SpriteError::config(format!("Failed to serialize configuration: {}", e))
+        })?;
 
         std::fs::write(path, content)
             .with_context(|| format!("Failed to write configuration file: {}", path.display()))?;
@@ -144,20 +149,26 @@ impl SpriteConfig {
 
             if agent_config.branch.is_empty() {
                 return Err(SpriteError::config(format!(
-                    "Agent {} branch cannot be empty", agent_id
-                )).into());
+                    "Agent {} branch cannot be empty",
+                    agent_id
+                ))
+                .into());
             }
 
             if agent_config.worktree_path.is_empty() {
                 return Err(SpriteError::config(format!(
-                    "Agent {} worktree_path cannot be empty", agent_id
-                )).into());
+                    "Agent {} worktree_path cannot be empty",
+                    agent_id
+                ))
+                .into());
             }
 
             if agent_config.model.is_empty() {
                 return Err(SpriteError::config(format!(
-                    "Agent {} model cannot be empty", agent_id
-                )).into());
+                    "Agent {} model cannot be empty",
+                    agent_id
+                ))
+                .into());
             }
         }
 
@@ -194,7 +205,10 @@ impl SpriteConfig {
 
     /// Provision worktrees for all configured agents
     pub fn provision_worktrees(&self) -> Result<()> {
-        println!("🔧 Provisioning worktrees for {} agents...", self.agents.len());
+        println!(
+            "🔧 Provisioning worktrees for {} agents...",
+            self.agents.len()
+        );
 
         // Validate git repository first
         git::validate_git_repository()?;
@@ -220,13 +234,10 @@ impl SpriteConfig {
     pub fn validate_workspaces(&self) -> Result<()> {
         println!("🔍 Validating agent workspaces...");
 
-        let worktrees = git::list_worktrees()
-            .context("Failed to list existing worktrees")?;
+        let worktrees = git::list_worktrees().context("Failed to list existing worktrees")?;
 
-        let worktree_paths: std::collections::HashSet<_> = worktrees
-            .iter()
-            .map(|w| w.path.clone())
-            .collect();
+        let worktree_paths: std::collections::HashSet<_> =
+            worktrees.iter().map(|w| w.path.clone()).collect();
 
         for (agent_id, agent_config) in &self.agents {
             let worktree_path = PathBuf::from(&agent_config.worktree_path);
@@ -236,19 +247,25 @@ impl SpriteConfig {
                     "Agent {} worktree does not exist: {}",
                     agent_id,
                     worktree_path.display()
-                )).into());
+                ))
+                .into());
             }
 
             // Check if branch exists
             if !git::branch_exists(&agent_config.branch)? {
                 return Err(SpriteError::config(format!(
                     "Agent {} branch does not exist: {}",
-                    agent_id,
-                    agent_config.branch
-                )).into());
+                    agent_id, agent_config.branch
+                ))
+                .into());
             }
 
-            println!("  ✅ Agent {}: {} ({})", agent_id, worktree_path.display(), agent_config.branch);
+            println!(
+                "  ✅ Agent {}: {} ({})",
+                agent_id,
+                worktree_path.display(),
+                agent_config.branch
+            );
         }
 
         println!("✅ All workspaces are valid!");
@@ -333,15 +350,20 @@ impl SpriteConfig {
 
         // Reload from disk
         let config_path = PathBuf::from("agents/agents.yaml");
-        let content = std::fs::read_to_string(&config_path)
-            .with_context(|| format!("Failed to read configuration file: {}", config_path.display()))?;
+        let content = std::fs::read_to_string(&config_path).with_context(|| {
+            format!(
+                "Failed to read configuration file: {}",
+                config_path.display()
+            )
+        })?;
 
-        let new_config: SpriteConfig = serde_yaml::from_str(&content)
-            .map_err(|e| SpriteError::config(format!(
+        let new_config: SpriteConfig = serde_yaml::from_str(&content).map_err(|e| {
+            SpriteError::config(format!(
                 "Failed to parse configuration file {}: {}",
                 config_path.display(),
                 e
-            )))?;
+            ))
+        })?;
 
         // Update current config
         self.agents = new_config.agents;
@@ -351,7 +373,10 @@ impl SpriteConfig {
         // Update metadata
         self.update_metadata(&config_path, &content)?;
 
-        println!("✅ Configuration reloaded (version {} → {})", old_version, self.metadata.version);
+        println!(
+            "✅ Configuration reloaded (version {} → {})",
+            old_version, self.metadata.version
+        );
         Ok(true)
     }
 
@@ -378,15 +403,20 @@ impl SpriteConfig {
         }
 
         // Load current config to compare
-        let current_content = std::fs::read_to_string(&config_path)
-            .with_context(|| format!("Failed to read configuration file: {}", config_path.display()))?;
+        let current_content = std::fs::read_to_string(&config_path).with_context(|| {
+            format!(
+                "Failed to read configuration file: {}",
+                config_path.display()
+            )
+        })?;
 
-        let current_config: SpriteConfig = serde_yaml::from_str(&current_content)
-            .map_err(|e| SpriteError::config(format!(
+        let current_config: SpriteConfig = serde_yaml::from_str(&current_content).map_err(|e| {
+            SpriteError::config(format!(
                 "Failed to parse configuration file {}: {}",
                 config_path.display(),
                 e
-            )))?;
+            ))
+        })?;
 
         // Detect changes
         let mut changes = ConfigChanges::new();
@@ -453,12 +483,12 @@ impl ConfigChanges {
     }
 
     pub fn has_changes(&self) -> bool {
-        self.file_modified ||
-        !self.added_agents.is_empty() ||
-        !self.removed_agents.is_empty() ||
-        !self.modified_agents.is_empty() ||
-        self.session_changed ||
-        self.sync_changed
+        self.file_modified
+            || !self.added_agents.is_empty()
+            || !self.removed_agents.is_empty()
+            || !self.modified_agents.is_empty()
+            || self.session_changed
+            || self.sync_changed
     }
 
     pub fn print_summary(&self) {
@@ -467,7 +497,10 @@ impl ConfigChanges {
             return;
         }
 
-        println!("🔄 Configuration changes detected (v{} → v{}):", self.old_version, self.new_version);
+        println!(
+            "🔄 Configuration changes detected (v{} → v{}):",
+            self.old_version, self.new_version
+        );
 
         if !self.added_agents.is_empty() {
             println!("  ➕ Added agents: {}", self.added_agents.join(", "));
@@ -505,8 +538,7 @@ pub fn execute(command: ConfigCommands) -> Result<()> {
 
 /// Show current configuration
 fn show_config() -> Result<()> {
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     println!("📋 Sprite Configuration");
     println!();
@@ -541,17 +573,18 @@ fn show_config() -> Result<()> {
 fn validate_config() -> Result<()> {
     println!("🔍 Validating Sprite configuration...");
 
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     // Validate configuration structure
-    config.validate()
+    config
+        .validate()
         .context("Configuration validation failed")?;
 
     println!("✅ Configuration structure is valid!");
 
     // Validate workspaces
-    config.validate_workspaces()
+    config
+        .validate_workspaces()
         .context("Workspace validation failed")?;
 
     println!("✅ Configuration is fully valid!");
@@ -560,8 +593,7 @@ fn validate_config() -> Result<()> {
 
 /// Set configuration value
 fn set_config_value(key: String, value: String) -> Result<()> {
-    let mut config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let mut config = SpriteConfig::load().context("Failed to load configuration")?;
 
     // Parse key in format: section.field or section.item.field
     let parts: Vec<&str> = key.split('.').collect();
@@ -575,14 +607,17 @@ fn set_config_value(key: String, value: String) -> Result<()> {
             config.session.profile = value;
         }
         ["sync", "auto_sync"] => {
-            config.sync.auto_sync = value.parse::<bool>()
+            config.sync.auto_sync = value
+                .parse::<bool>()
                 .map_err(|_| SpriteError::config("auto_sync must be true or false"))?;
         }
         ["sync", "conflict_resolution"] => {
             config.sync.conflict_resolution = value;
         }
         ["agents", agent_id, field] => {
-            let agent_config = config.agents.entry(agent_id.to_string())
+            let agent_config = config
+                .agents
+                .entry(agent_id.to_string())
                 .or_insert_with(|| SimpleAgentConfig {
                     branch: format!("agents/{}", agent_id),
                     worktree_path: format!("agents/{}", agent_id),
@@ -595,18 +630,17 @@ fn set_config_value(key: String, value: String) -> Result<()> {
                 "worktree_path" => agent_config.worktree_path = value,
                 "model" => agent_config.model = value,
                 "description" => agent_config.description = value,
-                _ => return Err(SpriteError::config(format!(
-                    "Unknown agent field: {}", field
-                )).into()),
+                _ => {
+                    return Err(
+                        SpriteError::config(format!("Unknown agent field: {}", field)).into(),
+                    )
+                }
             }
         }
-        _ => return Err(SpriteError::config(format!(
-            "Unknown configuration key: {}", key
-        )).into()),
+        _ => return Err(SpriteError::config(format!("Unknown configuration key: {}", key)).into()),
     }
 
-    config.save()
-        .context("Failed to save configuration")?;
+    config.save().context("Failed to save configuration")?;
 
     println!("✅ Configuration updated: {} = {}", key, value_clone);
     Ok(())
@@ -614,8 +648,7 @@ fn set_config_value(key: String, value: String) -> Result<()> {
 
 /// Get configuration value
 fn get_config_value(key: String) -> Result<()> {
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     let parts: Vec<&str> = key.split('.').collect();
 
@@ -625,24 +658,25 @@ fn get_config_value(key: String) -> Result<()> {
         ["sync", "auto_sync"] => Some(config.sync.auto_sync.to_string()),
         ["sync", "conflict_resolution"] => Some(config.sync.conflict_resolution.clone()),
         ["agents", agent_id, field] => {
-            config.agents.get(&**agent_id).and_then(|agent| {
-                match *field {
+            config
+                .agents
+                .get(&**agent_id)
+                .and_then(|agent| match *field {
                     "branch" => Some(agent.branch.clone()),
                     "worktree_path" => Some(agent.worktree_path.clone()),
                     "model" => Some(agent.model.clone()),
                     "description" => Some(agent.description.clone()),
                     _ => None,
-                }
-            })
+                })
         }
         _ => None,
     };
 
     match value {
         Some(v) => println!("{}: {}", key, v),
-        None => return Err(SpriteError::config(format!(
-            "Unknown configuration key: {}", key
-        )).into()),
+        None => {
+            return Err(SpriteError::config(format!("Unknown configuration key: {}", key)).into())
+        }
     }
 
     Ok(())
@@ -656,7 +690,8 @@ fn edit_config() -> Result<()> {
         return Err(SpriteError::config(format!(
             "Configuration file not found: {}",
             config_path.display()
-        )).into());
+        ))
+        .into());
     }
 
     // Try to find a suitable editor
@@ -687,16 +722,17 @@ fn edit_config() -> Result<()> {
             "editor".to_string(),
             status.code(),
             "".to_string(),
-            format!("Editor exited with non-zero status: {}", status)
-        ).into());
+            format!("Editor exited with non-zero status: {}", status),
+        )
+        .into());
     }
 
     // Validate after editing
     println!("🔍 Validating updated configuration...");
-    let config = SpriteConfig::load()
-        .context("Failed to load updated configuration")?;
+    let config = SpriteConfig::load().context("Failed to load updated configuration")?;
 
-    config.validate()
+    config
+        .validate()
         .context("Updated configuration is invalid")?;
 
     println!("✅ Configuration updated and validated successfully!");
@@ -707,15 +743,15 @@ fn edit_config() -> Result<()> {
 fn check_config_status() -> Result<()> {
     println!("🔍 Checking configuration status...");
 
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     println!("📋 Configuration Status:");
     println!("  Version: {}", config.version());
     println!("  Last Modified: {}", {
-        use std::time::{UNIX_EPOCH, Duration};
+        use std::time::{Duration, UNIX_EPOCH};
         let datetime = UNIX_EPOCH + Duration::from_secs(config.last_modified());
-        let time_str = datetime.duration_since(UNIX_EPOCH)
+        let time_str = datetime
+            .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
 
@@ -725,10 +761,14 @@ fn check_config_status() -> Result<()> {
         let seconds = time_str % 60;
         format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
     });
-    println!("  Content Hash: {}...", &config.content_hash()[..8.min(config.content_hash().len())]);
+    println!(
+        "  Content Hash: {}...",
+        &config.content_hash()[..8.min(config.content_hash().len())]
+    );
 
     // Check for changes
-    let changes = config.detect_changes()
+    let changes = config
+        .detect_changes()
         .context("Failed to detect configuration changes")?;
 
     if changes.has_changes() {

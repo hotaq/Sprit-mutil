@@ -3,13 +3,12 @@
 //! This module provides comprehensive validation functions that produce clear,
 //! actionable error messages for configuration issues.
 
-use anyhow::{Context, Result};
 use crate::error::SpriteError;
 use crate::models::{
-    ProjectConfig, Agent, SyncConfig, ProjectSettings, SecuritySettings,
-    PerformanceSettings, LoggingConfig, AgentStatus, ConflictResolution,
-    config::SyncHook,
+    config::SyncHook, Agent, AgentStatus, ConflictResolution, LoggingConfig, PerformanceSettings,
+    ProjectConfig, ProjectSettings, SecuritySettings, SyncConfig,
 };
+use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 /// Validate configuration with detailed error messages.
@@ -34,7 +33,8 @@ fn validate_version(version: &str) -> Result<()> {
             "Configuration version is required",
             Some("version".to_string()),
             Some("empty".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     // Check if version follows semantic versioning pattern
@@ -43,7 +43,8 @@ fn validate_version(version: &str) -> Result<()> {
             "Configuration version must be in semantic versioning format (e.g., '1.0', '1.2.3')",
             Some("version".to_string()),
             Some(version.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     Ok(())
@@ -56,7 +57,8 @@ fn validate_agents(agents: &[Agent]) -> Result<()> {
             "At least one agent must be configured",
             Some("agents".to_string()),
             Some("empty list".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     // Check for duplicate agent IDs
@@ -67,7 +69,8 @@ fn validate_agents(agents: &[Agent]) -> Result<()> {
                 format!("Duplicate agent ID '{}' found at index {}", agent.id, index),
                 Some("agents".to_string()),
                 Some(agent.id.clone()),
-            ).into());
+            )
+            .into());
         }
 
         validate_agent(agent).with_context(|| format!("Agent '{}' validation failed", agent.id))?;
@@ -84,15 +87,21 @@ pub fn validate_agent(agent: &Agent) -> Result<()> {
             "Agent ID cannot be empty",
             Some("agent.id".to_string()),
             Some("empty".to_string()),
-        ).into());
+        )
+        .into());
     }
 
-    if !agent.id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+    if !agent
+        .id
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    {
         return Err(SpriteError::validation(
             "Agent ID can only contain alphanumeric characters, hyphens, and underscores",
             Some("agent.id".to_string()),
             Some(agent.id.clone()),
-        ).into());
+        )
+        .into());
     }
 
     if agent.id.len() > 50 {
@@ -100,7 +109,8 @@ pub fn validate_agent(agent: &Agent) -> Result<()> {
             "Agent ID cannot exceed 50 characters",
             Some("agent.id".to_string()),
             Some(format!("{} characters", agent.id.len())),
-        ).into());
+        )
+        .into());
     }
 
     // Validate branch name
@@ -109,14 +119,15 @@ pub fn validate_agent(agent: &Agent) -> Result<()> {
             "Agent branch cannot be empty",
             Some("agent.branch".to_string()),
             Some("empty".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     validate_branch_name(&agent.branch)?;
 
     // Validate workspace path
     let workspace_path = agent.workspace_path();
-    validate_workspace_path(workspace_path)?;
+    validate_workspace_path(workspace_path.as_path())?;
 
     // Validate agent status consistency
     validate_agent_status(agent)?;
@@ -132,7 +143,8 @@ fn validate_branch_name(branch: &str) -> Result<()> {
             "Branch name cannot contain '..' (path traversal)",
             Some("branch".to_string()),
             Some(branch.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if branch.starts_with('/') || branch.ends_with('/') {
@@ -140,7 +152,8 @@ fn validate_branch_name(branch: &str) -> Result<()> {
             "Branch name cannot start or end with '/'",
             Some("branch".to_string()),
             Some(branch.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if branch.chars().any(|c| c.is_control()) {
@@ -148,14 +161,15 @@ fn validate_branch_name(branch: &str) -> Result<()> {
             "Branch name cannot contain control characters",
             Some("branch".to_string()),
             Some(branch.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     Ok(())
 }
 
 /// Validate workspace path security and format.
-fn validate_workspace_path(path: &PathBuf) -> Result<()> {
+fn validate_workspace_path(path: &std::path::Path) -> Result<()> {
     let path_str = path.to_string_lossy();
 
     // Path must be within agents/ directory
@@ -164,7 +178,8 @@ fn validate_workspace_path(path: &PathBuf) -> Result<()> {
             "Agent workspace must be within the 'agents/' directory",
             Some("worktree_path".to_string()),
             Some(path_str.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     // Check for path traversal attempts
@@ -173,7 +188,8 @@ fn validate_workspace_path(path: &PathBuf) -> Result<()> {
             "Agent workspace path cannot contain parent directory references",
             Some("worktree_path".to_string()),
             Some(path_str.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     // Check for absolute paths
@@ -182,7 +198,8 @@ fn validate_workspace_path(path: &PathBuf) -> Result<()> {
             "Agent workspace path must be relative to project root",
             Some("worktree_path".to_string()),
             Some(path_str.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     Ok(())
@@ -197,7 +214,8 @@ fn validate_agent_status(agent: &Agent) -> Result<()> {
                     "Agent error status must include an error message",
                     Some("agent.status".to_string()),
                     Some("empty error message".to_string()),
-                ).into());
+                )
+                .into());
             }
         }
         AgentStatus::Initializing => {
@@ -207,7 +225,8 @@ fn validate_agent_status(agent: &Agent) -> Result<()> {
                     "Agent in initializing state should have a last_activity timestamp",
                     Some("agent.last_activity".to_string()),
                     Some("not set".to_string()),
-                ).into());
+                )
+                .into());
             }
         }
         _ => {} // Other statuses are valid without additional checks
@@ -223,15 +242,20 @@ fn validate_session_name(session_name: &str) -> Result<()> {
             "Session name cannot be empty",
             Some("session_name".to_string()),
             Some("empty".to_string()),
-        ).into());
+        )
+        .into());
     }
 
-    if !session_name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+    if !session_name
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    {
         return Err(SpriteError::validation(
             "Session name can only contain alphanumeric characters, hyphens, and underscores",
             Some("session_name".to_string()),
             Some(session_name.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if session_name.len() > 50 {
@@ -239,7 +263,8 @@ fn validate_session_name(session_name: &str) -> Result<()> {
             "Session name cannot exceed 50 characters",
             Some("session_name".to_string()),
             Some(format!("{} characters", session_name.len())),
-        ).into());
+        )
+        .into());
     }
 
     Ok(())
@@ -252,7 +277,8 @@ fn validate_sync_config(sync: &SyncConfig) -> Result<()> {
             "Sync interval must be greater than 0 seconds",
             Some("sync.default_interval_secs".to_string()),
             Some("0".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if sync.default_interval_secs > 86400 {
@@ -260,7 +286,8 @@ fn validate_sync_config(sync: &SyncConfig) -> Result<()> {
             "Sync interval cannot exceed 24 hours (86400 seconds)",
             Some("sync.default_interval_secs".to_string()),
             Some(sync.default_interval_secs.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     // Validate conflict resolution strategy
@@ -302,7 +329,8 @@ fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
             "Hook command cannot be empty",
             Some("hook.command".to_string()),
             Some("empty".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     // Validate command doesn't contain suspicious characters
@@ -311,7 +339,8 @@ fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
             "Hook command contains potentially unsafe characters",
             Some("hook.command".to_string()),
             Some(hook.command.clone()),
-        ).into());
+        )
+        .into());
     }
 
     // Validate working directory if specified
@@ -321,10 +350,11 @@ fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
                 "Hook working directory cannot be empty",
                 Some("hook.work_dir".to_string()),
                 Some("empty path".to_string()),
-            ).into());
+            )
+            .into());
         }
 
-        validate_workspace_path(work_dir)?;
+        validate_workspace_path(work_dir.as_path())?;
     }
 
     // Validate timeout if specified
@@ -334,7 +364,8 @@ fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
                 "Hook timeout must be greater than 0 seconds",
                 Some("hook.timeout_secs".to_string()),
                 Some("0".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if timeout > 3600 {
@@ -342,7 +373,8 @@ fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
                 "Hook timeout cannot exceed 1 hour (3600 seconds)",
                 Some("hook.timeout_secs".to_string()),
                 Some(timeout.to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -368,7 +400,8 @@ fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
                 "Log file path should be relative to project root",
                 Some("logging.log_file".to_string()),
                 Some(path_str.to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if path_str.contains("..") {
@@ -376,7 +409,8 @@ fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
                 "Log file path cannot contain parent directory references",
                 Some("logging.log_file".to_string()),
                 Some(path_str.to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -386,7 +420,8 @@ fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
                 "Maximum log file size must be greater than 0 MB",
                 Some("logging.rotation.max_size_mb".to_string()),
                 Some("0".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if rotation.max_files == 0 {
@@ -394,7 +429,8 @@ fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
                 "Maximum number of log files must be greater than 0",
                 Some("logging.rotation.max_files".to_string()),
                 Some("0".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if rotation.max_files > 100 {
@@ -402,7 +438,8 @@ fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
                 "Maximum number of log files cannot exceed 100",
                 Some("logging.rotation.max_files".to_string()),
                 Some(rotation.max_files.to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -416,7 +453,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
             "Maximum concurrent operations must be greater than 0",
             Some("performance.max_concurrent_ops".to_string()),
             Some("0".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if performance.max_concurrent_ops > 100 {
@@ -424,7 +462,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
             "Maximum concurrent operations cannot exceed 100",
             Some("performance.max_concurrent_ops".to_string()),
             Some(performance.max_concurrent_ops.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if performance.default_timeout_secs == 0 {
@@ -432,7 +471,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
             "Default timeout must be greater than 0 seconds",
             Some("performance.default_timeout_secs".to_string()),
             Some("0".to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if performance.default_timeout_secs > 3600 {
@@ -440,7 +480,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
             "Default timeout cannot exceed 1 hour (3600 seconds)",
             Some("performance.default_timeout_secs".to_string()),
             Some(performance.default_timeout_secs.to_string()),
-        ).into());
+        )
+        .into());
     }
 
     if let Some(memory_limit) = performance.memory_limit_mb {
@@ -449,7 +490,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
                 "Memory limit must be greater than 0 MB",
                 Some("performance.memory_limit_mb".to_string()),
                 Some("0".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if memory_limit > 16384 {
@@ -457,7 +499,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
                 "Memory limit cannot exceed 16 GB (16384 MB)",
                 Some("performance.memory_limit_mb".to_string()),
                 Some(memory_limit.to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -467,7 +510,8 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
                 "CPU limit must be between 1 and 100 percent",
                 Some("performance.cpu_limit_percent".to_string()),
                 Some(cpu_limit.to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -482,7 +526,8 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                 "Maximum command length must be greater than 0",
                 Some("security.max_command_length".to_string()),
                 Some("0".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if max_length > 10000 {
@@ -490,7 +535,8 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                 "Maximum command length cannot exceed 10000 characters",
                 Some("security.max_command_length".to_string()),
                 Some(max_length.to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -501,7 +547,8 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                 "Allowed path cannot be empty",
                 Some(format!("security.allowed_paths[{}]", index)),
                 Some("empty path".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         if !path.starts_with("agents/") {
@@ -509,7 +556,8 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                 "Allowed paths should be within the agents/ directory",
                 Some(format!("security.allowed_paths[{}]", index)),
                 Some(path.to_string_lossy().to_string()),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -520,7 +568,8 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                 "Blocked command cannot be empty",
                 Some(format!("security.blocked_commands[{}]", index)),
                 Some("empty command".to_string()),
-            ).into());
+            )
+            .into());
         }
 
         // Check for obviously dangerous commands in blocked list
@@ -534,7 +583,8 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                     "Consider adding dangerous commands to blocked list (e.g., 'rm', 'sudo', 'su')",
                     Some("security.blocked_commands".to_string()),
                     Some("insufficient protection".to_string()),
-                ).into());
+                )
+                .into());
             }
         }
     }
@@ -555,9 +605,13 @@ pub fn validate_config_with_git(config: &ProjectConfig) -> Result<()> {
     for agent in &config.agents {
         if !crate::config::branch_exists(&agent.branch)? {
             return Err(SpriteError::agent(
-                format!("Agent branch '{}' does not exist. Create it with 'git checkout -b {}'", agent.branch, agent.branch),
+                format!(
+                    "Agent branch '{}' does not exist. Create it with 'git checkout -b {}'",
+                    agent.branch, agent.branch
+                ),
                 Some(&agent.id),
-            ).into());
+            )
+            .into());
         }
     }
 
@@ -567,8 +621,8 @@ pub fn validate_config_with_git(config: &ProjectConfig) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AgentConfig, ResourceLimits};
-
+    use std::path::PathBuf;
+    
     #[test]
     fn test_validate_version() {
         assert!(validate_version("1.0").is_ok());
@@ -602,11 +656,11 @@ mod tests {
 
     #[test]
     fn test_validate_workspace_path() {
-        assert!(validate_workspace_path(&PathBuf::from("agents/agent-1")).is_ok());
-        assert!(validate_workspace_path(&PathBuf::from("agents/workspace")).is_ok());
-        assert!(validate_workspace_path(&PathBuf::from("outside")).is_err());
-        assert!(validate_workspace_path(&PathBuf::from("agents/../dangerous")).is_err());
-        assert!(validate_workspace_path(&PathBuf::from("/absolute/path")).is_err());
+        assert!(validate_workspace_path(PathBuf::from("agents/agent-1").as_path()).is_ok());
+        assert!(validate_workspace_path(PathBuf::from("agents/workspace").as_path()).is_ok());
+        assert!(validate_workspace_path(PathBuf::from("outside").as_path()).is_err());
+        assert!(validate_workspace_path(PathBuf::from("agents/../dangerous").as_path()).is_err());
+        assert!(validate_workspace_path(PathBuf::from("/absolute/path").as_path()).is_err());
     }
 
     #[test]

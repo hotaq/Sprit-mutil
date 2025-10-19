@@ -1,8 +1,8 @@
-use anyhow::{Context, Result};
-use crate::error::SpriteError;
 use crate::cli::AgentsCommands;
-use crate::commands::config::{SpriteConfig, SimpleAgentConfig};
+use crate::commands::config::{SimpleAgentConfig, SpriteConfig};
+use crate::error::SpriteError;
 use crate::utils::git;
+use anyhow::{Context, Result};
 use std::io::{self, Write};
 use std::path::PathBuf;
 
@@ -10,12 +10,26 @@ use std::path::PathBuf;
 pub fn execute(command: AgentsCommands) -> Result<()> {
     match command {
         AgentsCommands::List => list_agents(),
-        AgentsCommands::Create { agent_id, branch, workspace, model, description, no_workspace } => {
-            create_agent(agent_id, branch, workspace, model, description, no_workspace)
-        },
-        AgentsCommands::Remove { agent_id, force, keep_workspace } => {
-            remove_agent(agent_id, force, keep_workspace)
-        },
+        AgentsCommands::Create {
+            agent_id,
+            branch,
+            workspace,
+            model,
+            description,
+            no_workspace,
+        } => create_agent(
+            agent_id,
+            branch,
+            workspace,
+            model,
+            description,
+            no_workspace,
+        ),
+        AgentsCommands::Remove {
+            agent_id,
+            force,
+            keep_workspace,
+        } => remove_agent(agent_id, force, keep_workspace),
         AgentsCommands::Show { agent_id } => show_agent(agent_id),
         AgentsCommands::Validate => validate_agents(),
         AgentsCommands::Provision { agent_id } => provision_agents(agent_id),
@@ -24,8 +38,7 @@ pub fn execute(command: AgentsCommands) -> Result<()> {
 
 /// List all configured agents
 fn list_agents() -> Result<()> {
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     if config.agents.is_empty() {
         println!("📝 No agents configured.");
@@ -62,7 +75,10 @@ fn list_agents() -> Result<()> {
         };
 
         println!("  Agent {} :", agent_id);
-        println!("    📁 Workspace: {} {}", agent_config.worktree_path, git_status);
+        println!(
+            "    📁 Workspace: {} {}",
+            agent_config.worktree_path, git_status
+        );
         println!("    🌿 Branch: {}", agent_config.branch);
         println!("    🤖 Model: {}", agent_config.model);
         println!("    📝 Description: {}", agent_config.description);
@@ -84,22 +100,23 @@ fn create_agent(
     println!("🚀 Creating new agent: {}", agent_id);
 
     // Load existing configuration
-    let mut config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let mut config = SpriteConfig::load().context("Failed to load configuration")?;
 
     // Check if agent already exists
     if config.agents.contains_key(&agent_id) {
         return Err(SpriteError::config(format!(
             "Agent {} already exists. Use a different ID or remove the existing agent first.",
             agent_id
-        )).into());
+        ))
+        .into());
     }
 
     // Validate agent ID format
     if agent_id.is_empty() || agent_id.contains('/') || agent_id.contains("..") {
         return Err(SpriteError::config(
-            "Invalid agent ID. Must be a simple identifier without slashes or '..'."
-        ).into());
+            "Invalid agent ID. Must be a simple identifier without slashes or '..'.",
+        )
+        .into());
     }
 
     // Set default values
@@ -119,7 +136,8 @@ fn create_agent(
     config.agents.insert(agent_id.clone(), agent_config);
 
     // Save configuration
-    config.save()
+    config
+        .save()
         .context("Failed to save updated configuration")?;
 
     println!("  ✅ Agent configuration saved");
@@ -129,8 +147,7 @@ fn create_agent(
         println!("  🔧 Creating workspace...");
 
         // Validate git repository first
-        git::validate_git_repository()
-            .context("Failed to validate git repository")?;
+        git::validate_git_repository().context("Failed to validate git repository")?;
 
         // Create branch if it doesn't exist
         if !git::branch_exists(&branch_name)? {
@@ -166,22 +183,21 @@ fn remove_agent(agent_id: String, force: bool, keep_workspace: bool) -> Result<(
     println!("🗑️  Removing agent: {}", agent_id);
 
     // Load configuration
-    let mut config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let mut config = SpriteConfig::load().context("Failed to load configuration")?;
 
     // Check if agent exists
     if !config.agents.contains_key(&agent_id) {
-        return Err(SpriteError::config(format!(
-            "Agent {} does not exist.",
-            agent_id
-        )).into());
+        return Err(SpriteError::config(format!("Agent {} does not exist.", agent_id)).into());
     }
 
     let agent_config = &config.agents[&agent_id];
 
     // Confirmation prompt (unless force is true)
     if !force {
-        println!("This will remove agent {} with the following configuration:", agent_id);
+        println!(
+            "This will remove agent {} with the following configuration:",
+            agent_id
+        );
         println!("  Workspace: {}", agent_config.worktree_path);
         println!("  Branch: {}", agent_config.branch);
         println!("  Model: {}", agent_config.model);
@@ -215,22 +231,36 @@ fn remove_agent(agent_id: String, force: bool, keep_workspace: bool) -> Result<(
 
             // Then remove the directory if it still exists
             if workspace_path.exists() {
-                std::fs::remove_dir_all(&workspace_path)
-                    .with_context(|| format!("Failed to remove workspace directory: {}", workspace_path.display()))?;
-                println!("  ✅ Removed workspace directory: {}", agent_config.worktree_path);
+                std::fs::remove_dir_all(&workspace_path).with_context(|| {
+                    format!(
+                        "Failed to remove workspace directory: {}",
+                        workspace_path.display()
+                    )
+                })?;
+                println!(
+                    "  ✅ Removed workspace directory: {}",
+                    agent_config.worktree_path
+                );
             }
         } else {
-            println!("  ℹ️  Workspace directory does not exist: {}", agent_config.worktree_path);
+            println!(
+                "  ℹ️  Workspace directory does not exist: {}",
+                agent_config.worktree_path
+            );
         }
     } else {
-        println!("  📁 Keeping workspace directory: {}", agent_config.worktree_path);
+        println!(
+            "  📁 Keeping workspace directory: {}",
+            agent_config.worktree_path
+        );
     }
 
     // Remove agent from configuration
     config.agents.remove(&agent_id);
 
     // Save configuration
-    config.save()
+    config
+        .save()
         .context("Failed to save updated configuration")?;
 
     println!("  ✅ Agent configuration removed");
@@ -241,8 +271,7 @@ fn remove_agent(agent_id: String, force: bool, keep_workspace: bool) -> Result<(
 
 /// Show agent details
 fn show_agent(agent_id: Option<String>) -> Result<()> {
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     match agent_id {
         Some(id) => {
@@ -265,7 +294,10 @@ fn show_agent(agent_id: Option<String>) -> Result<()> {
                         if branch == agent_config.branch {
                             println!("    Status: ✅ On correct branch");
                         } else {
-                            println!("    Status: ⚠️  Wrong branch (should be {})", agent_config.branch);
+                            println!(
+                                "    Status: ⚠️  Wrong branch (should be {})",
+                                agent_config.branch
+                            );
                         }
                     }
 
@@ -285,10 +317,7 @@ fn show_agent(agent_id: Option<String>) -> Result<()> {
                     println!("  💡 Run 'sprite agents provision {}' to create it", id);
                 }
             } else {
-                return Err(SpriteError::config(format!(
-                    "Agent {} does not exist.",
-                    id
-                )).into());
+                return Err(SpriteError::config(format!("Agent {} does not exist.", id)).into());
             }
         }
         None => {
@@ -302,8 +331,7 @@ fn show_agent(agent_id: Option<String>) -> Result<()> {
 
 /// Validate all agent workspaces
 fn validate_agents() -> Result<()> {
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     if config.agents.is_empty() {
         println!("📝 No agents configured.");
@@ -314,7 +342,7 @@ fn validate_agents() -> Result<()> {
     println!();
 
     let mut valid_count = 0;
-    let mut total_count = config.agents.len();
+    let total_count = config.agents.len();
 
     for (agent_id, agent_config) in &config.agents {
         let workspace_path = PathBuf::from(&agent_config.worktree_path);
@@ -361,7 +389,10 @@ fn validate_agents() -> Result<()> {
     if valid_count == total_count {
         println!("✅ All {} agent workspaces are valid!", total_count);
     } else {
-        println!("⚠️  {}/{} agent workspaces are valid", valid_count, total_count);
+        println!(
+            "⚠️  {}/{} agent workspaces are valid",
+            valid_count, total_count
+        );
         println!("💡 Use 'sprite agents provision' to fix missing workspaces");
     }
 
@@ -370,26 +401,25 @@ fn validate_agents() -> Result<()> {
 
 /// Provision workspaces for agents
 fn provision_agents(agent_id: Option<String>) -> Result<()> {
-    let config = SpriteConfig::load()
-        .context("Failed to load configuration")?;
+    let config = SpriteConfig::load().context("Failed to load configuration")?;
 
     // Validate git repository first
-    git::validate_git_repository()
-        .context("Failed to validate git repository")?;
+    git::validate_git_repository().context("Failed to validate git repository")?;
 
     let agents_to_provision: Vec<_> = if let Some(id) = agent_id {
         // Provision specific agent
         if let Some(agent_config) = config.agents.get(&id) {
             vec![(id.clone(), agent_config.clone())]
         } else {
-            return Err(SpriteError::config(format!(
-                "Agent {} does not exist.",
-                id
-            )).into());
+            return Err(SpriteError::config(format!("Agent {} does not exist.", id)).into());
         }
     } else {
         // Provision all agents
-        config.agents.iter().map(|(id, config)| (id.clone(), config.clone())).collect()
+        config
+            .agents
+            .iter()
+            .map(|(id, config)| (id.clone(), config.clone()))
+            .collect()
     };
 
     if agents_to_provision.is_empty() {
@@ -397,7 +427,10 @@ fn provision_agents(agent_id: Option<String>) -> Result<()> {
         return Ok(());
     }
 
-    println!("🔧 Provisioning workspaces for {} agent(s)...", agents_to_provision.len());
+    println!(
+        "🔧 Provisioning workspaces for {} agent(s)...",
+        agents_to_provision.len()
+    );
 
     for (id, agent_config) in agents_to_provision {
         println!("  🤖 Agent {}:", id);
@@ -421,7 +454,8 @@ fn provision_agents(agent_id: Option<String>) -> Result<()> {
                 return Err(SpriteError::config(format!(
                     "Workspace path exists but is not a git repository: {}",
                     agent_config.worktree_path
-                )).into());
+                ))
+                .into());
             }
         } else {
             // Create branch if it doesn't exist

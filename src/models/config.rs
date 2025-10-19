@@ -1,9 +1,9 @@
 //! Configuration data structures for the Sprite multi-agent workflow toolkit.
 
+use super::{Agent, ConflictResolution, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use super::{Agent, LogLevel, ConflictResolution};
 
 /// Top-level configuration that defines the entire multi-agent setup.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,11 +185,13 @@ impl SyncConfig {
 
         // Validate hooks
         for (i, hook) in self.pre_sync_hooks.iter().enumerate() {
-            hook.validate().map_err(|e| format!("Pre-sync hook {}: {}", i + 1, e))?;
+            hook.validate()
+                .map_err(|e| format!("Pre-sync hook {}: {}", i + 1, e))?;
         }
 
         for (i, hook) in self.post_sync_hooks.iter().enumerate() {
-            hook.validate().map_err(|e| format!("Post-sync hook {}: {}", i + 1, e))?;
+            hook.validate()
+                .map_err(|e| format!("Post-sync hook {}: {}", i + 1, e))?;
         }
 
         Ok(())
@@ -266,7 +268,8 @@ impl SyncHook {
             cmd.current_dir(work_dir);
         }
 
-        let output = cmd.output()
+        let output = cmd
+            .output()
             .map_err(|e| format!("Failed to execute hook command '{}': {}", self.command, e))?;
 
         Ok(output)
@@ -307,7 +310,10 @@ impl ProjectSettings {
     }
 
     /// Get effective environment variables (global + agent-specific).
-    pub fn get_effective_env(&self, agent_env: &HashMap<String, String>) -> HashMap<String, String> {
+    pub fn get_effective_env(
+        &self,
+        agent_env: &HashMap<String, String>,
+    ) -> HashMap<String, String> {
         let mut env = self.global_env_vars.clone();
         for (key, value) in agent_env {
             env.insert(key.clone(), value.clone());
@@ -453,7 +459,7 @@ impl Default for PerformanceSettings {
             default_timeout_secs: 300, // 5 minutes
             enable_monitoring: true,
             memory_limit_mb: Some(1024), // 1GB
-            cpu_limit_percent: Some(80),  // 80%
+            cpu_limit_percent: Some(80), // 80%
         }
     }
 }
@@ -517,9 +523,9 @@ impl SecuritySettings {
             return true; // If no restrictions, allow all
         }
 
-        self.allowed_paths.iter().any(|allowed| {
-            path.starts_with(allowed) || path == allowed
-        })
+        self.allowed_paths
+            .iter()
+            .any(|allowed| path.starts_with(allowed) || path == allowed)
     }
 }
 
@@ -543,8 +549,7 @@ impl Default for SecuritySettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::AgentStatus;
-
+    
     #[test]
     fn test_project_config_creation() {
         let config = ProjectConfig::new();

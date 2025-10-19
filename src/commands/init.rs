@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
 use crate::error::SpriteError;
 use crate::utils::git;
+use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -19,8 +19,7 @@ pub fn execute(options: InitOptions) -> Result<()> {
     println!("🚀 Initializing Sprite multi-agent environment...");
 
     // T026: Validate git repository
-    git::validate_git_repository()
-        .context("Failed to validate git repository")?;
+    git::validate_git_repository().context("Failed to validate git repository")?;
 
     // T028: Handle edge case - existing configuration
     let agents_dir = PathBuf::from("agents");
@@ -28,8 +27,9 @@ pub fn execute(options: InitOptions) -> Result<()> {
 
     if config_file.exists() && !options.force {
         return Err(SpriteError::config(
-            "Configuration file already exists. Use --force to overwrite."
-        ).into());
+            "Configuration file already exists. Use --force to overwrite.",
+        )
+        .into());
     }
 
     // Create directory structure
@@ -48,7 +48,10 @@ pub fn execute(options: InitOptions) -> Result<()> {
     create_direnv_config(&agents_dir)?;
 
     let duration = start_time.elapsed();
-    println!("✅ Sprite environment initialized successfully in {:.1}s!", duration.as_secs_f64());
+    println!(
+        "✅ Sprite environment initialized successfully in {:.1}s!",
+        duration.as_secs_f64()
+    );
     println!();
     println!("📁 Created directories:");
     println!("   agents/");
@@ -79,18 +82,15 @@ fn create_agents_directory_structure(agents_dir: &Path, agent_count: u32) -> Res
     println!("📁 Creating directory structure...");
 
     // Create main agents directory
-    fs::create_dir_all(agents_dir)
-        .context("Failed to create agents directory")?;
+    fs::create_dir_all(agents_dir).context("Failed to create agents directory")?;
 
     // Create scripts directory
     let scripts_dir = agents_dir.join("scripts");
-    fs::create_dir_all(&scripts_dir)
-        .context("Failed to create scripts directory")?;
+    fs::create_dir_all(&scripts_dir).context("Failed to create scripts directory")?;
 
     // Create profiles directory
     let profiles_dir = agents_dir.join("profiles");
-    fs::create_dir_all(&profiles_dir)
-        .context("Failed to create profiles directory")?;
+    fs::create_dir_all(&profiles_dir).context("Failed to create profiles directory")?;
 
     // Create individual agent directories
     for i in 1..=agent_count {
@@ -113,8 +113,7 @@ fn generate_agents_config(config_file: &Path, agent_count: u32) -> Result<()> {
         generate_config_content(agent_count)?
     };
 
-    fs::write(config_file, config)
-        .context("Failed to write agents.yaml configuration")?;
+    fs::write(config_file, config).context("Failed to write agents.yaml configuration")?;
 
     Ok(())
 }
@@ -293,7 +292,6 @@ export SPRITE_AGENT_DIR="$(pwd)"
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    use std::fs;
 
     #[test]
     fn test_create_agents_directory_structure() {

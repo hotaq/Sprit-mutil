@@ -8,14 +8,15 @@ pub mod config;
 pub mod session;
 
 // Re-export commonly used types
-pub use agent::{Agent, AgentConfig, AgentStatus, ResourceLimits};
-pub use config::{ProjectConfig, SyncConfig, ProjectSettings, LoggingConfig, PerformanceSettings, SecuritySettings};
-pub use session::{Session, SessionStatus, SessionLayout, TmuxProfile, SupervisorConfig};
+pub use agent::{Agent, AgentStatus};
+pub use config::{
+    LoggingConfig, PerformanceSettings, ProjectConfig, ProjectSettings, SecuritySettings,
+    SyncConfig,
+};
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// Log levels for configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -66,7 +67,7 @@ pub struct CommandMessage {
     pub args: Vec<String>,
 
     /// Working directory for command
-    pub work_dir: Option<PathBuf>,
+    pub work_dir: Option<String>,
 
     /// Environment variables for this command
     pub env_vars: HashMap<String, String>,

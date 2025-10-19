@@ -3,15 +3,14 @@
 //! This module provides logging functionality with support for different
 //! log levels, file output, and rotation.
 
-use anyhow::Result;
 use crate::error::SpriteError;
-use std::fs::{OpenOptions, File};
-use std::io::{Write, BufWriter};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use chrono::{Local, DateTime, Utc};
-use std::collections::HashMap;
+use anyhow::Result;
+use chrono::{DateTime, Local, Utc};
 use log::{Level, LevelFilter, Log, Metadata, Record};
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Write};
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 /// Logger configuration.
 #[derive(Debug, Clone)]
@@ -56,18 +55,26 @@ impl SpriteLogger {
         let log_file = if let Some(ref log_path) = config.log_file {
             // Create parent directory if it doesn't exist
             if let Some(parent) = log_path.parent() {
-                std::fs::create_dir_all(parent)?;
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    SpriteError::filesystem_with_source(
+                        format!("Failed to create log directory: {}", e),
+                        parent.display().to_string(),
+                        e,
+                    )
+                })?;
             }
 
             let file = OpenOptions::new()
                 .create(true)
                 .append(true)
                 .open(log_path)
-                .map_err(|e| SpriteError::filesystem_with_source(
-                    format!("Failed to open log file: {}", e),
-                    log_path.display().to_string(),
-                    e,
-                ))?;
+                .map_err(|e| {
+                    SpriteError::filesystem_with_source(
+                        format!("Failed to open log file: {}", e),
+                        log_path.display().to_string(),
+                        e,
+                    )
+                })?;
 
             Some(Mutex::new(BufWriter::new(file)))
         } else {
@@ -85,7 +92,12 @@ impl SpriteLogger {
     fn write_log(&self, level: Level, record: &Record) {
         let message = record.args().to_string();
 
-        let formatted = self.format_message(level.to_level_filter(), &message, record.file(), record.line());
+        let formatted = self.format_message(
+            level.to_level_filter(),
+            &message,
+            record.file(),
+            record.line(),
+        );
 
         // Write to file if configured
         if let Some(ref file_mutex) = self.log_file {
@@ -102,7 +114,13 @@ impl SpriteLogger {
     }
 
     /// Format a log message.
-    fn format_message(&self, level: LevelFilter, message: &str, file: Option<&str>, line: Option<u32>) -> String {
+    fn format_message(
+        &self,
+        level: LevelFilter,
+        message: &str,
+        file: Option<&str>,
+        line: Option<u32>,
+    ) -> String {
         let mut parts = Vec::new();
 
         // Add timestamp if configured
@@ -136,7 +154,7 @@ impl SpriteLogger {
         // Add module name if configured
         if self.config.include_module {
             if let Some(file) = file {
-                let module = file.rfind('/').map(|i| &file[i+1..]).unwrap_or(file);
+                let module = file.rfind('/').map(|i| &file[i + 1..]).unwrap_or(file);
                 parts.push(format!("[{}]", module));
             }
         }
@@ -197,7 +215,7 @@ impl Log for SpriteLogger {
 /// Initialize logging for the application.
 pub fn init_logging(config: LoggerConfig) -> Result<()> {
     let logger = SpriteLogger::new(config)?;
-    log::set_boxed_logger(Box::new(logger));
+    let _ = log::set_boxed_logger(Box::new(logger));
     Ok(())
 }
 
@@ -255,11 +273,7 @@ pub struct RotatingLogger {
 
 impl RotatingLogger {
     /// Create a new rotating logger.
-    pub fn new<P: AsRef<Path>>(
-        base_path: P,
-        max_size: u64,
-        level: Level,
-    ) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(base_path: P, max_size: u64, level: Level) -> Result<Self> {
         let base_path = base_path.as_ref().to_path_buf();
         let current_file = base_path.join(format!("{}.log", Local::now().format("%Y%m%d_%H%M%S")));
 
@@ -290,28 +304,37 @@ impl RotatingLogger {
     fn create_log_file(path: &Path) -> Result<File> {
         // Create parent directory if needed
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
+            std::fs::create_dir_all(parent).map_err(|e| {
+                SpriteError::filesystem_with_source(
+                    format!("Failed to create log directory: {}", e),
+                    parent.display().to_string(),
+                    e,
+                )
+            })?;
         }
 
         Ok(OpenOptions::new()
             .create(true)
             .append(true)
             .open(path)
-            .map_err(|e| SpriteError::filesystem_with_source(
-                format!("Failed to create log file: {}", e),
-                path.display().to_string(),
-                e,
-            ))?)
+            .map_err(|e| {
+                SpriteError::filesystem_with_source(
+                    format!("Failed to create log file: {}", e),
+                    path.display().to_string(),
+                    e,
+                )
+            })?)
     }
 
     /// Get the size of a file.
     fn get_file_size(path: &Path) -> Result<u64> {
-        let metadata = std::fs::metadata(path)
-            .map_err(|e| SpriteError::filesystem_with_source(
+        let metadata = std::fs::metadata(path).map_err(|e| {
+            SpriteError::filesystem_with_source(
                 format!("Failed to get file size: {}", e),
                 path.display().to_string(),
                 e,
-            ))?;
+            )
+        })?;
         Ok(metadata.len())
     }
 
@@ -329,14 +352,14 @@ impl RotatingLogger {
         if let Some(ref file_mutex) = self.file {
             if let Ok(mut file) = file_mutex.lock() {
                 let content = format!("{}\n", formatted);
-                if let Ok(written) = file.write(content.as_bytes()) {
-                    self.current_size.fetch_add(written as u64, std::sync::atomic::Ordering::Relaxed);
+                if file.write(content.as_bytes()).is_ok() {
+                    // Note: actual size tracking would require getting the written bytes count
                 }
                 let _ = file.flush();
             }
         }
 
-        // Also write to stdout if configured
+         // Also write to stdout if configured
         if self.config.log_to_stdout {
             eprintln!("{}", formatted);
         }
@@ -351,7 +374,6 @@ impl RotatingLogger {
 
     /// Clean up old log files.
     fn cleanup_old_files(&self) -> Result<()> {
-        let _pattern = format!("{}*.log", self.base_path.display());
 
         // List files matching the pattern
         if let Ok(entries) = std::fs::read_dir(&self.base_path) {
@@ -360,13 +382,20 @@ impl RotatingLogger {
                 .filter(|entry| {
                     let binding = entry.file_name();
                     let file_name = binding.to_string_lossy();
-                    file_name.ends_with(".log") && Some(file_name.as_ref()) != self.current_file.file_name().map(|n| n.to_string_lossy()).as_deref()
+                    file_name.ends_with(".log")
+                        && Some(file_name.as_ref())
+                            != self
+                                .current_file
+                                .file_name()
+                                .map(|n| n.to_string_lossy())
+                                .as_deref()
                 })
                 .collect();
 
             // Sort by modification time (oldest first)
             files.sort_by_key(|entry| {
-                entry.metadata()
+                entry
+                    .metadata()
                     .and_then(|m| m.modified())
                     .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
             });
@@ -384,7 +413,13 @@ impl RotatingLogger {
     }
 
     /// Format a log message.
-    fn format_message(&self, level: LevelFilter, message: &str, file: Option<&str>, line: Option<u32>) -> String {
+    fn format_message(
+        &self,
+        level: LevelFilter,
+        message: &str,
+        file: Option<&str>,
+        line: Option<u32>,
+    ) -> String {
         let mut parts = Vec::new();
 
         if self.config.include_timestamp {
@@ -403,7 +438,7 @@ impl RotatingLogger {
 
         if self.config.include_module {
             if let Some(file) = file {
-                let module = file.rfind('/').map(|i| &file[i+1..]).unwrap_or(file);
+                let module = file.rfind('/').map(|i| &file[i + 1..]).unwrap_or(file);
                 parts.push(format!("[{}]", module));
             }
         }
@@ -461,7 +496,7 @@ pub fn init_rotating_logging<P: AsRef<Path>>(
 ) -> Result<()> {
     let max_size_bytes = max_size_mb * 1024 * 1024;
     let logger = RotatingLogger::new(log_dir, max_size_bytes, level)?;
-    log::set_boxed_logger(Box::new(logger));
+    let _ = log::set_boxed_logger(Box::new(logger));
     Ok(())
 }
 

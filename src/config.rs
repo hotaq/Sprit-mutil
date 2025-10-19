@@ -3,13 +3,14 @@
 //! This module provides functions for loading, saving, and validating YAML
 //! configuration files using the data models defined in the models module.
 
-use anyhow::{Context, Result};
 use crate::error::SpriteError;
-use crate::models::{ProjectConfig, Agent};
-use std::path::{Path, PathBuf};
+use crate::models::{Agent, ProjectConfig};
+use anyhow::{Context, Result};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 /// Default configuration file path
+#[allow(dead_code)]
 pub const DEFAULT_CONFIG_PATH: &str = "agents/agents.yaml";
 
 /// Load configuration from a file.
@@ -17,6 +18,7 @@ pub const DEFAULT_CONFIG_PATH: &str = "agents/agents.yaml";
 /// This function loads a YAML configuration file, validates it, and returns
 /// a ProjectConfig instance. It provides clear error messages for common
 /// configuration issues.
+#[allow(dead_code)]
 pub fn load_config<P: AsRef<Path>>(path: P) -> Result<ProjectConfig> {
     let path = path.as_ref();
 
@@ -24,8 +26,9 @@ pub fn load_config<P: AsRef<Path>>(path: P) -> Result<ProjectConfig> {
     if !path.exists() {
         return Err(SpriteError::config_with_source(
             format!("Configuration file not found: {}", path.display()),
-            std::io::Error::new(std::io::ErrorKind::NotFound, "File not found")
-        ).into());
+            std::io::Error::new(std::io::ErrorKind::NotFound, "File not found"),
+        )
+        .into());
     }
 
     // Read file content
@@ -33,15 +36,17 @@ pub fn load_config<P: AsRef<Path>>(path: P) -> Result<ProjectConfig> {
         .with_context(|| format!("Failed to read configuration file: {}", path.display()))?;
 
     // Parse YAML
-    let config: ProjectConfig = serde_yaml::from_str(&content)
-        .map_err(|e| SpriteError::yaml(
+    let config: ProjectConfig = serde_yaml::from_str(&content).map_err(|e| {
+        SpriteError::yaml(
             format!("Failed to parse YAML configuration: {}", e),
             e.location().map(|loc| loc.line()),
             e.location().map(|loc| loc.column()),
-        ))?;
+        )
+    })?;
 
     // Validate configuration
-    config.validate()
+    config
+        .validate()
         .map_err(|e| SpriteError::config(format!("Configuration validation failed: {}", e)))?;
 
     Ok(config)
@@ -51,17 +56,23 @@ pub fn load_config<P: AsRef<Path>>(path: P) -> Result<ProjectConfig> {
 ///
 /// This function saves a ProjectConfig instance to a YAML file, creating
 /// the parent directory if necessary.
+#[allow(dead_code)]
 pub fn save_config<P: AsRef<Path>>(config: &ProjectConfig, path: P) -> Result<()> {
     let path = path.as_ref();
 
     // Validate configuration before saving
-    config.validate()
+    config
+        .validate()
         .map_err(|e| SpriteError::config(format!("Cannot save invalid configuration: {}", e)))?;
 
     // Create parent directory if it doesn't exist
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .with_context(|| format!("Failed to create configuration directory: {}", parent.display()))?;
+        std::fs::create_dir_all(parent).with_context(|| {
+            format!(
+                "Failed to create configuration directory: {}",
+                parent.display()
+            )
+        })?;
     }
 
     // Serialize to YAML
@@ -79,6 +90,7 @@ pub fn save_config<P: AsRef<Path>>(config: &ProjectConfig, path: P) -> Result<()
 ///
 /// This function creates a sample configuration with three agents that
 /// users can modify for their own needs.
+#[allow(dead_code)]
 pub fn create_default_config() -> ProjectConfig {
     let mut agents = Vec::new();
 
@@ -87,9 +99,18 @@ pub fn create_default_config() -> ProjectConfig {
     if let Some(agent) = agents.last_mut() {
         agent.model = Some("claude-sonnet-4".to_string());
         agent.description = Some("Frontend development specialist".to_string());
-        agent.config.custom_settings.insert("role".to_string(), serde_yaml::Value::String("frontend".to_string()));
-        agent.config.startup_commands.push("npm install".to_string());
-        agent.config.startup_commands.push("npm run dev".to_string());
+        agent.config.custom_settings.insert(
+            "role".to_string(),
+            serde_yaml::Value::String("frontend".to_string()),
+        );
+        agent
+            .config
+            .startup_commands
+            .push("npm install".to_string());
+        agent
+            .config
+            .startup_commands
+            .push("npm run dev".to_string());
     }
 
     // Agent 2: Backend development
@@ -97,8 +118,14 @@ pub fn create_default_config() -> ProjectConfig {
     if let Some(agent) = agents.last_mut() {
         agent.model = Some("claude-sonnet-4".to_string());
         agent.description = Some("Backend development specialist".to_string());
-        agent.config.custom_settings.insert("role".to_string(), serde_yaml::Value::String("backend".to_string()));
-        agent.config.startup_commands.push("cargo build".to_string());
+        agent.config.custom_settings.insert(
+            "role".to_string(),
+            serde_yaml::Value::String("backend".to_string()),
+        );
+        agent
+            .config
+            .startup_commands
+            .push("cargo build".to_string());
         agent.config.startup_commands.push("cargo run".to_string());
     }
 
@@ -107,7 +134,10 @@ pub fn create_default_config() -> ProjectConfig {
     if let Some(agent) = agents.last_mut() {
         agent.model = Some("claude-sonnet-4".to_string());
         agent.description = Some("Testing and QA specialist".to_string());
-        agent.config.custom_settings.insert("role".to_string(), serde_yaml::Value::String("testing".to_string()));
+        agent.config.custom_settings.insert(
+            "role".to_string(),
+            serde_yaml::Value::String("testing".to_string()),
+        );
         agent.config.startup_commands.push("cargo test".to_string());
     }
 
@@ -124,14 +154,17 @@ pub fn create_default_config() -> ProjectConfig {
 ///
 /// This function creates a new default configuration and saves it to the
 /// specified path. It will fail if the file already exists unless force is true.
+#[allow(dead_code)]
 pub fn init_config<P: AsRef<Path>>(path: P, force: bool) -> Result<ProjectConfig> {
     let path = path.as_ref();
 
     // Check if file already exists
     if path.exists() && !force {
-        return Err(SpriteError::config(
-            format!("Configuration file already exists: {}. Use --force to overwrite.", path.display())
-        ).into());
+        return Err(SpriteError::config(format!(
+            "Configuration file already exists: {}. Use --force to overwrite.",
+            path.display()
+        ))
+        .into());
     }
 
     let config = create_default_config();
@@ -144,6 +177,7 @@ pub fn init_config<P: AsRef<Path>>(path: P, force: bool) -> Result<ProjectConfig
 ///
 /// This is a convenience function that loads configuration from the
 /// standard agents/agents.yaml location.
+#[allow(dead_code)]
 pub fn load_default_config() -> Result<ProjectConfig> {
     load_config(DEFAULT_CONFIG_PATH)
 }
@@ -152,6 +186,7 @@ pub fn load_default_config() -> Result<ProjectConfig> {
 ///
 /// This is a convenience function that saves configuration to the
 /// standard agents/agents.yaml location.
+#[allow(dead_code)]
 pub fn save_default_config(config: &ProjectConfig) -> Result<()> {
     save_config(config, DEFAULT_CONFIG_PATH)
 }
@@ -160,6 +195,7 @@ pub fn save_default_config(config: &ProjectConfig) -> Result<()> {
 ///
 /// This function checks if the current directory is a git repository,
 /// which is required for Sprite to function properly.
+#[allow(dead_code)]
 pub fn validate_git_repository() -> Result<()> {
     let output = std::process::Command::new("git")
         .args(&["rev-parse", "--git-dir"])
@@ -168,8 +204,9 @@ pub fn validate_git_repository() -> Result<()> {
 
     if !output.status.success() {
         return Err(SpriteError::config(
-            "Not a git repository. Sprite must be run from within a git repository."
-        ).into());
+            "Not a git repository. Sprite must be run from within a git repository.",
+        )
+        .into());
     }
 
     Ok(())
@@ -178,6 +215,7 @@ pub fn validate_git_repository() -> Result<()> {
 /// Get the current git branch.
 ///
 /// This function returns the name of the current git branch.
+#[allow(dead_code)]
 pub fn get_current_branch() -> Result<String> {
     let output = std::process::Command::new("git")
         .args(&["rev-parse", "--abbrev-ref", "HEAD"])
@@ -195,6 +233,7 @@ pub fn get_current_branch() -> Result<String> {
 /// Check if a git branch exists.
 ///
 /// This function checks if a branch with the given name exists in the repository.
+#[allow(dead_code)]
 pub fn branch_exists(branch: &str) -> Result<bool> {
     let output = std::process::Command::new("git")
         .args(&["rev-parse", "--verify", &format!("refs/heads/{}", branch)])
@@ -207,6 +246,7 @@ pub fn branch_exists(branch: &str) -> Result<bool> {
 /// Get the git repository root directory.
 ///
 /// This function returns the absolute path to the git repository root.
+#[allow(dead_code)]
 pub fn get_git_root() -> Result<PathBuf> {
     let output = std::process::Command::new("git")
         .args(&["rev-parse", "--show-toplevel"])
@@ -222,13 +262,18 @@ pub fn get_git_root() -> Result<PathBuf> {
 }
 
 /// Validate that an agent configuration is compatible with the current git repository.
+#[allow(dead_code)]
 pub fn validate_agent_config(agent: &Agent) -> Result<()> {
     // Check if the agent's branch exists
     if !branch_exists(&agent.branch)? {
         return Err(SpriteError::agent(
-            format!("Branch '{}' does not exist. Create it first with 'git checkout -b {}'", agent.branch, agent.branch),
-            Some(&agent.id)
-        ).into());
+            format!(
+                "Branch '{}' does not exist. Create it first with 'git checkout -b {}'",
+                agent.branch, agent.branch
+            ),
+            Some(&agent.id),
+        )
+        .into());
     }
 
     // Check if the workspace path is within the git repository
@@ -237,9 +282,13 @@ pub fn validate_agent_config(agent: &Agent) -> Result<()> {
 
     if !workspace_path.starts_with(&git_root) {
         return Err(SpriteError::agent(
-            format!("Agent workspace '{}' must be within the git repository", workspace_path.display()),
-            Some(&agent.id)
-        ).into());
+            format!(
+                "Agent workspace '{}' must be within the git repository",
+                workspace_path.display()
+            ),
+            Some(&agent.id),
+        )
+        .into());
     }
 
     Ok(())
@@ -248,35 +297,61 @@ pub fn validate_agent_config(agent: &Agent) -> Result<()> {
 /// Migrate configuration from an older version.
 ///
 /// This function handles configuration migrations between versions.
-pub fn migrate_config(_config: &mut ProjectConfig, from_version: &str, to_version: &str) -> Result<()> {
+#[allow(dead_code)]
+pub fn migrate_config(
+    _config: &mut ProjectConfig,
+    from_version: &str,
+    to_version: &str,
+) -> Result<()> {
     if from_version == to_version {
         return Ok(());
     }
 
     match (from_version, to_version) {
         ("1.0", "1.0") => Ok(()),
-        _ => Err(SpriteError::config(
-            format!("Unsupported migration from version {} to {}", from_version, to_version)
-        ).into()),
+        _ => Err(SpriteError::config(format!(
+            "Unsupported migration from version {} to {}",
+            from_version, to_version
+        ))
+        .into()),
     }
 }
 
 /// Get configuration statistics.
 ///
 /// This function returns useful statistics about the configuration.
+#[allow(dead_code)]
 pub fn get_config_stats(config: &ProjectConfig) -> HashMap<String, serde_yaml::Value> {
     let mut stats = HashMap::new();
 
-    stats.insert("version".to_string(), serde_yaml::Value::String(config.version.clone()));
-    stats.insert("agent_count".to_string(), serde_yaml::Value::Number(config.agents.len().into()));
-    stats.insert("session_name".to_string(), serde_yaml::Value::String(config.session_name.clone()));
-    stats.insert("auto_sync".to_string(), serde_yaml::Value::Bool(config.sync.auto_sync));
+    stats.insert(
+        "version".to_string(),
+        serde_yaml::Value::String(config.version.clone()),
+    );
+    stats.insert(
+        "agent_count".to_string(),
+        serde_yaml::Value::Number(config.agents.len().into()),
+    );
+    stats.insert(
+        "session_name".to_string(),
+        serde_yaml::Value::String(config.session_name.clone()),
+    );
+    stats.insert(
+        "auto_sync".to_string(),
+        serde_yaml::Value::Bool(config.sync.auto_sync),
+    );
 
     let active_agents = config.agents.iter().filter(|a| a.is_active()).count();
-    stats.insert("active_agents".to_string(), serde_yaml::Value::Number(active_agents.into()));
+    stats.insert(
+        "active_agents".to_string(),
+        serde_yaml::Value::Number(active_agents.into()),
+    );
 
     let error_agents = config.agents.iter().filter(|a| a.has_error()).count();
-    stats.insert("error_agents".to_string(), serde_yaml::Value::Number(error_agents.into()));
+    stats.insert(
+        "error_agents".to_string(),
+        serde_yaml::Value::Number(error_agents.into()),
+    );
 
     stats
 }
@@ -284,8 +359,8 @@ pub fn get_config_stats(config: &ProjectConfig) -> HashMap<String, serde_yaml::V
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     #[test]
     fn test_create_default_config() {
