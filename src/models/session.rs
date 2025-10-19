@@ -386,6 +386,7 @@ pub enum SupervisorSize {
 
 /// Session layout configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct SessionLayout {
     /// Layout type: tiled, main-vertical, main-horizontal, custom
     pub layout_type: LayoutType,
@@ -399,6 +400,7 @@ pub struct SessionLayout {
 
 /// Layout type enumeration.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
 pub enum LayoutType {
     /// All panes arranged in a grid
     Tiled,
@@ -412,6 +414,7 @@ pub enum LayoutType {
 
 /// Configuration for individual panes in a session.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct PaneConfig {
     /// Agent name for this pane
     pub agent_name: String,
@@ -425,6 +428,7 @@ pub struct PaneConfig {
 
 /// Session dimensions for layout calculations.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct SessionDimensions {
     /// Width in characters
     pub width: u32,
