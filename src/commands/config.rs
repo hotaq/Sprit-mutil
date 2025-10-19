@@ -5,9 +5,10 @@ use crate::utils::git;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Simple agent configuration matching the YAML format from init command
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SimpleAgentConfig {
     pub branch: String,
     pub worktree_path: String,
@@ -16,20 +17,40 @@ pub struct SimpleAgentConfig {
 }
 
 /// Configuration file structure matching the init command output
+/// Configuration change detection metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigMetadata {
+    pub last_modified: u64,
+    pub content_hash: String,
+    pub version: u64,
+}
+
+impl Default for ConfigMetadata {
+    fn default() -> Self {
+        Self {
+            last_modified: 0,
+            content_hash: String::new(),
+            version: 1,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpriteConfig {
     pub agents: HashMap<String, SimpleAgentConfig>,
     pub session: SessionConfig,
     pub sync: SyncConfig,
+    #[serde(skip)]
+    metadata: ConfigMetadata,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SessionConfig {
     pub name: String,
     pub profile: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SyncConfig {
     pub auto_sync: bool,
     pub conflict_resolution: String,
@@ -37,6 +58,22 @@ pub struct SyncConfig {
 }
 
 impl SpriteConfig {
+    /// Create a new default configuration
+    pub fn new() -> Self {
+        Self {
+            agents: HashMap::new(),
+            session: SessionConfig {
+                name: "sprite-session".to_string(),
+                profile: "profile0".to_string(),
+            },
+            sync: SyncConfig {
+                auto_sync: false,
+                conflict_resolution: "manual".to_string(),
+                exclude_branches: Vec::new(),
+            },
+            metadata: ConfigMetadata::default(),
+        }
+    }
     /// Load configuration from the default path
     pub fn load() -> Result<Self> {
         let config_path = PathBuf::from("agents/agents.yaml");
@@ -55,12 +92,15 @@ impl SpriteConfig {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read configuration file: {}", path.display()))?;
 
-        let config: SpriteConfig = serde_yaml::from_str(&content)
+        let mut config: SpriteConfig = serde_yaml::from_str(&content)
             .map_err(|e| SpriteError::config(format!(
                 "Failed to parse configuration file {}: {}",
                 path.display(),
                 e
             )))?;
+
+        // Update metadata
+        config.update_metadata(path, &content)?;
 
         Ok(config)
     }
@@ -214,6 +254,241 @@ impl SpriteConfig {
         println!("✅ All workspaces are valid!");
         Ok(())
     }
+
+    /// Update metadata with current file information
+    fn update_metadata(&mut self, path: &PathBuf, content: &str) -> Result<()> {
+        let metadata = std::fs::metadata(path)
+            .with_context(|| format!("Failed to read file metadata: {}", path.display()))?;
+
+        let last_modified = metadata
+            .modified()
+            .with_context(|| format!("Failed to get modification time: {}", path.display()))?
+            .duration_since(UNIX_EPOCH)
+            .with_context(|| "System time before UNIX epoch")?
+            .as_secs();
+
+        // Simple content hash using SHA-256 (via std)
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        content.hash(&mut hasher);
+        let content_hash = format!("{:x}", hasher.finish());
+
+        self.metadata = ConfigMetadata {
+            last_modified,
+            content_hash,
+            version: self.metadata.version + 1,
+        };
+
+        Ok(())
+    }
+
+    /// Check if the configuration file has changed since last load
+    pub fn has_changed(&self) -> Result<bool> {
+        let config_path = PathBuf::from("agents/agents.yaml");
+
+        if !config_path.exists() {
+            return Ok(false);
+        }
+
+        let current_metadata = std::fs::metadata(&config_path)
+            .with_context(|| format!("Failed to read file metadata: {}", config_path.display()))?;
+
+        let current_modified = current_metadata
+            .modified()
+            .with_context(|| format!("Failed to get modification time: {}", config_path.display()))?
+            .duration_since(UNIX_EPOCH)
+            .with_context(|| "System time before UNIX epoch")?
+            .as_secs();
+
+        Ok(current_modified != self.metadata.last_modified)
+    }
+
+    /// Get the current configuration version
+    pub fn version(&self) -> u64 {
+        self.metadata.version
+    }
+
+    /// Get the last modification time
+    pub fn last_modified(&self) -> u64 {
+        self.metadata.last_modified
+    }
+
+    /// Get the content hash
+    pub fn content_hash(&self) -> &str {
+        &self.metadata.content_hash
+    }
+
+    /// Reload configuration if it has changed
+    pub fn reload_if_changed(&mut self) -> Result<bool> {
+        if !self.has_changed()? {
+            return Ok(false);
+        }
+
+        println!("🔄 Configuration file changed, reloading...");
+
+        // Store old version for comparison
+        let old_version = self.metadata.version;
+
+        // Reload from disk
+        let config_path = PathBuf::from("agents/agents.yaml");
+        let content = std::fs::read_to_string(&config_path)
+            .with_context(|| format!("Failed to read configuration file: {}", config_path.display()))?;
+
+        let new_config: SpriteConfig = serde_yaml::from_str(&content)
+            .map_err(|e| SpriteError::config(format!(
+                "Failed to parse configuration file {}: {}",
+                config_path.display(),
+                e
+            )))?;
+
+        // Update current config
+        self.agents = new_config.agents;
+        self.session = new_config.session;
+        self.sync = new_config.sync;
+
+        // Update metadata
+        self.update_metadata(&config_path, &content)?;
+
+        println!("✅ Configuration reloaded (version {} → {})", old_version, self.metadata.version);
+        Ok(true)
+    }
+
+    /// Detect and report configuration changes
+    pub fn detect_changes(&self) -> Result<ConfigChanges> {
+        let config_path = PathBuf::from("agents/agents.yaml");
+
+        if !config_path.exists() {
+            return Ok(ConfigChanges::new());
+        }
+
+        let current_metadata = std::fs::metadata(&config_path)
+            .with_context(|| format!("Failed to read file metadata: {}", config_path.display()))?;
+
+        let current_modified = current_metadata
+            .modified()
+            .with_context(|| format!("Failed to get modification time: {}", config_path.display()))?
+            .duration_since(UNIX_EPOCH)
+            .with_context(|| "System time before UNIX epoch")?
+            .as_secs();
+
+        if current_modified == self.metadata.last_modified {
+            return Ok(ConfigChanges::new());
+        }
+
+        // Load current config to compare
+        let current_content = std::fs::read_to_string(&config_path)
+            .with_context(|| format!("Failed to read configuration file: {}", config_path.display()))?;
+
+        let current_config: SpriteConfig = serde_yaml::from_str(&current_content)
+            .map_err(|e| SpriteError::config(format!(
+                "Failed to parse configuration file {}: {}",
+                config_path.display(),
+                e
+            )))?;
+
+        // Detect changes
+        let mut changes = ConfigChanges::new();
+        changes.file_modified = true;
+        changes.old_version = self.metadata.version;
+        changes.new_version = self.metadata.version + 1;
+
+        // Compare agents
+        for (agent_id, old_agent) in &self.agents {
+            if let Some(new_agent) = current_config.agents.get(agent_id) {
+                if old_agent != new_agent {
+                    changes.modified_agents.push(agent_id.clone());
+                }
+            } else {
+                changes.removed_agents.push(agent_id.clone());
+            }
+        }
+
+        for (agent_id, _) in &current_config.agents {
+            if !self.agents.contains_key(agent_id) {
+                changes.added_agents.push(agent_id.clone());
+            }
+        }
+
+        // Compare session
+        if self.session != current_config.session {
+            changes.session_changed = true;
+        }
+
+        // Compare sync
+        if self.sync != current_config.sync {
+            changes.sync_changed = true;
+        }
+
+        Ok(changes)
+    }
+}
+
+/// Configuration change detection results
+#[derive(Debug, Clone)]
+pub struct ConfigChanges {
+    pub file_modified: bool,
+    pub old_version: u64,
+    pub new_version: u64,
+    pub added_agents: Vec<String>,
+    pub removed_agents: Vec<String>,
+    pub modified_agents: Vec<String>,
+    pub session_changed: bool,
+    pub sync_changed: bool,
+}
+
+impl ConfigChanges {
+    pub fn new() -> Self {
+        Self {
+            file_modified: false,
+            old_version: 0,
+            new_version: 0,
+            added_agents: Vec::new(),
+            removed_agents: Vec::new(),
+            modified_agents: Vec::new(),
+            session_changed: false,
+            sync_changed: false,
+        }
+    }
+
+    pub fn has_changes(&self) -> bool {
+        self.file_modified ||
+        !self.added_agents.is_empty() ||
+        !self.removed_agents.is_empty() ||
+        !self.modified_agents.is_empty() ||
+        self.session_changed ||
+        self.sync_changed
+    }
+
+    pub fn print_summary(&self) {
+        if !self.has_changes() {
+            println!("✅ No configuration changes detected.");
+            return;
+        }
+
+        println!("🔄 Configuration changes detected (v{} → v{}):", self.old_version, self.new_version);
+
+        if !self.added_agents.is_empty() {
+            println!("  ➕ Added agents: {}", self.added_agents.join(", "));
+        }
+
+        if !self.removed_agents.is_empty() {
+            println!("  ➖ Removed agents: {}", self.removed_agents.join(", "));
+        }
+
+        if !self.modified_agents.is_empty() {
+            println!("  ✏️  Modified agents: {}", self.modified_agents.join(", "));
+        }
+
+        if self.session_changed {
+            println!("  🎮 Session configuration changed");
+        }
+
+        if self.sync_changed {
+            println!("  🔄 Sync configuration changed");
+        }
+    }
 }
 
 /// Execute config command with subcommands
@@ -224,6 +499,7 @@ pub fn execute(command: ConfigCommands) -> Result<()> {
         ConfigCommands::Set { key, value } => set_config_value(key, value),
         ConfigCommands::Get { key } => get_config_value(key),
         ConfigCommands::Edit => edit_config(),
+        ConfigCommands::Status => check_config_status(),
     }
 }
 
@@ -424,5 +700,63 @@ fn edit_config() -> Result<()> {
         .context("Updated configuration is invalid")?;
 
     println!("✅ Configuration updated and validated successfully!");
+    Ok(())
+}
+
+/// Check configuration status and detect changes
+fn check_config_status() -> Result<()> {
+    println!("🔍 Checking configuration status...");
+
+    let config = SpriteConfig::load()
+        .context("Failed to load configuration")?;
+
+    println!("📋 Configuration Status:");
+    println!("  Version: {}", config.version());
+    println!("  Last Modified: {}", {
+        use std::time::{UNIX_EPOCH, Duration};
+        let datetime = UNIX_EPOCH + Duration::from_secs(config.last_modified());
+        let time_str = datetime.duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        // Simple formatting of timestamp
+        let hours = time_str / 3600;
+        let minutes = (time_str % 3600) / 60;
+        let seconds = time_str % 60;
+        format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+    });
+    println!("  Content Hash: {}...", &config.content_hash()[..8.min(config.content_hash().len())]);
+
+    // Check for changes
+    let changes = config.detect_changes()
+        .context("Failed to detect configuration changes")?;
+
+    if changes.has_changes() {
+        println!();
+        changes.print_summary();
+
+        // If agents were added or modified, suggest provisioning
+        if !changes.added_agents.is_empty() || !changes.modified_agents.is_empty() {
+            println!();
+            println!("💡 Suggestion: Run 'sprite agents provision' to create/update workspaces");
+        }
+
+        // If agents were removed, suggest cleanup
+        if !changes.removed_agents.is_empty() {
+            println!();
+            println!("💡 Suggestion: Check if workspaces for removed agents need cleanup");
+        }
+    } else {
+        println!("  ✅ Configuration is up to date");
+    }
+
+    // Show workspace status
+    println!();
+    println!("🔧 Workspace Status:");
+    match config.validate_workspaces() {
+        Ok(_) => println!("  ✅ All workspaces are valid"),
+        Err(e) => println!("  ⚠️  Workspace validation failed: {}", e),
+    }
+
     Ok(())
 }

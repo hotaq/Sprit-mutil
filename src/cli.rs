@@ -168,6 +168,8 @@ pub enum ConfigCommands {
     },
     /// Edit configuration file
     Edit,
+    /// Check for configuration changes
+    Status,
 }
 
 #[derive(Subcommand)]
