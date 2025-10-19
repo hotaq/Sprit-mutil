@@ -452,10 +452,13 @@ pub fn validate_url(url: &str) -> Result<()> {
         .any(|protocol| url.to_lowercase().starts_with(protocol));
 
     // Also check for SCP-style git URLs (user@host:path/repo.git)
-    let is_scp_style = url.contains('@') && url.contains(':') &&
-                       !url.starts_with("http://") && !url.starts_with("https://") &&
-                       !url.starts_with("git://") && !url.starts_with("ssh://") &&
-                       !url.contains("://");
+    let is_scp_style = url.contains('@')
+        && url.contains(':')
+        && !url.starts_with("http://")
+        && !url.starts_with("https://")
+        && !url.starts_with("git://")
+        && !url.starts_with("ssh://")
+        && !url.contains("://");
 
     if !has_allowed_protocol && !is_scp_style {
         return Err(SpriteError::security(

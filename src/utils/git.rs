@@ -416,12 +416,12 @@ fn parse_git_status(output: &str) -> Result<GitStatus> {
         match (first_char, second_char) {
             // Modified files (staged or unstaged)
             ('M', _) | ('A', 'M') | ('R', 'M') => status.modified += 1,
-            (' ', 'M') => status.modified += 1,  // Unstaged modifications
+            (' ', 'M') => status.modified += 1, // Unstaged modifications
             // Added files
             ('A', _) | ('R', 'A') | ('C', 'A') => status.added += 1,
             // Deleted files
             ('D', _) | ('C', 'D') => status.deleted += 1,
-            (' ', 'D') => status.deleted += 1,  // Unstaged deletions
+            (' ', 'D') => status.deleted += 1, // Unstaged deletions
             // Untracked files
             ('?', _) => status.untracked += 1,
             _ => {}

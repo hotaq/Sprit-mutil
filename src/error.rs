@@ -437,7 +437,9 @@ impl std::fmt::Display for SpriteError {
             Self::Tmux { operation, .. } => write!(f, "Tmux operation failed: {}", operation),
             Self::Agent { message, .. } => write!(f, "Agent error: {}", message),
             Self::Session { message, .. } => write!(f, "Session error: {}", message),
-            Self::FileSystem { operation, path, .. } => {
+            Self::FileSystem {
+                operation, path, ..
+            } => {
                 write!(f, "File system error: {} on '{}' failed", operation, path)
             }
             Self::Validation { message, .. } => write!(f, "Validation error: {}", message),
@@ -459,10 +461,18 @@ impl std::fmt::Display for SpriteError {
 impl std::error::Error for SpriteError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Config { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
-            Self::Git { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
-            Self::Tmux { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
-            Self::FileSystem { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::Config { source, .. } => source
+                .as_ref()
+                .map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::Git { source, .. } => source
+                .as_ref()
+                .map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::Tmux { source, .. } => source
+                .as_ref()
+                .map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::FileSystem { source, .. } => source
+                .as_ref()
+                .map(|e| e.as_ref() as &dyn std::error::Error),
             Self::Io { source, .. } => Some(source),
             _ => None,
         }

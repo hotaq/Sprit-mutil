@@ -588,9 +588,9 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
     // Check if there are any dangerous commands in the blocked list
     let dangerous_commands = ["rm", "sudo", "su", "chmod", "chown", "dd"];
     let has_dangerous_command = security.blocked_commands.iter().any(|command| {
-        dangerous_commands.iter().any(|dangerous| {
-            command.starts_with(dangerous) || command.ends_with(dangerous)
-        })
+        dangerous_commands
+            .iter()
+            .any(|dangerous| command.starts_with(dangerous) || command.ends_with(dangerous))
     });
 
     if !has_dangerous_command {
