@@ -359,7 +359,7 @@ impl RotatingLogger {
             }
         }
 
-         // Also write to stdout if configured
+        // Also write to stdout if configured
         if self.config.log_to_stdout {
             eprintln!("{}", formatted);
         }
@@ -374,7 +374,6 @@ impl RotatingLogger {
 
     /// Clean up old log files.
     fn cleanup_old_files(&self) -> Result<()> {
-
         // List files matching the pattern
         if let Ok(entries) = std::fs::read_dir(&self.base_path) {
             let mut files: Vec<_> = entries

@@ -549,7 +549,7 @@ impl Default for SecuritySettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_project_config_creation() {
         let config = ProjectConfig::new();

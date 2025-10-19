@@ -548,7 +548,7 @@ pub fn get_remote_url(remote: Option<&str>) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_parse_worktree_list() {
         let input = r#"

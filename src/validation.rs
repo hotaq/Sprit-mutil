@@ -622,7 +622,7 @@ pub fn validate_config_with_git(config: &ProjectConfig) -> Result<()> {
 mod tests {
     use super::*;
     use std::path::PathBuf;
-    
+
     #[test]
     fn test_validate_version() {
         assert!(validate_version("1.0").is_ok());
