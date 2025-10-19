@@ -449,7 +449,11 @@ mod tests {
             best_for_agent_count: Some(3),
             layout: ProfileLayout {
                 layout_type: "tiled".to_string(),
-                pane_sizes: vec![],
+                pane_sizes: vec![PaneSize {
+                    agent_id: "agent-1".to_string(),
+                    size_spec: "50%".to_string(),
+                    position: LayoutPosition::Top,
+                }],
                 root_pane: None,
             },
             script_path: PathBuf::from("test.sh"),
@@ -471,7 +475,11 @@ mod tests {
             best_for_agent_count: Some(3),
             layout: ProfileLayout {
                 layout_type: "tiled".to_string(),
-                pane_sizes: vec![],
+                pane_sizes: vec![PaneSize {
+                    agent_id: "agent-1".to_string(),
+                    size_spec: "50%".to_string(),
+                    position: LayoutPosition::Top,
+                }],
                 root_pane: None,
             },
             script_path: PathBuf::from("test.sh"),

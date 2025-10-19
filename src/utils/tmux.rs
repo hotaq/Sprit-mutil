@@ -126,42 +126,39 @@ fn parse_sessions_list(output: &str) -> Result<Vec<SessionInfo>> {
 
         // Parse tmux list-sessions format
         // Format: <session_name>: <windows> windows (created <date>) [<attached>]
-        let parts: Vec<&str> = line.split(':').collect();
-        if parts.len() < 2 {
-            continue;
+        if let Some((name, info_part)) = line.split_once(':') {
+            let name = name.to_string();
+            let info_part = info_part;
+
+            let windows = info_part
+                .split_whitespace()
+                .next()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
+
+            let created = info_part
+                .find("(created ")
+                .and_then(|i| {
+                    let start = i + 9;
+                    info_part[start..]
+                        .find(')')
+                        .map(|j| info_part[start..j].to_string())
+                })
+                .unwrap_or_else(|| "unknown".to_string());
+
+            let attached = info_part.contains("[attached]");
+
+            // TODO: Count panes more accurately by examining each window
+            let panes = windows;
+
+            sessions.push(SessionInfo {
+                name,
+                windows,
+                panes,
+                created,
+                attached,
+            });
         }
-
-        let name = parts[0].to_string();
-        let info_part = parts[1];
-
-        let windows = info_part
-            .split_whitespace()
-            .next()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0);
-
-        let created = info_part
-            .find("(created ")
-            .and_then(|i| {
-                let start = i + 9;
-                info_part[start..]
-                    .find(')')
-                    .map(|j| info_part[start..j].to_string())
-            })
-            .unwrap_or_else(|| "unknown".to_string());
-
-        let attached = info_part.contains("[attached]");
-
-        // TODO: Count panes more accurately by examining each window
-        let panes = windows;
-
-        sessions.push(SessionInfo {
-            name,
-            windows,
-            panes,
-            created,
-            attached,
-        });
     }
 
     Ok(sessions)

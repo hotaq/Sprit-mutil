@@ -1,63 +1,50 @@
 //! Error handling for the Sprite multi-agent workflow toolkit.
 //!
-//! This module defines custom error types using thiserror for clear, actionable
+//! This module defines custom error types for clear, actionable
 //! error messages while using anyhow for error propagation throughout the application.
 
-use thiserror::Error;
-
 /// Main error type for the Sprite application.
-#[derive(Error, Debug)]
+#[derive(Debug)]
 #[allow(dead_code)]
 pub enum SpriteError {
     /// Configuration-related errors
-    #[error("Configuration error: {message}")]
     Config {
         message: String,
-        #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Git operation errors
-    #[error("Git operation failed: {operation}")]
     Git {
         operation: String,
-        #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Tmux operation errors
-    #[error("Tmux operation failed: {operation}")]
     Tmux {
         operation: String,
-        #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Agent management errors
-    #[error("Agent error: {message}")]
     Agent {
         message: String,
         agent_id: Option<String>,
     },
 
     /// Session management errors
-    #[error("Session error: {message}")]
     Session {
         message: String,
         session_name: Option<String>,
     },
 
     /// File system errors
-    #[error("File system error: {operation} on '{path}' failed")]
     FileSystem {
         operation: String,
         path: String,
-        #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Validation errors
-    #[error("Validation error: {message}")]
     Validation {
         message: String,
         field: Option<String>,
@@ -65,7 +52,6 @@ pub enum SpriteError {
     },
 
     /// Process execution errors
-    #[error("Command execution failed: {command}")]
     Process {
         command: String,
         exit_code: Option<i32>,
@@ -74,15 +60,12 @@ pub enum SpriteError {
     },
 
     /// I/O errors
-    #[error("I/O error: {operation}")]
     Io {
         operation: String,
-        #[source]
         source: std::io::Error,
     },
 
     /// YAML parsing errors
-    #[error("YAML parsing error: {message}")]
     Yaml {
         message: String,
         line: Option<usize>,
@@ -90,14 +73,12 @@ pub enum SpriteError {
     },
 
     /// Security errors
-    #[error("Security error: {message}")]
     Security {
         message: String,
         violation_type: SecurityViolationType,
     },
 
     /// Network/communication errors
-    #[error("Communication error: {message}")]
     Communication {
         message: String,
         target: Option<String>,
@@ -105,28 +86,18 @@ pub enum SpriteError {
 }
 
 /// Types of security violations for better error categorization.
-#[derive(Error, Debug, Clone)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum SecurityViolationType {
-    #[error("Path traversal attempt")]
     PathTraversal,
-    #[error("Invalid path")]
     InvalidPath,
-    #[error("Unauthorized file access")]
     UnauthorizedAccess,
-    #[error("Command injection attempt")]
     CommandInjection,
-    #[error("Unsafe command")]
     UnsafeCommand,
-    #[error("Invalid input")]
     InvalidInput,
-    #[error("Malformed session name")]
     MalformedSessionName,
-    #[error("Workspace validation failed")]
     WorkspaceValidation,
-    #[error("Insecure permissions")]
     InsecurePermissions,
-    #[error("Insecure environment")]
     InsecureEnvironment,
 }
 
@@ -454,6 +425,47 @@ impl From<serde_yaml::Error> for SpriteError {
         let line = location.as_ref().map(|loc| loc.line());
         let column = location.as_ref().map(|loc| loc.column());
         Self::yaml(err.to_string(), line, column)
+    }
+}
+
+/// Display implementation that includes suggestions.
+impl std::fmt::Display for SpriteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Config { message, .. } => write!(f, "Configuration error: {}", message),
+            Self::Git { operation, .. } => write!(f, "Git operation failed: {}", operation),
+            Self::Tmux { operation, .. } => write!(f, "Tmux operation failed: {}", operation),
+            Self::Agent { message, .. } => write!(f, "Agent error: {}", message),
+            Self::Session { message, .. } => write!(f, "Session error: {}", message),
+            Self::FileSystem { operation, path, .. } => {
+                write!(f, "File system error: {} on '{}' failed", operation, path)
+            }
+            Self::Validation { message, .. } => write!(f, "Validation error: {}", message),
+            Self::Process { command, .. } => write!(f, "Command execution failed: {}", command),
+            Self::Io { operation, .. } => write!(f, "I/O error: {}", operation),
+            Self::Yaml { message, .. } => write!(f, "YAML parsing error: {}", message),
+            Self::Security { message, .. } => write!(f, "Security error: {}", message),
+            Self::Communication { message, .. } => write!(f, "Communication error: {}", message),
+        }?;
+
+        if let Some(suggestion) = self.suggestion() {
+            write!(f, "\n\nSuggestion: {}", suggestion)?;
+        }
+        Ok(())
+    }
+}
+
+/// Implement std::error::Error trait for SpriteError.
+impl std::error::Error for SpriteError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Config { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::Git { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::Tmux { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::FileSystem { source, .. } => source.as_ref().map(|e| e.as_ref() as &dyn std::error::Error),
+            Self::Io { source, .. } => Some(source),
+            _ => None,
+        }
     }
 }
 

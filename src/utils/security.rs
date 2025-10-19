@@ -69,7 +69,41 @@ pub fn validate_agent_path(path: &Path) -> Result<()> {
 /// Validate that a directory path is safe and within allowed bounds.
 #[allow(dead_code)]
 pub fn validate_directory_path(path: &Path, base_dir: &Path) -> Result<()> {
-    validate_agent_path(path)?;
+    // First check that the original path doesn't contain dangerous patterns
+    let path_str = path.to_string_lossy();
+
+    // Check path length
+    if path_str.len() > MAX_PATH_LENGTH {
+        return Err(SpriteError::security(
+            format!(
+                "Path too long: {} characters (max: {})",
+                path_str.len(),
+                MAX_PATH_LENGTH
+            ),
+            SecurityViolationType::InvalidPath,
+        )
+        .into());
+    }
+
+    // Check for dangerous characters
+    for char in DANGEROUS_CHARS.iter() {
+        if path_str.contains(*char) {
+            return Err(SpriteError::security(
+                format!("Path contains dangerous character '{}': {}", char, path_str),
+                SecurityViolationType::InvalidPath,
+            )
+            .into());
+        }
+    }
+
+    // Check for path traversal attempts in the original path
+    if path_str.contains("..") {
+        return Err(SpriteError::security(
+            format!("Path traversal detected: {}", path_str),
+            SecurityViolationType::PathTraversal,
+        )
+        .into());
+    }
 
     // Canonicalize both paths to resolve relative components
     let canonical_path = std::fs::canonicalize(path)
@@ -308,10 +342,18 @@ pub fn validate_git_branch_name(name: &str) -> Result<()> {
 pub fn sanitize_input(input: &str) -> String {
     input
         .chars()
-        .filter(|c| {
-            // Allow only printable ASCII characters and some Unicode
-            c.is_ascii_graphic() || *c == ' ' || *c == '\t' || *c == '\n' || *c == '\r'
+        .map(|c| {
+            // Convert newlines and carriage returns to spaces
+            if c == '\n' || c == '\r' {
+                ' '
+            } else if c.is_ascii_graphic() || c == ' ' || c == '\t' {
+                c
+            } else {
+                // Filter out dangerous characters
+                '\0'
+            }
         })
+        .filter(|c| *c != '\0')
         .collect::<String>()
         .trim()
         .to_string()
@@ -409,10 +451,16 @@ pub fn validate_url(url: &str) -> Result<()> {
         .iter()
         .any(|protocol| url.to_lowercase().starts_with(protocol));
 
-    if !has_allowed_protocol {
+    // Also check for SCP-style git URLs (user@host:path/repo.git)
+    let is_scp_style = url.contains('@') && url.contains(':') &&
+                       !url.starts_with("http://") && !url.starts_with("https://") &&
+                       !url.starts_with("git://") && !url.starts_with("ssh://") &&
+                       !url.contains("://");
+
+    if !has_allowed_protocol && !is_scp_style {
         return Err(SpriteError::security(
             format!(
-                "URL must use allowed protocol (http, https, git, ssh): {}",
+                "URL must use allowed protocol (http, https, git, ssh) or SCP-style git URL: {}",
                 url
             ),
             SecurityViolationType::InvalidInput,

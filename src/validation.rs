@@ -576,6 +576,33 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
     }
 
     // Validate blocked commands
+    if security.blocked_commands.is_empty() {
+        return Err(SpriteError::validation(
+            "Blocked commands list cannot be empty",
+            Some("security.blocked_commands".to_string()),
+            Some("empty list".to_string()),
+        )
+        .into());
+    }
+
+    // Check if there are any dangerous commands in the blocked list
+    let dangerous_commands = ["rm", "sudo", "su", "chmod", "chown", "dd"];
+    let has_dangerous_command = security.blocked_commands.iter().any(|command| {
+        dangerous_commands.iter().any(|dangerous| {
+            command.starts_with(dangerous) || command.ends_with(dangerous)
+        })
+    });
+
+    if !has_dangerous_command {
+        return Err(SpriteError::validation(
+            "Consider adding dangerous commands to blocked list (e.g., 'rm', 'sudo', 'su')",
+            Some("security.blocked_commands".to_string()),
+            Some("insufficient protection".to_string()),
+        )
+        .into());
+    }
+
+    // Validate each blocked command individually
     for (index, command) in security.blocked_commands.iter().enumerate() {
         if command.is_empty() {
             return Err(SpriteError::validation(
@@ -584,22 +611,6 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
                 Some("empty command".to_string()),
             )
             .into());
-        }
-
-        // Check for obviously dangerous commands in blocked list
-        let dangerous_commands = ["rm", "sudo", "su", "chmod", "chown", "dd"];
-        for dangerous in dangerous_commands.iter() {
-            if command.starts_with(dangerous) || command.ends_with(dangerous) {
-                break; // Good, this is appropriately blocked
-            } else if index == security.blocked_commands.len() - 1 {
-                // If we're at the last command and none are dangerous, warn
-                return Err(SpriteError::validation(
-                    "Consider adding dangerous commands to blocked list (e.g., 'rm', 'sudo', 'su')",
-                    Some("security.blocked_commands".to_string()),
-                    Some("insufficient protection".to_string()),
-                )
-                .into());
-            }
         }
     }
 

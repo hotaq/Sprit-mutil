@@ -257,26 +257,35 @@ fn parse_worktree_list(output: &str) -> Result<Vec<WorktreeInfo>> {
         }
 
         let path = PathBuf::from(parts[0]);
-        let (branch, id) = if parts.len() > 1 {
-            let branch_part = parts[1].trim_start_matches('[').trim_end_matches(']');
-            let branch = branch_part
-                .split('(')
-                .next()
-                .unwrap_or(branch_part)
-                .trim()
-                .to_string();
+        let (branch, id, bare) = if parts.len() > 1 {
+            // Check if this is a bare worktree
+            if parts.len() == 2 && parts[1].starts_with('(') && parts[1].ends_with(')') {
+                (String::new(), None, true)
+            } else if parts.len() >= 3 {
+                // Format: path branch id or path branch (something)
+                if parts[2].starts_with('(') {
+                    // This is a special marker like (bare), not an ID
+                    (parts[1].to_string(), None, parts[2].contains("bare"))
+                } else {
+                    // Format: path branch id
+                    (parts[1].to_string(), Some(parts[2].to_string()), false)
+                }
+            } else {
+                // Format: path branch or path branch [id]
+                let branch_part = parts[1];
+                let (branch, id_part) = branch_part.split_once(' ').unwrap_or((branch_part, ""));
 
-            let id = branch_part
-                .find('(')
-                .and_then(|i| branch_part[i + 1..].strip_suffix(')'))
-                .map(|s| s.to_string());
+                let id = if !id_part.is_empty() {
+                    Some(id_part.to_string())
+                } else {
+                    None
+                };
 
-            (branch, id)
+                (branch.trim().to_string(), id, false)
+            }
         } else {
-            (String::new(), None)
+            (String::new(), None, false)
         };
-
-        let bare = path.file_name().is_some_and(|name| name == "bare");
 
         worktrees.push(WorktreeInfo {
             path,
@@ -405,9 +414,15 @@ fn parse_git_status(output: &str) -> Result<GitStatus> {
         let second_char = line.chars().nth(1).unwrap_or(' ');
 
         match (first_char, second_char) {
+            // Modified files (staged or unstaged)
             ('M', _) | ('A', 'M') | ('R', 'M') => status.modified += 1,
+            (' ', 'M') => status.modified += 1,  // Unstaged modifications
+            // Added files
             ('A', _) | ('R', 'A') | ('C', 'A') => status.added += 1,
+            // Deleted files
             ('D', _) | ('C', 'D') => status.deleted += 1,
+            (' ', 'D') => status.deleted += 1,  // Unstaged deletions
+            // Untracked files
             ('?', _) => status.untracked += 1,
             _ => {}
         }
