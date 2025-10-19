@@ -128,7 +128,6 @@ fn parse_sessions_list(output: &str) -> Result<Vec<SessionInfo>> {
         // Format: <session_name>: <windows> windows (created <date>) [<attached>]
         if let Some((name, info_part)) = line.split_once(':') {
             let name = name.to_string();
-            let info_part = info_part;
 
             let windows = info_part
                 .split_whitespace()

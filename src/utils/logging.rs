@@ -570,7 +570,7 @@ mod tests {
     #[test]
     fn test_rotating_logger() {
         let temp_dir = TempDir::new().unwrap();
-        let logger = RotatingLogger::new(&temp_dir.path(), 100, Level::Info);
+        let logger = RotatingLogger::new(temp_dir.path(), 100, Level::Info);
         assert!(logger.is_ok());
     }
 }
