@@ -1,0 +1,18 @@
+agents:
+  '1':
+    branch: agents/1
+    worktree_path: agents/1
+    model: claude-sonnet-4
+    description: Agent 1 workspace
+  '2':
+    branch: agents/2
+    worktree_path: agents/2
+    model: claude-sonnet-4
+    description: Agent 2 workspace
+session:
+  name: test-session
+  profile: profile0
+sync:
+  auto_sync: false
+  conflict_resolution: manual
+  exclude_branches: []

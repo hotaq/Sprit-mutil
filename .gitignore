@@ -25,3 +25,8 @@ Thumbs.db
 # Project files
 CLAUDE.md
 specs/
+
+
+# Added by cargo
+
+/target

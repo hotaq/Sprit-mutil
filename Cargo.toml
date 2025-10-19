@@ -1,0 +1,27 @@
+[package]
+name = "sprit-mutil"
+version = "0.1.0"
+edition = "2021"
+description = "A robust command-line toolkit for managing multiple AI coding agents in parallel development workflows"
+authors = ["hotaq"]
+license = "MIT"
+repository = "https://github.com/hotaq/Sprit-mutil"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+anyhow = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }
+log = { version = "0.4", features = ["std"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3.0"
+assert_cmd = "2.0"
+predicates = "3.0"
