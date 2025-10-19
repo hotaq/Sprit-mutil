@@ -8,14 +8,17 @@ use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 
 /// Maximum allowed path length to prevent path traversal attacks
+#[allow(dead_code)]
 const MAX_PATH_LENGTH: usize = 4096;
 
 /// List of dangerous characters that should not be in file paths
+#[allow(dead_code)]
 const DANGEROUS_CHARS: &[char] = &[
     '\0', '<', '>', '|', '"', ';', '&', '$', '`', '(', ')', '[', ']', '{', '}',
 ];
 
 /// Validate that a path is safe for agent operations.
+#[allow(dead_code)]
 pub fn validate_agent_path(path: &Path) -> Result<()> {
     // Check path length
     let path_str = path.to_string_lossy();
@@ -64,6 +67,7 @@ pub fn validate_agent_path(path: &Path) -> Result<()> {
 }
 
 /// Validate that a directory path is safe and within allowed bounds.
+#[allow(dead_code)]
 pub fn validate_directory_path(path: &Path, base_dir: &Path) -> Result<()> {
     validate_agent_path(path)?;
 
@@ -95,6 +99,7 @@ pub fn validate_directory_path(path: &Path, base_dir: &Path) -> Result<()> {
 }
 
 /// Validate agent name for security and proper formatting.
+#[allow(dead_code)]
 pub fn validate_agent_name(name: &str) -> Result<()> {
     if name.is_empty() {
         return Err(SpriteError::security(
@@ -153,6 +158,7 @@ pub fn validate_agent_name(name: &str) -> Result<()> {
 }
 
 /// Validate session name for security and proper formatting.
+#[allow(dead_code)]
 pub fn validate_session_name(name: &str) -> Result<()> {
     // Use same validation as agent names for consistency
     validate_agent_name(name)?;
@@ -170,6 +176,7 @@ pub fn validate_session_name(name: &str) -> Result<()> {
 }
 
 /// Validate tmux session name for compatibility with tmux requirements.
+#[allow(dead_code)]
 pub fn validate_tmux_session_name(name: &str) -> Result<()> {
     validate_session_name(name)?;
 
@@ -198,6 +205,7 @@ pub fn validate_tmux_session_name(name: &str) -> Result<()> {
 }
 
 /// Validate git branch name for compatibility with git requirements.
+#[allow(dead_code)]
 pub fn validate_git_branch_name(name: &str) -> Result<()> {
     if name.is_empty() {
         return Err(SpriteError::security(
@@ -296,6 +304,7 @@ pub fn validate_git_branch_name(name: &str) -> Result<()> {
 }
 
 /// Sanitize a string input to remove potentially dangerous content.
+#[allow(dead_code)]
 pub fn sanitize_input(input: &str) -> String {
     input
         .chars()
@@ -309,6 +318,7 @@ pub fn sanitize_input(input: &str) -> String {
 }
 
 /// Validate that a command is safe to execute.
+#[allow(dead_code)]
 pub fn validate_command(command: &str) -> Result<()> {
     if command.is_empty() {
         return Err(SpriteError::security(
@@ -374,6 +384,7 @@ pub fn validate_command(command: &str) -> Result<()> {
 }
 
 /// Validate that a URL is safe and uses allowed protocols.
+#[allow(dead_code)]
 pub fn validate_url(url: &str) -> Result<()> {
     if url.is_empty() {
         return Err(SpriteError::security(
@@ -422,6 +433,7 @@ pub fn validate_url(url: &str) -> Result<()> {
 }
 
 /// Validate file permissions to ensure they're not too permissive.
+#[allow(dead_code)]
 pub fn validate_file_permissions(path: &Path) -> Result<()> {
     if !path.exists() {
         return Err(SpriteError::security(
@@ -459,6 +471,7 @@ pub fn validate_file_permissions(path: &Path) -> Result<()> {
 }
 
 /// Create a secure temporary directory with appropriate permissions.
+#[allow(dead_code)]
 pub fn create_secure_temp_dir(prefix: &str) -> Result<PathBuf> {
     let temp_dir = std::env::temp_dir();
     let secure_name = format!("{}_{}", sanitize_input(prefix), uuid::Uuid::new_v4());
@@ -485,6 +498,7 @@ pub fn create_secure_temp_dir(prefix: &str) -> Result<PathBuf> {
 }
 
 /// Check if running in a secure environment.
+#[allow(dead_code)]
 pub fn check_environment_security() -> Result<()> {
     // Check if running as root (not recommended)
     #[cfg(unix)]

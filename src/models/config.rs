@@ -24,6 +24,7 @@ pub struct ProjectConfig {
     pub settings: ProjectSettings,
 }
 
+#[allow(dead_code)]
 impl ProjectConfig {
     /// Create a new project configuration with default values.
     pub fn new() -> Self {
@@ -176,6 +177,7 @@ pub struct SyncConfig {
     pub post_sync_hooks: Vec<SyncHook>,
 }
 
+#[allow(dead_code)]
 impl SyncConfig {
     /// Validate the sync configuration.
     pub fn validate(&self) -> Result<(), String> {
@@ -241,6 +243,7 @@ pub struct SyncHook {
     pub timeout_secs: Option<u64>,
 }
 
+#[allow(dead_code)]
 impl SyncHook {
     /// Validate the hook configuration.
     pub fn validate(&self) -> Result<(), String> {
@@ -295,6 +298,7 @@ pub struct ProjectSettings {
     pub security: SecuritySettings,
 }
 
+#[allow(dead_code)]
 impl ProjectSettings {
     /// Validate the project settings.
     pub fn validate(&self) -> Result<(), String> {
@@ -350,6 +354,7 @@ pub struct LoggingConfig {
     pub rotation: Option<LogRotation>,
 }
 
+#[allow(dead_code)]
 impl LoggingConfig {
     /// Validate the logging configuration.
     pub fn validate(&self) -> Result<(), String> {
@@ -388,6 +393,7 @@ pub struct LogRotation {
     pub max_files: u32,
 }
 
+#[allow(dead_code)]
 impl LogRotation {
     /// Validate the log rotation settings.
     pub fn validate(&self) -> Result<(), String> {
@@ -431,6 +437,7 @@ pub struct PerformanceSettings {
     pub cpu_limit_percent: Option<u8>,
 }
 
+#[allow(dead_code)]
 impl PerformanceSettings {
     /// Validate the performance settings.
     pub fn validate(&self) -> Result<(), String> {
@@ -483,6 +490,7 @@ pub struct SecuritySettings {
     pub allow_shell_execution: bool,
 }
 
+#[allow(dead_code)]
 impl SecuritySettings {
     /// Validate the security settings.
     pub fn validate(&self) -> Result<(), String> {

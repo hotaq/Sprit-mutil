@@ -107,7 +107,7 @@ fn create_tmux_session(
     session_name: &str,
     config: &SpriteConfig,
     profile: &str,
-    #[allow(dead_code)] detach: bool,
+    #[allow(dead_code)] _detach: bool,
 ) -> Result<()> {
     println!("🔧 Creating tmux session '{}'...", session_name);
 

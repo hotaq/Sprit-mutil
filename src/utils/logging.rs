@@ -14,6 +14,7 @@ use std::sync::Mutex;
 
 /// Logger configuration.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct LoggerConfig {
     /// Log file path (None for stdout only)
     pub log_file: Option<PathBuf>,
@@ -43,14 +44,17 @@ impl Default for LoggerConfig {
 }
 
 /// A simple file and console logger for Sprite.
+#[allow(dead_code)]
 pub struct SpriteLogger {
     config: LoggerConfig,
     log_file: Option<Mutex<BufWriter<File>>>,
+    #[allow(dead_code)]
     start_time: DateTime<Utc>,
 }
 
 impl SpriteLogger {
     /// Create a new logger with the given configuration.
+    #[allow(dead_code)]
     pub fn new(config: LoggerConfig) -> Result<Self> {
         let log_file = if let Some(ref log_path) = config.log_file {
             // Create parent directory if it doesn't exist
@@ -89,6 +93,7 @@ impl SpriteLogger {
     }
 
     /// Write a log entry.
+    #[allow(dead_code)]
     fn write_log(&self, level: Level, record: &Record) {
         let message = record.args().to_string();
 
@@ -114,6 +119,7 @@ impl SpriteLogger {
     }
 
     /// Format a log message.
+    #[allow(dead_code)]
     fn format_message(
         &self,
         level: LevelFilter,
@@ -171,11 +177,13 @@ impl SpriteLogger {
     }
 
     /// Check if the given log level should be logged.
+    #[allow(dead_code)]
     fn should_log(&self, level: LevelFilter) -> bool {
         level <= self.config.level
     }
 
     /// Flush any buffered log data.
+    #[allow(dead_code)]
     pub fn flush(&self) -> Result<()> {
         if let Some(ref file_mutex) = self.log_file {
             if let Ok(mut file) = file_mutex.lock() {
@@ -186,11 +194,13 @@ impl SpriteLogger {
     }
 
     /// Get the logger start time.
+    #[allow(dead_code)]
     pub fn start_time(&self) -> DateTime<Utc> {
         self.start_time
     }
 
     /// Get the uptime since logger start.
+    #[allow(dead_code)]
     pub fn uptime(&self) -> chrono::Duration {
         Utc::now() - self.start_time
     }
@@ -213,6 +223,7 @@ impl Log for SpriteLogger {
 }
 
 /// Initialize logging for the application.
+#[allow(dead_code)]
 pub fn init_logging(config: LoggerConfig) -> Result<()> {
     let logger = SpriteLogger::new(config)?;
     let _ = log::set_boxed_logger(Box::new(logger));
@@ -220,11 +231,13 @@ pub fn init_logging(config: LoggerConfig) -> Result<()> {
 }
 
 /// Initialize logging with default configuration.
+#[allow(dead_code)]
 pub fn init_default_logging() -> Result<()> {
     init_logging(LoggerConfig::default())
 }
 
 /// Initialize logging with a log file.
+#[allow(dead_code)]
 pub fn init_file_logging<P: AsRef<Path>>(log_file: P, level: Level) -> Result<()> {
     let config = LoggerConfig {
         log_file: Some(log_file.as_ref().to_path_buf()),
@@ -238,6 +251,7 @@ pub fn init_file_logging<P: AsRef<Path>>(log_file: P, level: Level) -> Result<()
 }
 
 /// Initialize logging without colors (for scripts).
+#[allow(dead_code)]
 pub fn init_script_logging<P: AsRef<Path>>(log_file: P, level: Level) -> Result<()> {
     let config = LoggerConfig {
         log_file: Some(log_file.as_ref().to_path_buf()),
@@ -251,28 +265,35 @@ pub fn init_script_logging<P: AsRef<Path>>(log_file: P, level: Level) -> Result<
 }
 
 /// Get the current log level.
+#[allow(dead_code)]
 pub fn get_log_level() -> LevelFilter {
     log::max_level()
 }
 
 /// Set the log level.
+#[allow(dead_code)]
 pub fn set_log_level(level: LevelFilter) {
     log::set_max_level(level);
 }
 
 /// Create a log file with rotation support.
+#[allow(dead_code)]
 pub struct RotatingLogger {
     config: LoggerConfig,
+    #[allow(dead_code)]
     base_path: PathBuf,
+    #[allow(dead_code)]
     current_file: PathBuf,
     max_size: u64,
     current_size: std::sync::atomic::AtomicU64,
     file: Option<Mutex<BufWriter<File>>>,
+    #[allow(dead_code)]
     start_time: DateTime<Utc>,
 }
 
 impl RotatingLogger {
     /// Create a new rotating logger.
+    #[allow(dead_code)]
     pub fn new<P: AsRef<Path>>(base_path: P, max_size: u64, level: Level) -> Result<Self> {
         let base_path = base_path.as_ref().to_path_buf();
         let current_file = base_path.join(format!("{}.log", Local::now().format("%Y%m%d_%H%M%S")));
@@ -301,6 +322,7 @@ impl RotatingLogger {
     }
 
     /// Create the initial log file.
+    #[allow(dead_code)]
     fn create_log_file(path: &Path) -> Result<File> {
         // Create parent directory if needed
         if let Some(parent) = path.parent() {
@@ -327,6 +349,7 @@ impl RotatingLogger {
     }
 
     /// Get the size of a file.
+    #[allow(dead_code)]
     fn get_file_size(path: &Path) -> Result<u64> {
         let metadata = std::fs::metadata(path).map_err(|e| {
             SpriteError::filesystem_with_source(
@@ -339,6 +362,7 @@ impl RotatingLogger {
     }
 
     /// Write a log entry with rotation.
+    #[allow(dead_code)]
     fn write_log_with_rotation(&self, level: LevelFilter, record: &Record) {
         let message = record.args().to_string();
         let formatted = self.format_message(level, &message, record.file(), record.line());
@@ -366,6 +390,7 @@ impl RotatingLogger {
     }
 
     /// Rotate log files when they get too large.
+    #[allow(dead_code)]
     fn rotate_files(&self) -> Result<()> {
         // For now, just log that rotation is needed
         eprintln!("Log rotation is needed but not fully implemented");
@@ -373,6 +398,7 @@ impl RotatingLogger {
     }
 
     /// Clean up old log files.
+    #[allow(dead_code)]
     fn cleanup_old_files(&self) -> Result<()> {
         // List files matching the pattern
         if let Ok(entries) = std::fs::read_dir(&self.base_path) {
@@ -412,6 +438,7 @@ impl RotatingLogger {
     }
 
     /// Format a log message.
+    #[allow(dead_code)]
     fn format_message(
         &self,
         level: LevelFilter,
@@ -452,16 +479,19 @@ impl RotatingLogger {
     }
 
     /// Check if the given log level should be logged.
+    #[allow(dead_code)]
     fn should_log(&self, level: LevelFilter) -> bool {
         level <= self.config.level
     }
 
     /// Get the current log file path.
+    #[allow(dead_code)]
     pub fn current_file(&self) -> &PathBuf {
         &self.current_file
     }
 
     /// Get the logger start time.
+    #[allow(dead_code)]
     pub fn start_time(&self) -> DateTime<Utc> {
         self.start_time
     }
@@ -488,6 +518,7 @@ impl Log for RotatingLogger {
 }
 
 /// Initialize rotating logging.
+#[allow(dead_code)]
 pub fn init_rotating_logging<P: AsRef<Path>>(
     log_dir: P,
     max_size_mb: u64,
@@ -500,6 +531,7 @@ pub fn init_rotating_logging<P: AsRef<Path>>(
 }
 
 /// Initialize rotating logging with default values.
+#[allow(dead_code)]
 pub fn init_default_rotating_logging() -> Result<()> {
     init_rotating_logging("logs", 10, Level::Info)
 }

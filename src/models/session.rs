@@ -30,6 +30,7 @@ pub struct Session {
     pub settings: SessionSettings,
 }
 
+#[allow(dead_code)]
 impl Session {
     /// Create a new session with basic configuration.
     pub fn new(name: impl Into<String>, profile: TmuxProfile) -> Self {
@@ -183,6 +184,7 @@ pub struct TmuxProfile {
     pub supervisor_config: Option<SupervisorConfig>,
 }
 
+#[allow(dead_code)]
 impl TmuxProfile {
     /// Validate the profile configuration.
     pub fn validate(&self) -> Result<(), String> {
@@ -233,6 +235,7 @@ pub struct ProfileLayout {
     pub root_pane: Option<RootPaneConfig>,
 }
 
+#[allow(dead_code)]
 impl ProfileLayout {
     /// Validate the layout configuration.
     pub fn validate(&self) -> Result<(), String> {
@@ -282,6 +285,7 @@ pub struct PaneSize {
     pub position: LayoutPosition,
 }
 
+#[allow(dead_code)]
 impl PaneSize {
     /// Validate the pane size specification.
     pub fn validate(&self) -> Result<(), String> {
@@ -347,6 +351,7 @@ pub struct SupervisorConfig {
     pub focus_by_default: bool,
 }
 
+#[allow(dead_code)]
 impl SupervisorConfig {
     /// Validate the supervisor configuration.
     pub fn validate(&self) -> Result<(), String> {

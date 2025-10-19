@@ -9,13 +9,13 @@ use crate::models::{
     ProjectConfig, ProjectSettings, SecuritySettings, SyncConfig,
 };
 use anyhow::{Context, Result};
-use std::path::PathBuf;
 
 /// Validate configuration with detailed error messages.
 ///
 /// This function provides comprehensive validation of the entire configuration
 /// with specific, actionable error messages that help users understand
 /// what needs to be fixed.
+#[allow(dead_code)]
 pub fn validate_config(config: &ProjectConfig) -> Result<()> {
     validate_version(&config.version)?;
     validate_agents(&config.agents)?;
@@ -27,6 +27,7 @@ pub fn validate_config(config: &ProjectConfig) -> Result<()> {
 }
 
 /// Validate configuration version.
+#[allow(dead_code)]
 fn validate_version(version: &str) -> Result<()> {
     if version.is_empty() {
         return Err(SpriteError::validation(
@@ -51,6 +52,7 @@ fn validate_version(version: &str) -> Result<()> {
 }
 
 /// Validate agent configurations.
+#[allow(dead_code)]
 fn validate_agents(agents: &[Agent]) -> Result<()> {
     if agents.is_empty() {
         return Err(SpriteError::validation(
@@ -80,6 +82,7 @@ fn validate_agents(agents: &[Agent]) -> Result<()> {
 }
 
 /// Validate individual agent configuration.
+#[allow(dead_code)]
 pub fn validate_agent(agent: &Agent) -> Result<()> {
     // Validate agent ID
     if agent.id.is_empty() {
@@ -136,6 +139,7 @@ pub fn validate_agent(agent: &Agent) -> Result<()> {
 }
 
 /// Validate branch name format.
+#[allow(dead_code)]
 fn validate_branch_name(branch: &str) -> Result<()> {
     // Basic branch name validation (git branch naming conventions)
     if branch.contains("..") {
@@ -169,6 +173,7 @@ fn validate_branch_name(branch: &str) -> Result<()> {
 }
 
 /// Validate workspace path security and format.
+#[allow(dead_code)]
 fn validate_workspace_path(path: &std::path::Path) -> Result<()> {
     let path_str = path.to_string_lossy();
 
@@ -206,6 +211,7 @@ fn validate_workspace_path(path: &std::path::Path) -> Result<()> {
 }
 
 /// Validate agent status consistency.
+#[allow(dead_code)]
 fn validate_agent_status(agent: &Agent) -> Result<()> {
     match &agent.status {
         AgentStatus::Error(msg) => {
@@ -236,6 +242,7 @@ fn validate_agent_status(agent: &Agent) -> Result<()> {
 }
 
 /// Validate session configuration.
+#[allow(dead_code)]
 fn validate_session_name(session_name: &str) -> Result<()> {
     if session_name.is_empty() {
         return Err(SpriteError::validation(
@@ -271,6 +278,7 @@ fn validate_session_name(session_name: &str) -> Result<()> {
 }
 
 /// Validate sync configuration.
+#[allow(dead_code)]
 fn validate_sync_config(sync: &SyncConfig) -> Result<()> {
     if sync.default_interval_secs == 0 {
         return Err(SpriteError::validation(
@@ -314,6 +322,7 @@ fn validate_sync_config(sync: &SyncConfig) -> Result<()> {
 }
 
 /// Validate conflict resolution strategy.
+#[allow(dead_code)]
 fn validate_conflict_resolution(resolution: &ConflictResolution) -> Result<()> {
     match resolution {
         ConflictResolution::Manual => Ok(()),
@@ -323,6 +332,7 @@ fn validate_conflict_resolution(resolution: &ConflictResolution) -> Result<()> {
 }
 
 /// Validate sync hook configuration.
+#[allow(dead_code)]
 fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
     if hook.command.is_empty() {
         return Err(SpriteError::validation(
@@ -382,6 +392,7 @@ fn validate_sync_hook(hook: &SyncHook) -> Result<()> {
 }
 
 /// Validate project settings.
+#[allow(dead_code)]
 fn validate_project_settings(settings: &ProjectSettings) -> Result<()> {
     validate_logging_config(&settings.logging)?;
     validate_performance_settings(&settings.performance)?;
@@ -391,6 +402,7 @@ fn validate_project_settings(settings: &ProjectSettings) -> Result<()> {
 }
 
 /// Validate logging configuration.
+#[allow(dead_code)]
 fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
     if let Some(ref log_file) = logging.log_file {
         let path_str = log_file.to_string_lossy();
@@ -447,6 +459,7 @@ fn validate_logging_config(logging: &LoggingConfig) -> Result<()> {
 }
 
 /// Validate performance settings.
+#[allow(dead_code)]
 fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()> {
     if performance.max_concurrent_ops == 0 {
         return Err(SpriteError::validation(
@@ -519,6 +532,7 @@ fn validate_performance_settings(performance: &PerformanceSettings) -> Result<()
 }
 
 /// Validate security settings.
+#[allow(dead_code)]
 fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
     if let Some(max_length) = security.max_command_length {
         if max_length == 0 {
@@ -593,6 +607,7 @@ fn validate_security_settings(security: &SecuritySettings) -> Result<()> {
 }
 
 /// Validate configuration against current git repository state.
+#[allow(dead_code)]
 pub fn validate_config_with_git(config: &ProjectConfig) -> Result<()> {
     // First, do basic validation
     validate_config(config)?;

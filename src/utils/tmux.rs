@@ -11,7 +11,7 @@ use std::process::Command;
 /// Create a new tmux session.
 pub fn create_session(name: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["new-session", "-d", "-s", name])
+        .args(["new-session", "-d", "-s", name])
         .output()
         .with_context(|| "Failed to create tmux session. Is tmux installed?")?;
 
@@ -29,7 +29,7 @@ pub fn create_session(name: &str) -> Result<()> {
 /// Check if a tmux session exists.
 pub fn session_exists(name: &str) -> Result<bool> {
     let output = Command::new("tmux")
-        .args(&["has-session", "-t", name])
+        .args(["has-session", "-t", name])
         .output()
         .with_context(|| "Failed to check tmux session existence")?;
 
@@ -37,9 +37,10 @@ pub fn session_exists(name: &str) -> Result<bool> {
 }
 
 /// Kill a tmux session.
+#[allow(dead_code)]
 pub fn kill_session(name: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["kill-session", "-t", name])
+        .args(["kill-session", "-t", name])
         .output()
         .with_context(|| format!("Failed to kill tmux session '{}'", name))?;
 
@@ -55,9 +56,10 @@ pub fn kill_session(name: &str) -> Result<()> {
 }
 
 /// Attach to a tmux session.
+#[allow(dead_code)]
 pub fn attach_session(name: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["attach", "-t", name])
+        .args(["attach", "-t", name])
         .output()
         .with_context(|| format!("Failed to attach to tmux session '{}'", name))?;
 
@@ -73,9 +75,10 @@ pub fn attach_session(name: &str) -> Result<()> {
 }
 
 /// List all tmux sessions.
+#[allow(dead_code)]
 pub fn list_sessions() -> Result<Vec<SessionInfo>> {
     let output = Command::new("tmux")
-        .args(&["list-sessions"])
+        .args(["list-sessions"])
         .output()
         .with_context(|| "Failed to list tmux sessions")?;
 
@@ -95,18 +98,24 @@ pub fn list_sessions() -> Result<Vec<SessionInfo>> {
 #[derive(Debug, Clone)]
 pub struct SessionInfo {
     /// Session name
+    #[allow(dead_code)]
     pub name: String,
     /// Number of windows
+    #[allow(dead_code)]
     pub windows: usize,
     /// Number of panes
+    #[allow(dead_code)]
     pub panes: usize,
     /// Session creation time
+    #[allow(dead_code)]
     pub created: String,
     /// Session attachments
+    #[allow(dead_code)]
     pub attached: bool,
 }
 
 /// Parse the output of `tmux list-sessions`.
+#[allow(dead_code)]
 fn parse_sessions_list(output: &str) -> Result<Vec<SessionInfo>> {
     let mut sessions = Vec::new();
 
@@ -161,7 +170,7 @@ fn parse_sessions_list(output: &str) -> Result<Vec<SessionInfo>> {
 /// Create a new window in a tmux session.
 pub fn create_window(session: &str, window_name: &str) -> Result<String> {
     let output = Command::new("tmux")
-        .args(&["new-window", "-t", session, "-n", window_name])
+        .args(["new-window", "-t", session, "-n", window_name])
         .output()
         .with_context(|| {
             format!(
@@ -187,9 +196,10 @@ pub fn create_window(session: &str, window_name: &str) -> Result<String> {
 }
 
 /// Split a window vertically.
+#[allow(dead_code)]
 pub fn split_window_vertical(session: &str, target: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["split-window", "-t", session, "-v", "-P", target])
+        .args(["split-window", "-t", session, "-v", "-P", target])
         .output()
         .with_context(|| format!("Failed to split window vertically in session '{}'", session))?;
 
@@ -205,9 +215,10 @@ pub fn split_window_vertical(session: &str, target: &str) -> Result<()> {
 }
 
 /// Split a window horizontally.
+#[allow(dead_code)]
 pub fn split_window_horizontal(session: &str, target: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["split-window", "-t", session, "-h", "-P", target])
+        .args(["split-window", "-t", session, "-h", "-P", target])
         .output()
         .with_context(|| {
             format!(
@@ -231,9 +242,10 @@ pub fn split_window_horizontal(session: &str, target: &str) -> Result<()> {
 }
 
 /// Send a command to a specific pane.
+#[allow(dead_code)]
 pub fn send_keys(session: &str, target: &str, command: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["send-keys", "-t", session, target, command, "C-m"])
+        .args(["send-keys", "-t", session, target, command, "C-m"])
         .output()
         .with_context(|| {
             format!(
@@ -257,9 +269,10 @@ pub fn send_keys(session: &str, target: &str, command: &str) -> Result<()> {
 }
 
 /// Capture output from a pane.
+#[allow(dead_code)]
 pub fn capture_pane(session: &str, target: &str) -> Result<String> {
     let output = Command::new("tmux")
-        .args(&["capture-pane", "-p", "-t", session, target])
+        .args(["capture-pane", "-p", "-t", session, target])
         .output()
         .with_context(|| {
             format!(
@@ -283,9 +296,10 @@ pub fn capture_pane(session: &str, target: &str) -> Result<String> {
 }
 
 /// Set the layout for a window.
+#[allow(dead_code)]
 pub fn select_layout(session: &str, target: &str, layout: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["select-layout", "-t", session, "-P", target, layout])
+        .args(["select-layout", "-t", session, "-P", target, layout])
         .output()
         .with_context(|| {
             format!(
@@ -309,9 +323,10 @@ pub fn select_layout(session: &str, target: &str, layout: &str) -> Result<()> {
 }
 
 /// Get the layout for a window.
+#[allow(dead_code)]
 pub fn get_layout(session: &str, target: &str) -> Result<String> {
     let output = Command::new("tmux")
-        .args(&[
+        .args([
             "display-message",
             "-p",
             "-t",
@@ -342,6 +357,7 @@ pub fn get_layout(session: &str, target: &str) -> Result<String> {
 }
 
 /// Check if tmux is installed and available.
+#[allow(dead_code)]
 pub fn is_tmux_available() -> Result<bool> {
     let output = Command::new("tmux")
         .arg("-V")
@@ -352,6 +368,7 @@ pub fn is_tmux_available() -> Result<bool> {
 }
 
 /// Get tmux version information.
+#[allow(dead_code)]
 pub fn get_tmux_version() -> Result<String> {
     let output = Command::new("tmux")
         .arg("-V")
@@ -366,10 +383,11 @@ pub fn get_tmux_version() -> Result<String> {
 }
 
 /// Set environment variables for a session.
+#[allow(dead_code)]
 pub fn set_environment(session: &str, env_vars: &HashMap<String, String>) -> Result<()> {
     for (key, value) in env_vars {
         let output = Command::new("tmux")
-            .args(&[
+            .args([
                 "set-environment",
                 "-t",
                 session,
@@ -412,7 +430,7 @@ pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> R
 
     // Clear the session first
     let output = Command::new("tmux")
-        .args(&["send-keys", "-t", session, "C-l", "C-c"])
+        .args(["send-keys", "-t", session, "C-l", "C-c"])
         .output()
         .context("Failed to clear tmux session")?;
 
@@ -437,7 +455,7 @@ pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> R
 
         // Execute the command in the tmux session
         let output = Command::new("tmux")
-            .args(&["send-keys", "-t", session, line, "C-m"])
+            .args(["send-keys", "-t", session, line, "C-m"])
             .output()
             .with_context(|| format!("Failed to execute tmux command: {}", line))?;
 
@@ -456,7 +474,7 @@ pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> R
 /// Get information about panes in a session.
 pub fn get_session_panes(session: &str) -> Result<Vec<PaneInfo>> {
     let output = Command::new("tmux")
-        .args(&["list-panes", "-t", session])
+        .args(["list-panes", "-t", session])
         .output()
         .with_context(|| format!("Failed to list panes for session '{}'", session))?;
 
@@ -478,12 +496,16 @@ pub struct PaneInfo {
     /// Pane index
     pub index: usize,
     /// Current working directory
+    #[allow(dead_code)]
     pub current_path: Option<String>,
     /// Running command
+    #[allow(dead_code)]
     pub current_command: Option<String>,
     /// Pane size (lines x columns)
+    #[allow(dead_code)]
     pub size: Option<(usize, usize)>,
     /// Pane layout
+    #[allow(dead_code)]
     pub layout: Option<String>,
 }
 
@@ -499,7 +521,7 @@ fn parse_panes_list(output: &str) -> Result<Vec<PaneInfo>> {
         // Parse tmux list-panes format
         // Format: <index>: [<size>] [<command>] [<path>] [<layout>]
         let parts: Vec<&str> = line.split(':').collect();
-        if parts.len() < 1 {
+        if parts.is_empty() {
             continue;
         }
 
@@ -535,9 +557,10 @@ fn parse_panes_list(output: &str) -> Result<Vec<PaneInfo>> {
 }
 
 /// Switch to a specific pane.
+#[allow(dead_code)]
 pub fn select_pane(session: &str, pane_index: usize) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["select-pane", "-t", &format!("{}.{}", session, pane_index)])
+        .args(["select-pane", "-t", &format!("{}.{}", session, pane_index)])
         .output()
         .with_context(|| {
             format!(
@@ -561,9 +584,10 @@ pub fn select_pane(session: &str, pane_index: usize) -> Result<()> {
 }
 
 /// Get the current working directory of a pane.
+#[allow(dead_code)]
 pub fn get_pane_cwd(session: &str, pane_index: usize) -> Result<String> {
     let output = Command::new("tmux")
-        .args(&[
+        .args([
             "display-message",
             "-p",
             "-t",
@@ -600,7 +624,7 @@ pub fn send_keys_with_delay(
     delay_ms: u64,
 ) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["send-keys", "-t", session, target, command, "C-m"])
+        .args(["send-keys", "-t", session, target, command, "C-m"])
         .output()
         .with_context(|| {
             format!(
@@ -629,13 +653,14 @@ pub fn send_keys_with_delay(
 }
 
 /// Create a new window with specific working directory.
+#[allow(dead_code)]
 pub fn create_window_with_path(
     session: &str,
     window_name: &str,
     working_dir: &str,
 ) -> Result<String> {
     let output = Command::new("tmux")
-        .args(&[
+        .args([
             "new-window",
             "-t",
             session,
@@ -669,9 +694,10 @@ pub fn create_window_with_path(
 }
 
 /// Rename an existing window.
+#[allow(dead_code)]
 pub fn rename_window(session: &str, window_index: &str, new_name: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&[
+        .args([
             "rename-window",
             "-t",
             &format!("{}.{}", session, window_index),

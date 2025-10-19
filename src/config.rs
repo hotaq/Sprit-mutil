@@ -198,7 +198,7 @@ pub fn save_default_config(config: &ProjectConfig) -> Result<()> {
 #[allow(dead_code)]
 pub fn validate_git_repository() -> Result<()> {
     let output = std::process::Command::new("git")
-        .args(&["rev-parse", "--git-dir"])
+        .args(["rev-parse", "--git-dir"])
         .output()
         .with_context(|| "Failed to execute git command. Is git installed?")?;
 
@@ -218,7 +218,7 @@ pub fn validate_git_repository() -> Result<()> {
 #[allow(dead_code)]
 pub fn get_current_branch() -> Result<String> {
     let output = std::process::Command::new("git")
-        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
         .output()
         .with_context(|| "Failed to get current git branch")?;
 
@@ -236,7 +236,7 @@ pub fn get_current_branch() -> Result<String> {
 #[allow(dead_code)]
 pub fn branch_exists(branch: &str) -> Result<bool> {
     let output = std::process::Command::new("git")
-        .args(&["rev-parse", "--verify", &format!("refs/heads/{}", branch)])
+        .args(["rev-parse", "--verify", &format!("refs/heads/{}", branch)])
         .output()
         .with_context(|| "Failed to check if branch exists")?;
 
@@ -249,7 +249,7 @@ pub fn branch_exists(branch: &str) -> Result<bool> {
 #[allow(dead_code)]
 pub fn get_git_root() -> Result<PathBuf> {
     let output = std::process::Command::new("git")
-        .args(&["rev-parse", "--show-toplevel"])
+        .args(["rev-parse", "--show-toplevel"])
         .output()
         .with_context(|| "Failed to get git repository root")?;
 

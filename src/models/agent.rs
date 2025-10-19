@@ -37,6 +37,7 @@ pub struct Agent {
     pub config: AgentConfig,
 }
 
+#[allow(dead_code)]
 impl Agent {
     /// Create a new agent with basic configuration.
     pub fn new(id: impl Into<String>, branch: impl Into<String>) -> Self {
@@ -200,6 +201,7 @@ impl Default for AgentConfig {
     }
 }
 
+#[allow(dead_code)]
 impl AgentConfig {
     /// Get the default workspace path for an agent with the given ID.
     pub fn default_workspace(&self) -> PathBuf {
@@ -209,7 +211,7 @@ impl AgentConfig {
     /// Get the effective timeout value.
     pub fn timeout(&self) -> u64 {
         self.default_timeout_secs
-            .or_else(|| self.resource_limits.operation_timeout_secs)
+            .or(self.resource_limits.operation_timeout_secs)
             .unwrap_or(300)
     }
 
@@ -284,6 +286,7 @@ impl Default for ResourceLimits {
     }
 }
 
+#[allow(dead_code)]
 impl ResourceLimits {
     /// Merge this resource limits with another, with the other taking precedence.
     pub fn merge(&self, other: &ResourceLimits) -> ResourceLimits {

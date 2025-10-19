@@ -435,7 +435,7 @@ impl SpriteConfig {
             }
         }
 
-        for (agent_id, _) in &current_config.agents {
+        for agent_id in current_config.agents.keys() {
             if !self.agents.contains_key(agent_id) {
                 changes.added_agents.push(agent_id.clone());
             }

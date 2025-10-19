@@ -9,9 +9,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Get the current git repository root directory.
+#[allow(dead_code)]
 pub fn get_git_root() -> Result<PathBuf> {
     let output = Command::new("git")
-        .args(&["rev-parse", "--show-toplevel"])
+        .args(["rev-parse", "--show-toplevel"])
         .output()
         .with_context(|| "Failed to execute git command. Is git installed?")?;
 
@@ -28,6 +29,7 @@ pub fn get_git_root() -> Result<PathBuf> {
 }
 
 /// Get the current git branch name.
+#[allow(dead_code)]
 pub fn get_current_branch() -> Result<String> {
     get_current_branch_at(&std::env::current_dir()?)
 }
@@ -36,7 +38,7 @@ pub fn get_current_branch() -> Result<String> {
 pub fn get_current_branch_at(path: &Path) -> Result<String> {
     let output = Command::new("git")
         .current_dir(path)
-        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
         .output()
         .with_context(|| format!("Failed to get current git branch at {}", path.display()))?;
 
@@ -55,7 +57,7 @@ pub fn get_current_branch_at(path: &Path) -> Result<String> {
 /// Check if a git branch exists.
 pub fn branch_exists(branch: &str) -> Result<bool> {
     let output = Command::new("git")
-        .args(&["rev-parse", "--verify", &format!("refs/heads/{}", branch)])
+        .args(["rev-parse", "--verify", &format!("refs/heads/{}", branch)])
         .output()
         .with_context(|| "Failed to check if branch exists")?;
 
@@ -74,7 +76,7 @@ pub fn create_branch_from(branch: &str, from: &str) -> Result<()> {
     }
 
     let output = Command::new("git")
-        .args(&["checkout", "-b", branch, from])
+        .args(["checkout", "-b", branch, from])
         .output()
         .with_context(|| format!("Failed to create branch '{}' from '{}'", branch, from))?;
 
@@ -90,6 +92,7 @@ pub fn create_branch_from(branch: &str, from: &str) -> Result<()> {
 }
 
 /// Switch to an existing git branch.
+#[allow(dead_code)]
 pub fn switch_branch(branch: &str) -> Result<()> {
     switch_branch_at(&std::env::current_dir()?, branch)
 }
@@ -102,7 +105,7 @@ pub fn switch_branch_at(path: &Path, branch: &str) -> Result<()> {
 
     let output = Command::new("git")
         .current_dir(path)
-        .args(&["checkout", branch])
+        .args(["checkout", branch])
         .output()
         .with_context(|| {
             format!(
@@ -150,7 +153,7 @@ pub fn create_worktree(path: &Path, branch: &str) -> Result<()> {
     }
 
     let output = Command::new("git")
-        .args(&[
+        .args([
             "worktree",
             "add",
             "-b",
@@ -181,7 +184,7 @@ pub fn remove_worktree(path: &Path) -> Result<()> {
     }
 
     let output = Command::new("git")
-        .args(&["worktree", "remove", path.to_string_lossy().as_ref()])
+        .args(["worktree", "remove", path.to_string_lossy().as_ref()])
         .output()
         .with_context(|| format!("Failed to remove worktree at '{}'", path.display()))?;
 
@@ -205,7 +208,7 @@ pub fn remove_worktree(path: &Path) -> Result<()> {
 /// List all git worktrees in the repository.
 pub fn list_worktrees() -> Result<Vec<WorktreeInfo>> {
     let output = Command::new("git")
-        .args(&["worktree", "list"])
+        .args(["worktree", "list"])
         .output()
         .with_context(|| "Failed to list worktrees")?;
 
@@ -227,10 +230,13 @@ pub struct WorktreeInfo {
     /// Path to the worktree
     pub path: PathBuf,
     /// Branch name
+    #[allow(dead_code)]
     pub branch: String,
     /// Whether the worktree is bare
+    #[allow(dead_code)]
     pub bare: bool,
     /// Worktree ID (for detached HEAD worktrees)
+    #[allow(dead_code)]
     pub id: Option<String>,
 }
 
@@ -270,7 +276,7 @@ fn parse_worktree_list(output: &str) -> Result<Vec<WorktreeInfo>> {
             (String::new(), None)
         };
 
-        let bare = path.file_name().map_or(false, |name| name == "bare");
+        let bare = path.file_name().is_some_and(|name| name == "bare");
 
         worktrees.push(WorktreeInfo {
             path,
@@ -292,7 +298,7 @@ pub fn is_git_repository() -> Result<bool> {
 pub fn is_git_repository_at(path: &Path) -> Result<bool> {
     let output = Command::new("git")
         .current_dir(path)
-        .args(&["rev-parse", "--git-dir"])
+        .args(["rev-parse", "--git-dir"])
         .output()
         .with_context(|| format!("Failed to execute git command at {}", path.display()))?;
 
@@ -311,20 +317,23 @@ pub fn validate_git_repository() -> Result<()> {
 }
 
 /// Get the git repository status.
+#[allow(dead_code)]
 pub fn get_status() -> Result<GitStatus> {
     get_status_at(&std::env::current_dir()?)
 }
 
 /// Get the git repository status as a string.
+#[allow(dead_code)]
 pub fn get_status_string() -> Result<String> {
     get_status_string_at(&std::env::current_dir()?)
 }
 
 /// Get the git repository status at a specific path.
+#[allow(dead_code)]
 pub fn get_status_at(path: &Path) -> Result<GitStatus> {
     let output = Command::new("git")
         .current_dir(path)
-        .args(&["status", "--porcelain"])
+        .args(["status", "--porcelain"])
         .output()
         .with_context(|| format!("Failed to get git status at {}", path.display()))?;
 
@@ -344,7 +353,7 @@ pub fn get_status_at(path: &Path) -> Result<GitStatus> {
 pub fn get_status_string_at(path: &Path) -> Result<String> {
     let output = Command::new("git")
         .current_dir(path)
-        .args(&["status", "--porcelain"])
+        .args(["status", "--porcelain"])
         .output()
         .with_context(|| format!("Failed to get git status string at {}", path.display()))?;
 
@@ -362,6 +371,7 @@ pub fn get_status_string_at(path: &Path) -> Result<String> {
 
 /// Git repository status information.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct GitStatus {
     /// Number of modified files
     pub modified: usize,
@@ -376,6 +386,7 @@ pub struct GitStatus {
 }
 
 /// Parse the output of `git status --porcelain`.
+#[allow(dead_code)]
 fn parse_git_status(output: &str) -> Result<GitStatus> {
     let mut status = GitStatus {
         modified: 0,
@@ -408,9 +419,10 @@ fn parse_git_status(output: &str) -> Result<GitStatus> {
 }
 
 /// Pull changes from the remote repository.
+#[allow(dead_code)]
 pub fn pull() -> Result<()> {
     let output = Command::new("git")
-        .args(&["pull"])
+        .args(["pull"])
         .output()
         .with_context(|| "Failed to pull changes")?;
 
@@ -426,6 +438,7 @@ pub fn pull() -> Result<()> {
 }
 
 /// Push changes to the remote repository.
+#[allow(dead_code)]
 pub fn push(branch: Option<&str>) -> Result<()> {
     let mut args = vec!["push"];
     if let Some(b) = branch {
@@ -449,9 +462,10 @@ pub fn push(branch: Option<&str>) -> Result<()> {
 }
 
 /// Commit changes with a message.
+#[allow(dead_code)]
 pub fn commit(message: &str) -> Result<()> {
     let output = Command::new("git")
-        .args(&["commit", "-m", message])
+        .args(["commit", "-m", message])
         .output()
         .with_context(|| "Failed to commit changes")?;
 
@@ -467,6 +481,7 @@ pub fn commit(message: &str) -> Result<()> {
 }
 
 /// Add files to git staging area.
+#[allow(dead_code)]
 pub fn add(files: &[&Path]) -> Result<()> {
     let mut args: Vec<String> = vec!["add".to_string()];
     for file in files {
@@ -490,9 +505,10 @@ pub fn add(files: &[&Path]) -> Result<()> {
 }
 
 /// Check if a file has uncommitted changes.
+#[allow(dead_code)]
 pub fn has_uncommitted_changes(path: &Path) -> Result<bool> {
     let output = Command::new("git")
-        .args(&[
+        .args([
             "diff",
             "--quiet",
             "--exit-code",
@@ -506,9 +522,10 @@ pub fn has_uncommitted_changes(path: &Path) -> Result<bool> {
 }
 
 /// Get the current git commit hash.
+#[allow(dead_code)]
 pub fn get_current_commit() -> Result<String> {
     let output = Command::new("git")
-        .args(&["rev-parse", "HEAD"])
+        .args(["rev-parse", "HEAD"])
         .output()
         .with_context(|| "Failed to get current commit hash")?;
 
@@ -525,11 +542,12 @@ pub fn get_current_commit() -> Result<String> {
 }
 
 /// Get the git remote URL.
+#[allow(dead_code)]
 pub fn get_remote_url(remote: Option<&str>) -> Result<String> {
     let remote_name = remote.unwrap_or("origin");
 
     let output = Command::new("git")
-        .args(&["remote", "get-url", remote_name])
+        .args(["remote", "get-url", remote_name])
         .output()
         .with_context(|| format!("Failed to get remote URL for '{}'", remote_name))?;
 

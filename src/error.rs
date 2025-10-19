@@ -7,6 +7,7 @@ use thiserror::Error;
 
 /// Main error type for the Sprite application.
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum SpriteError {
     /// Configuration-related errors
     #[error("Configuration error: {message}")]
@@ -105,6 +106,7 @@ pub enum SpriteError {
 
 /// Types of security violations for better error categorization.
 #[derive(Error, Debug, Clone)]
+#[allow(dead_code)]
 pub enum SecurityViolationType {
     #[error("Path traversal attempt")]
     PathTraversal,
@@ -128,6 +130,7 @@ pub enum SecurityViolationType {
     InsecureEnvironment,
 }
 
+#[allow(dead_code)]
 impl SpriteError {
     /// Create a configuration error with a message.
     pub fn config(message: impl Into<String>) -> Self {
@@ -434,6 +437,7 @@ impl SpriteError {
 }
 
 /// Type alias for Result with our error type.
+#[allow(dead_code)]
 pub type Result<T> = anyhow::Result<T, SpriteError>;
 
 /// Convert std::io::Error to our error type.
