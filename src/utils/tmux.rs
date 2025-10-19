@@ -398,6 +398,285 @@ pub fn set_environment(session: &str, env_vars: &HashMap<String, String>) -> Res
     Ok(())
 }
 
+/// Execute a tmux profile script in a session.
+pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> Result<()> {
+    if !script_path.exists() {
+        return Err(SpriteError::filesystem(
+            format!("Profile script not found: {}", script_path.display()),
+            script_path.display().to_string(),
+        )
+        .into());
+    }
+
+    println!("📜 Executing profile script: {}", script_path.display());
+
+    // Clear the session first
+    let output = Command::new("tmux")
+        .args(&["send-keys", "-t", session, "C-l", "C-c"])
+        .output()
+        .context("Failed to clear tmux session")?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            "Failed to clear tmux session",
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    // Read and execute the profile script
+    let script_content = std::fs::read_to_string(script_path)
+        .with_context(|| format!("Failed to read profile script: {}", script_path.display()))?;
+
+    // Split script into lines and execute each command
+    for line in script_content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+
+        // Execute the command in the tmux session
+        let output = Command::new("tmux")
+            .args(&["send-keys", "-t", session, line, "C-m"])
+            .output()
+            .with_context(|| format!("Failed to execute tmux command: {}", line))?;
+
+        if !output.status.success() {
+            eprintln!("⚠️  Warning: Failed to execute tmux command: {}", line);
+            eprintln!("   Error: {}", String::from_utf8_lossy(&output.stderr));
+        }
+
+        // Small delay to allow commands to execute
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
+    Ok(())
+}
+
+/// Get information about panes in a session.
+pub fn get_session_panes(session: &str) -> Result<Vec<PaneInfo>> {
+    let output = Command::new("tmux")
+        .args(&["list-panes", "-t", session])
+        .output()
+        .with_context(|| format!("Failed to list panes for session '{}'", session))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!("Failed to list panes for session '{}'", session),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    let panes_str = String::from_utf8_lossy(&output.stdout);
+    parse_panes_list(&panes_str)
+}
+
+/// Information about a tmux pane.
+#[derive(Debug, Clone)]
+pub struct PaneInfo {
+    /// Pane index
+    pub index: usize,
+    /// Current working directory
+    pub current_path: Option<String>,
+    /// Running command
+    pub current_command: Option<String>,
+    /// Pane size (lines x columns)
+    pub size: Option<(usize, usize)>,
+    /// Pane layout
+    pub layout: Option<String>,
+}
+
+/// Parse the output of `tmux list-panes`.
+fn parse_panes_list(output: &str) -> Result<Vec<PaneInfo>> {
+    let mut panes = Vec::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        // Parse tmux list-panes format
+        // Format: <index>: [<size>] [<command>] [<path>] [<layout>]
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() < 1 {
+            continue;
+        }
+
+        let index = parts[0].trim().parse::<usize>().unwrap_or(0);
+        let info_part = if parts.len() > 1 { parts[1] } else { "" };
+
+        // Extract current command (in brackets)
+        let current_command = info_part
+            .find('[')
+            .and_then(|start| {
+                info_part[start + 1..]
+                    .find(']')
+                    .map(|end| info_part[start + 1..start + end].to_string())
+            })
+            .filter(|cmd| !cmd.trim().is_empty());
+
+        // Extract current path (usually at the end)
+        let current_path = info_part
+            .rfind(' ')
+            .map(|start| info_part[start + 1..].trim().to_string())
+            .filter(|path| !path.is_empty() && path.starts_with('/'));
+
+        panes.push(PaneInfo {
+            index,
+            current_path,
+            current_command,
+            size: None, // Would need additional tmux commands to get this
+            layout: None, // Would need additional tmux commands to get this
+        });
+    }
+
+    Ok(panes)
+}
+
+/// Switch to a specific pane.
+pub fn select_pane(session: &str, pane_index: usize) -> Result<()> {
+    let output = Command::new("tmux")
+        .args(&["select-pane", "-t", &format!("{}.{}", session, pane_index)])
+        .output()
+        .with_context(|| format!("Failed to select pane {} in session '{}'", pane_index, session))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!("Failed to select pane {} in session '{}'", pane_index, session),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
+/// Get the current working directory of a pane.
+pub fn get_pane_cwd(session: &str, pane_index: usize) -> Result<String> {
+    let output = Command::new("tmux")
+        .args(&[
+            "display-message",
+            "-p",
+            "-t",
+            &format!("{}.{}", session, pane_index),
+            "#{pane_current_path}",
+        ])
+        .output()
+        .with_context(|| {
+            format!(
+                "Failed to get current path for pane {} in session '{}'",
+                pane_index, session
+            )
+        })?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!(
+                "Failed to get current path for pane {} in session '{}'",
+                pane_index, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+/// Send a command to a specific pane with optional delay.
+pub fn send_keys_with_delay(session: &str, target: &str, command: &str, delay_ms: u64) -> Result<()> {
+    let output = Command::new("tmux")
+        .args(&["send-keys", "-t", session, target, command, "C-m"])
+        .output()
+        .with_context(|| {
+            format!(
+                "Failed to send keys to pane '{}' in session '{}'",
+                target, session
+            )
+        })?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!(
+                "Failed to send keys to pane '{}' in session '{}'",
+                target, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    // Add delay if requested
+    if delay_ms > 0 {
+        std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+    }
+
+    Ok(())
+}
+
+/// Create a new window with specific working directory.
+pub fn create_window_with_path(session: &str, window_name: &str, working_dir: &str) -> Result<String> {
+    let output = Command::new("tmux")
+        .args(&[
+            "new-window",
+            "-t",
+            session,
+            "-n",
+            window_name,
+            "-c",
+            working_dir,
+        ])
+        .output()
+        .with_context(|| {
+            format!(
+                "Failed to create window '{}' in session '{}' with path '{}'",
+                window_name, session, working_dir
+            )
+        })?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!(
+                "Failed to create window '{}' in session '{}' with path '{}'",
+                window_name, session, working_dir
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    // The window index is in stdout
+    let window_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    Ok(window_id)
+}
+
+/// Rename an existing window.
+pub fn rename_window(session: &str, window_index: &str, new_name: &str) -> Result<()> {
+    let output = Command::new("tmux")
+        .args(&["rename-window", "-t", &format!("{}.{}", session, window_index), new_name])
+        .output()
+        .with_context(|| {
+            format!(
+                "Failed to rename window '{}.{}' to '{}'",
+                session, window_index, new_name
+            )
+        })?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!(
+                "Failed to rename window '{}.{}' to '{}'",
+                session, window_index, new_name
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
