@@ -2,31 +2,123 @@
 /target/
 Cargo.lock
 **/*.rs.bk
+*.pdb
 
 # Sprite-specific
 /agents/*/target/
 /.agents/state/
 *.log
+sprite.log
+*.pid
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Claude & Specify
 .claude/commands
+.claude/
 .specify/
+.memory/
 
 # Project files
 CLAUDE.md
 specs/
+.env
+.env.local
+.env.*.local
 
+# Debug and profiling
+profiling/
+*.prof
 
-# Added by cargo
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
 
-/target
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Local development
+.local/
+local/
+dev/
+development/
+
+# Logs and runtime
+logs/
+*.log.*
+stderr.log
+stdout.log
+
+# Cache
+.cache/
+cache/
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Test coverage
+coverage/
+*.lcov
+.coverage/
+
+# Documentation build
+docs/build/
+book/
+
+# Release
+release/
+releases/
+
+# Node.js (if any future tooling needs it)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if any tooling needs it)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# MacOS
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
