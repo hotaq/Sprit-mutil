@@ -35,7 +35,11 @@ fn main() -> Result<()> {
             commands::agents::execute(command)?;
             Ok(())
         }
-        cli::Commands::Start { session_name, layout, detach } => {
+        cli::Commands::Start {
+            session_name,
+            layout,
+            detach,
+        } => {
             commands::start::execute(session_name, layout, detach)?;
             Ok(())
         }

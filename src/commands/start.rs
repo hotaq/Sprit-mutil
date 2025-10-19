@@ -35,14 +35,19 @@ pub fn execute(session_name: Option<String>, layout: String, detach: bool) -> Re
             )
             .into());
         } else {
-            println!("ℹ️  Session '{}' already exists, detaching...", session_name);
+            println!(
+                "ℹ️  Session '{}' already exists, detaching...",
+                session_name
+            );
             return Ok(());
         }
     }
 
     // Validate all agent workspaces
     println!("🔍 Validating agent workspaces...");
-    config.validate_workspaces().context("Workspace validation failed")?;
+    config
+        .validate_workspaces()
+        .context("Workspace validation failed")?;
 
     // Determine tmux profile to use
     let profile = determine_tmux_profile(&config.agents.len(), &layout)?;
@@ -57,7 +62,10 @@ pub fn execute(session_name: Option<String>, layout: String, detach: bool) -> Re
         println!("💡 Use 'sprite kill' to terminate the session");
     } else {
         println!("✅ Session created and detached!");
-        println!("💡 Use 'sprite attach {}' to join the session", session_name);
+        println!(
+            "💡 Use 'sprite attach {}' to join the session",
+            session_name
+        );
     }
 
     Ok(())
@@ -67,15 +75,15 @@ pub fn execute(session_name: Option<String>, layout: String, detach: bool) -> Re
 fn determine_tmux_profile(agent_count: &usize, layout: &str) -> Result<String> {
     let profile = match layout {
         "tiled" => match agent_count {
-            1 => "profile3", // Focus mode for single agent
+            1 => "profile3",     // Focus mode for single agent
             2..=3 => "profile0", // Top + split bottom
             4..=6 => "profile2", // Top row + full-width bottom
-            _ => "profile5", // Six-pane dashboard
+            _ => "profile5",     // Six-pane dashboard
         },
-        "focus" => "profile3", // Single agent focus mode
-        "vertical" => "profile1", // Left column + stacked right
+        "focus" => "profile3",      // Single agent focus mode
+        "vertical" => "profile1",   // Left column + stacked right
         "horizontal" => "profile0", // Top + split bottom
-        "dashboard" => "profile5", // Six-pane dashboard
+        "dashboard" => "profile5",  // Six-pane dashboard
         custom => {
             // Try to find a matching profile file
             if custom.starts_with("profile") && custom.len() == 8 {
@@ -111,8 +119,12 @@ fn create_tmux_session(
     let profile_script = agents_dir.join("profiles").join(format!("{}.sh", profile));
 
     // Execute the profile script using the tmux utility
-    tmux::execute_profile_script(session_name, &profile_script)
-        .with_context(|| format!("Failed to execute profile script: {}", profile_script.display()))?;
+    tmux::execute_profile_script(session_name, &profile_script).with_context(|| {
+        format!(
+            "Failed to execute profile script: {}",
+            profile_script.display()
+        )
+    })?;
 
     // Send initial setup commands to each agent pane
     setup_agent_panes(session_name, config)?;
@@ -144,19 +156,31 @@ fn setup_agent_panes(session_name: &str, config: &SpriteConfig) -> Result<()> {
         // Change to agent workspace
         let cmd = format!("cd {}", workspace_path);
         if let Err(e) = tmux::send_keys_with_delay(session_name, &pane_target, &cmd, 50) {
-            eprintln!("⚠️  Warning: Failed to setup agent {} workspace: {}", agent_id, e);
+            eprintln!(
+                "⚠️  Warning: Failed to setup agent {} workspace: {}",
+                agent_id, e
+            );
         }
 
         // Display agent information
-        let info_cmd = format!("echo '🤖 Agent {} - {}'", agent_id, agent_config.description);
+        let info_cmd = format!(
+            "echo '🤖 Agent {} - {}'",
+            agent_id, agent_config.description
+        );
         if let Err(e) = tmux::send_keys_with_delay(session_name, &pane_target, &info_cmd, 50) {
-            eprintln!("⚠️  Warning: Failed to display agent {} info: {}", agent_id, e);
+            eprintln!(
+                "⚠️  Warning: Failed to display agent {} info: {}",
+                agent_id, e
+            );
         }
 
         // Show git status
         let git_cmd = "git status --porcelain";
         if let Err(e) = tmux::send_keys_with_delay(session_name, &pane_target, git_cmd, 50) {
-            eprintln!("⚠️  Warning: Failed to show git status for agent {}: {}", agent_id, e);
+            eprintln!(
+                "⚠️  Warning: Failed to show git status for agent {}: {}",
+                agent_id, e
+            );
         }
     }
 
@@ -194,7 +218,10 @@ fn create_supervisor_pane(session_name: &str, config: &SpriteConfig) -> Result<(
 
     // Use the supervisor window as target
     if let Err(e) = tmux::send_keys_with_delay(session_name, "supervisor", &supervisor_info, 100) {
-        eprintln!("⚠️  Warning: Failed to display supervisor information: {}", e);
+        eprintln!(
+            "⚠️  Warning: Failed to display supervisor information: {}",
+            e
+        );
     }
 
     // Show help information

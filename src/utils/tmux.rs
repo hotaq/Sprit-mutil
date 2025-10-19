@@ -526,7 +526,7 @@ fn parse_panes_list(output: &str) -> Result<Vec<PaneInfo>> {
             index,
             current_path,
             current_command,
-            size: None, // Would need additional tmux commands to get this
+            size: None,   // Would need additional tmux commands to get this
             layout: None, // Would need additional tmux commands to get this
         });
     }
@@ -539,11 +539,19 @@ pub fn select_pane(session: &str, pane_index: usize) -> Result<()> {
     let output = Command::new("tmux")
         .args(&["select-pane", "-t", &format!("{}.{}", session, pane_index)])
         .output()
-        .with_context(|| format!("Failed to select pane {} in session '{}'", pane_index, session))?;
+        .with_context(|| {
+            format!(
+                "Failed to select pane {} in session '{}'",
+                pane_index, session
+            )
+        })?;
 
     if !output.status.success() {
         return Err(SpriteError::tmux_with_source(
-            format!("Failed to select pane {} in session '{}'", pane_index, session),
+            format!(
+                "Failed to select pane {} in session '{}'",
+                pane_index, session
+            ),
             String::from_utf8_lossy(&output.stderr),
         )
         .into());
@@ -585,7 +593,12 @@ pub fn get_pane_cwd(session: &str, pane_index: usize) -> Result<String> {
 }
 
 /// Send a command to a specific pane with optional delay.
-pub fn send_keys_with_delay(session: &str, target: &str, command: &str, delay_ms: u64) -> Result<()> {
+pub fn send_keys_with_delay(
+    session: &str,
+    target: &str,
+    command: &str,
+    delay_ms: u64,
+) -> Result<()> {
     let output = Command::new("tmux")
         .args(&["send-keys", "-t", session, target, command, "C-m"])
         .output()
@@ -616,7 +629,11 @@ pub fn send_keys_with_delay(session: &str, target: &str, command: &str, delay_ms
 }
 
 /// Create a new window with specific working directory.
-pub fn create_window_with_path(session: &str, window_name: &str, working_dir: &str) -> Result<String> {
+pub fn create_window_with_path(
+    session: &str,
+    window_name: &str,
+    working_dir: &str,
+) -> Result<String> {
     let output = Command::new("tmux")
         .args(&[
             "new-window",
@@ -654,7 +671,12 @@ pub fn create_window_with_path(session: &str, window_name: &str, working_dir: &s
 /// Rename an existing window.
 pub fn rename_window(session: &str, window_index: &str, new_name: &str) -> Result<()> {
     let output = Command::new("tmux")
-        .args(&["rename-window", "-t", &format!("{}.{}", session, window_index), new_name])
+        .args(&[
+            "rename-window",
+            "-t",
+            &format!("{}.{}", session, window_index),
+            new_name,
+        ])
         .output()
         .with_context(|| {
             format!(
