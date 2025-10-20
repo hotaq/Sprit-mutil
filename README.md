@@ -14,14 +14,30 @@ A powerful CLI tool that lets you manage multiple AI coding agents simultaneousl
 
 ## 🚀 Quick Start
 
-### One-Command Installation
+### Installation Comparison
+
+| Method | Command | Speed | Dependencies | Best For |
+|--------|---------|-------|--------------|----------|
+| **UV-Style** | `uv tool install .` | ⚡ Fast | Python + uv | Python developers |
+| **Binary Install** | `cargo binstall hotaq/sprit-mutil` | ⚡ Fast | Rust + cargo-binstall | Quick setup |
+| **Traditional** | `cargo install --git https://github.com/hotaq/Sprit-mutil.git` | 🐢 Slow | Rust + cargo | Full control |
+| **Smart Script** | `curl ... install-uv.sh \| bash` | 🚀 Auto | Varies | Most users |
+
+### One-Command Installation (Modern)
 
 ```bash
-# Install automatically (works on macOS, Linux, Windows)
-curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
+# Method 1: UV-Style (like 'uv tool install specify-cli')
+git clone https://github.com/hotaq/Sprit-mutil.git && cd Sprit-mutil
+uv tool install .
 
-# Or use cargo (if you have Rust)
-cargo install sprite
+# Method 2: Smart Installer (detects best method)
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install-uv.sh | bash
+
+# Method 3: Binary Installation (no compilation)
+cargo binstall hotaq/sprit-mutil
+
+# Method 4: Traditional Cargo
+cargo install --git https://github.com/hotaq/Sprit-mutil.git
 
 # Verify installation
 sprite --version
@@ -257,14 +273,25 @@ sprite status --cleanup
 
 ## 📦 Installation Methods
 
-### Method 1: One-Command Install (Recommended)
+### Method 1: UV-Style Install (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
+# Like 'uv tool install' - most modern approach
+git clone https://github.com/hotaq/Sprit-mutil.git && cd Sprit-mutil
+uv tool install .
+
+# Or using our smart installer
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install-uv.sh | bash
 ```
 
 ### Method 2: Using Cargo
 ```bash
-cargo install sprite
+# Binary installation (no compilation)
+cargo binstall hotaq/sprit-mutil
+
+# From GitHub (latest)
+cargo install --git https://github.com/hotaq/Sprit-mutil.git
+
+# Note: There's a name conflict on crates.io, so we use GitHub
 ```
 
 ### Method 3: Package Managers
