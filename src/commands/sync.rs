@@ -7,12 +7,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 /// Execute the sync command with the given parameters.
-pub fn execute(
-    agent: Option<&str>,
-    force: bool,
-    strategy: &str,
-    dry_run: bool,
-) -> Result<()> {
+pub fn execute(agent: Option<&str>, force: bool, strategy: &str, dry_run: bool) -> Result<()> {
     // Validate we're in a git repository
     git::validate_git_repository()?;
 
@@ -41,8 +36,12 @@ pub fn execute(
 
     // Execute sync based on context
     match &sync_context.context_type {
-        SyncContextType::MainWorktree => sync_main_worktree(&sync_context, conflict_strategy, dry_run, force)?,
-        SyncContextType::AgentWorktree { agent_id } => sync_agent_worktree(&sync_context, agent_id, conflict_strategy, dry_run, force)?,
+        SyncContextType::MainWorktree => {
+            sync_main_worktree(&sync_context, conflict_strategy, dry_run, force)?
+        }
+        SyncContextType::AgentWorktree { agent_id } => {
+            sync_agent_worktree(&sync_context, agent_id, conflict_strategy, dry_run, force)?
+        }
         SyncContextType::Unknown => {
             return Err(SpriteError::sync(
                 "Cannot determine sync context. Please run from main worktree or an agent worktree."
@@ -85,19 +84,19 @@ enum SyncContextType {
 
 /// Determine the current sync context.
 fn determine_sync_context(agent_id: Option<String>) -> Result<SyncContext> {
-    let current_dir = std::env::current_dir()
-        .context("Failed to get current directory")?;
+    let current_dir = std::env::current_dir().context("Failed to get current directory")?;
 
-    let git_root = git::get_git_root()
-        .context("Failed to get git repository root")?;
+    let git_root = git::get_git_root().context("Failed to get git repository root")?;
 
-    let current_branch = git::get_current_branch_at(&current_dir)
-        .context("Failed to get current git branch")?;
+    let current_branch =
+        git::get_current_branch_at(&current_dir).context("Failed to get current git branch")?;
 
     // Normalize paths for comparison
-    let current_dir_normalized = current_dir.canonicalize()
+    let current_dir_normalized = current_dir
+        .canonicalize()
         .context("Failed to canonicalize current directory")?;
-    let git_root_normalized = git_root.canonicalize()
+    let git_root_normalized = git_root
+        .canonicalize()
         .context("Failed to canonicalize git root")?;
 
     // Check if we're in the main worktree
@@ -132,15 +131,21 @@ fn determine_sync_context(agent_id: Option<String>) -> Result<SyncContext> {
         if let Some(provided_id) = &agent_id {
             if provided_id != &extracted_agent_id {
                 return Err(SpriteError::validation(
-                    format!("Agent ID mismatch. Path suggests '{}' but you specified '{}'", extracted_agent_id, provided_id),
+                    format!(
+                        "Agent ID mismatch. Path suggests '{}' but you specified '{}'",
+                        extracted_agent_id, provided_id
+                    ),
                     Some("agent".to_string()),
-                    Some(format!("path: {}, agent: {}", path_str, provided_id))
-                ).into());
+                    Some(format!("path: {}, agent: {}", path_str, provided_id)),
+                )
+                .into());
             }
         }
 
         return Ok(SyncContext {
-            context_type: SyncContextType::AgentWorktree { agent_id: extracted_agent_id },
+            context_type: SyncContextType::AgentWorktree {
+                agent_id: extracted_agent_id,
+            },
             current_dir,
             current_branch,
             git_root,
@@ -170,12 +175,18 @@ fn extract_agent_id_from_path(path: &str) -> Option<String> {
         if let Some(slash_pos) = remaining.find('/') {
             let potential_id = &remaining[..slash_pos];
             // Validate that it's a valid agent ID (numeric or simple string)
-            if potential_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+            if potential_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            {
                 return Some(potential_id.to_string());
             }
         } else {
             // Entire remaining part is the agent ID
-            if remaining.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+            if remaining
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            {
                 return Some(remaining.to_string());
             }
         }
@@ -199,8 +210,8 @@ fn sync_main_worktree(
     }
 
     // Check if we have uncommitted changes
-    let status = git::get_status_string_at(&context.current_dir)
-        .context("Failed to get git status")?;
+    let status =
+        git::get_status_string_at(&context.current_dir).context("Failed to get git status")?;
 
     if !status.is_empty() {
         println!("⚠️  You have uncommitted changes:");
@@ -231,7 +242,10 @@ fn sync_agent_worktree(
     dry_run: bool,
     force: bool,
 ) -> Result<()> {
-    println!("📥 Syncing agent worktree '{}' (merge from main branch)", agent_id);
+    println!(
+        "📥 Syncing agent worktree '{}' (merge from main branch)",
+        agent_id
+    );
 
     if dry_run {
         println!("  Would run: git merge main");
@@ -262,10 +276,12 @@ fn sync_agent_worktree(
     let current_branch = context.current_branch.clone();
     if current_branch != "main" && current_branch != "master" {
         println!("  Switching to main branch temporarily...");
-        git::switch_branch("main").or_else(|_| {
-            // Try master if main doesn't exist
-            git::switch_branch("master")
-        }).with_context(|| "Failed to switch to main branch")?;
+        git::switch_branch("main")
+            .or_else(|_| {
+                // Try master if main doesn't exist
+                git::switch_branch("master")
+            })
+            .with_context(|| "Failed to switch to main branch")?;
 
         // Switch back to original branch after merge
         defer_switch_back(&current_branch)?;
@@ -289,8 +305,9 @@ fn sync_agent_worktree(
         } else {
             return Err(SpriteError::git_with_source(
                 "Failed to merge main branch",
-                stderr.to_string()
-            ).into());
+                stderr.to_string(),
+            )
+            .into());
         }
     }
 
@@ -305,7 +322,10 @@ fn handle_merge_conflicts(
     dry_run: bool,
 ) -> Result<()> {
     if dry_run {
-        println!("  Merge conflicts detected - would use strategy: {:?}", strategy);
+        println!(
+            "  Merge conflicts detected - would use strategy: {:?}",
+            strategy
+        );
         return Ok(());
     }
 
@@ -314,8 +334,9 @@ fn handle_merge_conflicts(
             println!("❌ Merge conflicts detected:");
             println!("{}", error_output);
             return Err(SpriteError::sync(
-                "Merge conflicts detected. Please resolve them manually and try again."
-            ).into());
+                "Merge conflicts detected. Please resolve them manually and try again.",
+            )
+            .into());
         }
         ConflictResolution::AutoTheirs => {
             println!("🔄 Automatically accepting their changes...");
@@ -327,8 +348,9 @@ fn handle_merge_conflicts(
             if !output.status.success() {
                 return Err(SpriteError::git_with_source(
                     "Failed to auto-accept their changes",
-                    String::from_utf8_lossy(&output.stderr)
-                ).into());
+                    String::from_utf8_lossy(&output.stderr),
+                )
+                .into());
             }
 
             println!("✓ Automatically accepted their changes");
@@ -343,8 +365,9 @@ fn handle_merge_conflicts(
             if !output.status.success() {
                 return Err(SpriteError::git_with_source(
                     "Failed to auto-accept our changes",
-                    String::from_utf8_lossy(&output.stderr)
-                ).into());
+                    String::from_utf8_lossy(&output.stderr),
+                )
+                .into());
             }
 
             println!("✓ Automatically accepted our changes");
@@ -360,8 +383,9 @@ fn handle_merge_conflicts(
     if !output.status.success() {
         return Err(SpriteError::git_with_source(
             "Failed to stage resolved files",
-            String::from_utf8_lossy(&output.stderr)
-        ).into());
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
     }
 
     Ok(())
@@ -374,7 +398,10 @@ fn defer_switch_back(original_branch: &str) -> Result<()> {
     // or handle the switch back logic differently
     if original_branch != "main" && original_branch != "master" {
         // This would need to be handled with proper error handling
-        println!("  Note: Would switch back to '{}' after operations", original_branch);
+        println!(
+            "  Note: Would switch back to '{}' after operations",
+            original_branch
+        );
     }
     Ok(())
 }
@@ -387,11 +414,12 @@ fn mark_task_completed(task_id: &str) -> Result<()> {
         return Ok(()); // Skip if tasks file doesn't exist
     }
 
-    let content = std::fs::read_to_string(&tasks_path)
-        .with_context(|| "Failed to read tasks.md")?;
+    let content =
+        std::fs::read_to_string(&tasks_path).with_context(|| "Failed to read tasks.md")?;
 
     // Replace task status from pending to completed
-    let updated_content = content.replace(&format!("- [ ] {}", task_id), &format!("- [x] {}", task_id));
+    let updated_content =
+        content.replace(&format!("- [ ] {}", task_id), &format!("- [x] {}", task_id));
 
     if updated_content != content {
         std::fs::write(&tasks_path, updated_content)
@@ -407,10 +435,22 @@ mod tests {
 
     #[test]
     fn test_extract_agent_id_from_path() {
-        assert_eq!(extract_agent_id_from_path("agents/1"), Some("1".to_string()));
-        assert_eq!(extract_agent_id_from_path("agents/2/"), Some("2".to_string()));
-        assert_eq!(extract_agent_id_from_path("agents/agent-3"), Some("agent-3".to_string()));
-        assert_eq!(extract_agent_id_from_path("agents/agent_4"), Some("agent_4".to_string()));
+        assert_eq!(
+            extract_agent_id_from_path("agents/1"),
+            Some("1".to_string())
+        );
+        assert_eq!(
+            extract_agent_id_from_path("agents/2/"),
+            Some("2".to_string())
+        );
+        assert_eq!(
+            extract_agent_id_from_path("agents/agent-3"),
+            Some("agent-3".to_string())
+        );
+        assert_eq!(
+            extract_agent_id_from_path("agents/agent_4"),
+            Some("agent_4".to_string())
+        );
         assert_eq!(extract_agent_id_from_path("other/path"), None);
         assert_eq!(extract_agent_id_from_path("agents/"), None);
     }

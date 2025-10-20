@@ -1,5 +1,8 @@
+use crate::utils::session_recovery::{
+    analyze_session_health, cleanup_old_sessions, cleanup_temp_files, generate_health_report,
+    RecoveryConfig,
+};
 use crate::utils::tmux;
-use crate::utils::session_recovery::{analyze_session_health, RecoveryConfig, generate_health_report, cleanup_old_sessions, cleanup_temp_files};
 use anyhow::{Context, Result};
 
 /// Execute status command with session health checking and cleanup options
@@ -72,7 +75,11 @@ fn cleanup_resources() -> Result<()> {
     let cleaned_sessions = cleanup_old_sessions(&config)?;
 
     if !cleaned_sessions.is_empty() {
-        println!("✅ Cleaned up {} old session(s): {}", cleaned_sessions.len(), cleaned_sessions.join(", "));
+        println!(
+            "✅ Cleaned up {} old session(s): {}",
+            cleaned_sessions.len(),
+            cleaned_sessions.join(", ")
+        );
     } else {
         println!("✅ No old sessions needed cleanup.");
     }
@@ -88,7 +95,9 @@ fn cleanup_resources() -> Result<()> {
 }
 
 /// Show detailed status information for sessions
-fn show_detailed_status(health_reports: &[crate::utils::session_recovery::SessionHealth]) -> Result<()> {
+fn show_detailed_status(
+    health_reports: &[crate::utils::session_recovery::SessionHealth],
+) -> Result<()> {
     println!("\n📊 Detailed Session Information");
     println!("=============================");
 
@@ -118,20 +127,27 @@ fn show_detailed_status(health_reports: &[crate::utils::session_recovery::Sessio
             println!("   Issues:");
             for issue in &health.issues {
                 let issue_desc = match issue {
-                    crate::utils::session_recovery::SessionIssue::NoActivePanes =>
-                        "• No active panes found".to_string(),
-                    crate::utils::session_recovery::SessionIssue::IdleTooLong(duration) =>
-                        format!("• Session has been idle for {:?}", duration),
-                    crate::utils::session_recovery::SessionIssue::ZombieProcesses(count) =>
-                        format!("• {} zombie processes detected", count),
-                    crate::utils::session_recovery::SessionIssue::WorkspaceMissing(path) =>
-                        format!("• Workspace directory missing: {}", path),
-                    crate::utils::session_recovery::SessionIssue::GitIssues(msg) =>
-                        format!("• Git repository issues: {}", msg),
-                    crate::utils::session_recovery::SessionIssue::TmuxSocketIssues(msg) =>
-                        format!("• Tmux socket issues: {}", msg),
-                    crate::utils::session_recovery::SessionIssue::HighMemoryUsage(bytes) =>
-                        format!("• High memory usage: {} MB", bytes / 1024 / 1024),
+                    crate::utils::session_recovery::SessionIssue::NoActivePanes => {
+                        "• No active panes found".to_string()
+                    }
+                    crate::utils::session_recovery::SessionIssue::IdleTooLong(duration) => {
+                        format!("• Session has been idle for {:?}", duration)
+                    }
+                    crate::utils::session_recovery::SessionIssue::ZombieProcesses(count) => {
+                        format!("• {} zombie processes detected", count)
+                    }
+                    crate::utils::session_recovery::SessionIssue::WorkspaceMissing(path) => {
+                        format!("• Workspace directory missing: {}", path)
+                    }
+                    crate::utils::session_recovery::SessionIssue::GitIssues(msg) => {
+                        format!("• Git repository issues: {}", msg)
+                    }
+                    crate::utils::session_recovery::SessionIssue::TmuxSocketIssues(msg) => {
+                        format!("• Tmux socket issues: {}", msg)
+                    }
+                    crate::utils::session_recovery::SessionIssue::HighMemoryUsage(bytes) => {
+                        format!("• High memory usage: {} MB", bytes / 1024 / 1024)
+                    }
                 };
                 println!("     {}", issue_desc);
             }
@@ -142,7 +158,9 @@ fn show_detailed_status(health_reports: &[crate::utils::session_recovery::Sessio
 }
 
 /// Show recommendations based on session health
-fn show_recommendations(health_reports: &[crate::utils::session_recovery::SessionHealth]) -> Result<()> {
+fn show_recommendations(
+    health_reports: &[crate::utils::session_recovery::SessionHealth],
+) -> Result<()> {
     println!("\n💡 Recommendations");
     println!("=================");
 
@@ -152,11 +170,17 @@ fn show_recommendations(health_reports: &[crate::utils::session_recovery::Sessio
     for health in health_reports {
         match health.status {
             crate::utils::session_recovery::SessionStatus::Healthy => {
-                println!("✅ Session '{}' is healthy and running normally.", health.name);
+                println!(
+                    "✅ Session '{}' is healthy and running normally.",
+                    health.name
+                );
             }
             crate::utils::session_recovery::SessionStatus::Degraded => {
                 has_issues = true;
-                println!("⚠️  Session '{}' has issues that may affect performance:", health.name);
+                println!(
+                    "⚠️  Session '{}' has issues that may affect performance:",
+                    health.name
+                );
 
                 for issue in &health.issues {
                     let recommendation = match issue {
@@ -181,14 +205,23 @@ fn show_recommendations(health_reports: &[crate::utils::session_recovery::Sessio
             crate::utils::session_recovery::SessionStatus::Dead => {
                 has_issues = true;
                 needs_cleanup = true;
-                println!("🔴 Session '{}' is unresponsive and should be cleaned up:", health.name);
-                println!("  • Use 'sprite kill --force {}' to remove the dead session", health.name);
+                println!(
+                    "🔴 Session '{}' is unresponsive and should be cleaned up:",
+                    health.name
+                );
+                println!(
+                    "  • Use 'sprite kill --force {}' to remove the dead session",
+                    health.name
+                );
             }
             crate::utils::session_recovery::SessionStatus::Orphaned => {
                 has_issues = true;
                 needs_cleanup = true;
                 println!("⚪ Session '{}' appears to be orphaned:", health.name);
-                println!("  • Use 'sprite kill --force {}' to remove the orphaned session", health.name);
+                println!(
+                    "  • Use 'sprite kill --force {}' to remove the orphaned session",
+                    health.name
+                );
             }
         }
     }

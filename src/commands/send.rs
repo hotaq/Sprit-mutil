@@ -1,8 +1,8 @@
 //! Send command - Broadcast command to all agents
 
-use crate::models::ProjectConfig;
 use crate::error::SpriteError;
-use crate::utils::{tmux, accessibility::AccessibilityConfig};
+use crate::models::ProjectConfig;
+use crate::utils::{accessibility::AccessibilityConfig, tmux};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -35,10 +35,10 @@ pub fn execute(
     }
 
     // Find the active session
-    let sessions = tmux::list_sessions()
-        .context("Failed to list tmux sessions")?;
+    let sessions = tmux::list_sessions().context("Failed to list tmux sessions")?;
 
-    let active_session = sessions.iter()
+    let active_session = sessions
+        .iter()
         .find(|s| s.name.starts_with("sprite-") && s.attached)
         .or_else(|| sessions.iter().find(|s| s.name.starts_with("sprite-")))
         .ok_or_else(|| SpriteError::session_not_found("No active sprite session found"))?;
@@ -59,18 +59,39 @@ pub fn execute(
 
     let accessibility_config = AccessibilityConfig::default();
     crate::utils::accessibility::print_info(
-        &format!("Broadcasting command to {} agents: {}", active_agents.len(), full_command),
-        &accessibility_config
+        &format!(
+            "Broadcasting command to {} agents: {}",
+            active_agents.len(),
+            full_command
+        ),
+        &accessibility_config,
     );
 
     // Execute the command on all agents
     if sequential {
-        execute_sequential(&active_session.name, &panes, &active_agents, &full_command, work_dir, &env_map)?;
+        execute_sequential(
+            &active_session.name,
+            &panes,
+            &active_agents,
+            &full_command,
+            work_dir,
+            &env_map,
+        )?;
     } else {
-        execute_parallel(&active_session.name, &panes, active_agents.into_iter().cloned().collect(), &full_command, work_dir, &env_map)?;
+        execute_parallel(
+            &active_session.name,
+            &panes,
+            active_agents.into_iter().cloned().collect(),
+            &full_command,
+            work_dir,
+            &env_map,
+        )?;
     }
 
-    crate::utils::accessibility::print_success("Command broadcast completed", &accessibility_config);
+    crate::utils::accessibility::print_success(
+        "Command broadcast completed",
+        &accessibility_config,
+    );
     Ok(())
 }
 
@@ -124,7 +145,14 @@ fn execute_parallel(
 
         let handle = thread::spawn(move || {
             let start_time = Instant::now();
-            let result = send_to_agent(&session_name, &panes, &agent, &command, work_dir.as_deref(), &env_vars);
+            let result = send_to_agent(
+                &session_name,
+                &panes,
+                &agent,
+                &command,
+                work_dir.as_deref(),
+                &env_vars,
+            );
             let duration = start_time.elapsed();
 
             let mut results = results.lock().unwrap();
@@ -161,8 +189,10 @@ fn execute_parallel(
 
     if !results.is_empty() {
         let avg_duration = total_duration / results.len() as u32;
-        println!("  📊 Parallel execution: {} successful, {} failed, avg time: {:?}",
-                success_count, failure_count, avg_duration);
+        println!(
+            "  📊 Parallel execution: {} successful, {} failed, avg time: {:?}",
+            success_count, failure_count, avg_duration
+        );
     }
 
     Ok(())
@@ -210,13 +240,15 @@ fn send_to_agent(
 fn find_agent_pane(
     panes: &[tmux::PaneInfo],
     agent: &crate::models::Agent,
-    session_name: &str
+    session_name: &str,
 ) -> Result<usize> {
     // Try to find the pane by matching the workspace path
     if let Some(workspace) = &agent.worktree_path {
         for pane in panes {
             if let Some(current_path) = &pane.current_path {
-                if current_path.contains(&*workspace.to_string_lossy()) || current_path.ends_with(&agent.id) {
+                if current_path.contains(&*workspace.to_string_lossy())
+                    || current_path.ends_with(&agent.id)
+                {
                     return Ok(pane.index);
                 }
             }
@@ -240,9 +272,11 @@ fn find_agent_pane(
         }
     }
 
-    Err(SpriteError::pane_not_found(
-        format!("Could not find tmux pane for agent '{}' in session '{}'", agent.id, session_name)
-    ).into())
+    Err(SpriteError::pane_not_found(format!(
+        "Could not find tmux pane for agent '{}' in session '{}'",
+        agent.id, session_name
+    ))
+    .into())
 }
 
 /// Parse environment variables from KEY=VALUE format.
@@ -255,16 +289,21 @@ fn parse_env_vars(env_vars: &[String]) -> Result<HashMap<String, String>> {
                 return Err(SpriteError::validation(
                     "Environment variable key cannot be empty".to_string(),
                     Some("env_var".to_string()),
-                    None::<String>
-                ).into());
+                    None::<String>,
+                )
+                .into());
             }
             env_map.insert(key.to_string(), value.to_string());
         } else {
             return Err(SpriteError::validation(
-                format!("Invalid environment variable format: '{}'. Expected KEY=VALUE", env_var),
+                format!(
+                    "Invalid environment variable format: '{}'. Expected KEY=VALUE",
+                    env_var
+                ),
                 Some("env_var".to_string()),
-                Some(env_var.clone() as String)
-            ).into());
+                Some(env_var.clone() as String),
+            )
+            .into());
         }
     }
 

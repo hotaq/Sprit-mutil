@@ -6,11 +6,7 @@ use crate::utils::tmux;
 use anyhow::{Context, Result};
 
 /// Execute the zoom command with the given parameters.
-pub fn execute(
-    agent: Option<String>,
-    unzoom: bool,
-    list: bool,
-) -> Result<()> {
+pub fn execute(agent: Option<String>, unzoom: bool, list: bool) -> Result<()> {
     // Load current configuration
     let config_path = ProjectConfig::config_path();
     if config_path.exists() {
@@ -39,10 +35,10 @@ pub fn execute(
     };
 
     // Find the active session
-    let sessions = tmux::list_sessions()
-        .context("Failed to list tmux sessions")?;
+    let sessions = tmux::list_sessions().context("Failed to list tmux sessions")?;
 
-    let active_session = sessions.iter()
+    let active_session = sessions
+        .iter()
         .find(|s| s.name.starts_with("sprite-") && s.attached)
         .or_else(|| sessions.iter().find(|s| s.name.starts_with("sprite-")))
         .ok_or_else(|| SpriteError::session_not_found("No active sprite session found"))?;
@@ -63,10 +59,10 @@ pub fn execute(
 /// List all available panes in the active session
 fn list_panes() -> Result<()> {
     // Find the active session
-    let sessions = tmux::list_sessions()
-        .context("Failed to list tmux sessions")?;
+    let sessions = tmux::list_sessions().context("Failed to list tmux sessions")?;
 
-    let active_session = sessions.iter()
+    let active_session = sessions
+        .iter()
         .find(|s| s.name.starts_with("sprite-") && s.attached)
         .or_else(|| sessions.iter().find(|s| s.name.starts_with("sprite-")));
 
@@ -153,8 +149,9 @@ fn find_target_pane(panes: &[tmux::PaneInfo], agent_id: &str) -> Result<usize> {
     Err(SpriteError::validation(
         format!("Agent '{}' not found or no active pane", agent_id),
         Some("agent".to_string()),
-        Some(agent_id.to_string())
-    ).into())
+        Some(agent_id.to_string()),
+    )
+    .into())
 }
 
 /// Zoom to the specified pane
@@ -169,10 +166,9 @@ fn zoom_to_pane(session_name: &str, pane_index: usize) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(SpriteError::tmux_with_source(
-            "Failed to select pane",
-            stderr.to_string()
-        ).into());
+        return Err(
+            SpriteError::tmux_with_source("Failed to select pane", stderr.to_string()).into(),
+        );
     }
 
     // Optionally maximize the pane (tmux has zoom functionality)
@@ -204,10 +200,9 @@ fn unzoom_session() -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(SpriteError::tmux_with_source(
-            "Failed to unzoom session",
-            stderr.to_string()
-        ).into());
+        return Err(
+            SpriteError::tmux_with_source("Failed to unzoom session", stderr.to_string()).into(),
+        );
     }
 
     println!("✓ Returned to normal layout");
@@ -237,7 +232,8 @@ fn extract_agent_info(pane: &tmux::PaneInfo) -> Option<String> {
                 if word.contains("agent") {
                     // Extract the part after "agent"
                     if let Some(agent_part) = word.split("agent").nth(1) {
-                        let agent_id = agent_part.trim_start_matches('_')
+                        let agent_id = agent_part
+                            .trim_start_matches('_')
                             .trim_start_matches('-')
                             .trim();
                         if !agent_id.is_empty() {

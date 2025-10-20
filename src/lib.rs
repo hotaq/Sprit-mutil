@@ -12,6 +12,6 @@ pub mod utils;
 pub mod validation;
 
 // Re-export commonly used types for easier access in tests
-pub use commands::config::{SimpleAgentConfig, SpriteConfig, ConfigChanges};
+pub use commands::config::{ConfigChanges, SimpleAgentConfig, SpriteConfig};
 pub use error::SpriteError;
 pub use utils::git;

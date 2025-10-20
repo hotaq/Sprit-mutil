@@ -332,8 +332,8 @@ export SPRITE_AGENT_DIR="$(pwd)"
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     #[test]
     fn test_create_agents_directory_structure() {

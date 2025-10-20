@@ -3,7 +3,7 @@
 //! This module provides functions for detecting orphaned sessions, cleaning up
 //! dead resources, and recovering from session failures.
 
-use crate::utils::tmux::{SessionInfo, list_sessions, kill_session};
+use crate::utils::tmux::{kill_session, list_sessions, SessionInfo};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
@@ -94,15 +94,11 @@ pub struct RecoveryConfig {
 impl Default for RecoveryConfig {
     fn default() -> Self {
         Self {
-            max_idle_time: Duration::from_secs(3600), // 1 hour
+            max_idle_time: Duration::from_secs(3600),    // 1 hour
             max_session_age: Duration::from_secs(86400), // 24 hours
             auto_cleanup: false,
             cleanup_dirs: vec!["/tmp".to_string(), "/var/tmp".to_string()],
-            monitored_processes: vec![
-                "tmux".to_string(),
-                "git".to_string(),
-                "sprite".to_string(),
-            ],
+            monitored_processes: vec!["tmux".to_string(), "git".to_string(), "sprite".to_string()],
         }
     }
 }
@@ -121,7 +117,10 @@ pub fn analyze_session_health(config: &RecoveryConfig) -> Result<Vec<SessionHeal
 }
 
 /// Check the health of a specific session
-pub fn check_session_health(session: &SessionInfo, config: &RecoveryConfig) -> Result<SessionHealth> {
+pub fn check_session_health(
+    session: &SessionInfo,
+    config: &RecoveryConfig,
+) -> Result<SessionHealth> {
     let mut issues = Vec::new();
     let mut active_panes = 0;
 
@@ -138,7 +137,7 @@ pub fn check_session_health(session: &SessionInfo, config: &RecoveryConfig) -> R
         }
         Err(_) => {
             issues.push(SessionIssue::TmuxSocketIssues(
-                "Failed to list session panes".to_string()
+                "Failed to list session panes".to_string(),
             ));
         }
     }
@@ -162,9 +161,16 @@ pub fn check_session_health(session: &SessionInfo, config: &RecoveryConfig) -> R
     }
 
     // Determine overall status
-    let status = if !is_responsive || issues.iter().any(|i| matches!(i, SessionIssue::TmuxSocketIssues(_))) {
+    let status = if !is_responsive
+        || issues
+            .iter()
+            .any(|i| matches!(i, SessionIssue::TmuxSocketIssues(_)))
+    {
         SessionStatus::Dead
-    } else if issues.iter().any(|i| matches!(i, SessionIssue::WorkspaceMissing(_))) {
+    } else if issues
+        .iter()
+        .any(|i| matches!(i, SessionIssue::WorkspaceMissing(_)))
+    {
         SessionStatus::Orphaned
     } else if !issues.is_empty() {
         SessionStatus::Degraded
@@ -216,17 +222,19 @@ fn check_workspace_integrity(session_name: &str) -> Result<Option<SessionIssue>>
             if Path::new(&format!("{}/.git", workspace_dir)).exists() {
                 return Ok(None);
             } else {
-                return Ok(Some(SessionIssue::GitIssues(
-                    format!("Workspace {} is not a git repository", workspace_dir)
-                )));
+                return Ok(Some(SessionIssue::GitIssues(format!(
+                    "Workspace {} is not a git repository",
+                    workspace_dir
+                ))));
             }
         }
     }
 
     // If we can't find a workspace, consider it orphaned
-    Ok(Some(SessionIssue::WorkspaceMissing(
-        format!("No workspace found for session {}", session_name)
-    )))
+    Ok(Some(SessionIssue::WorkspaceMissing(format!(
+        "No workspace found for session {}",
+        session_name
+    ))))
 }
 
 /// Count zombie processes associated with a session
@@ -255,7 +263,11 @@ pub fn get_recovery_action(health: &SessionHealth, config: &RecoveryConfig) -> R
             }
         }
         SessionStatus::Degraded => {
-            if health.issues.iter().any(|i| matches!(i, SessionIssue::NoActivePanes)) {
+            if health
+                .issues
+                .iter()
+                .any(|i| matches!(i, SessionIssue::NoActivePanes))
+            {
                 RecoveryAction::Repair
             } else if health.age_seconds > config.max_session_age.as_secs() {
                 if config.auto_cleanup {
@@ -310,9 +322,16 @@ pub fn cleanup_session_resources(session_name: &str) -> Result<()> {
     ];
 
     for pattern in temp_patterns {
-        if let Ok(output) = Command::new("find").args(&["/tmp", "-name", &pattern, "-delete"]).output() {
+        if let Ok(output) = Command::new("find")
+            .args(&["/tmp", "-name", &pattern, "-delete"])
+            .output()
+        {
             if !output.status.success() {
-                eprintln!("Warning: Failed to cleanup pattern {}: {}", pattern, String::from_utf8_lossy(&output.stderr));
+                eprintln!(
+                    "Warning: Failed to cleanup pattern {}: {}",
+                    pattern,
+                    String::from_utf8_lossy(&output.stderr)
+                );
             }
         }
     }
@@ -322,8 +341,9 @@ pub fn cleanup_session_resources(session_name: &str) -> Result<()> {
     if state_dir.exists() {
         let session_state = state_dir.join(format!("{}.json", session_name));
         if session_state.exists() {
-            fs::remove_file(&session_state)
-                .with_context(|| format!("Failed to remove session state file: {:?}", session_state))?;
+            fs::remove_file(&session_state).with_context(|| {
+                format!("Failed to remove session state file: {:?}", session_state)
+            })?;
         }
     }
 
@@ -390,7 +410,12 @@ fn cleanup_directory(dir: &str, pattern: &str) -> Result<()> {
         .context("Failed to cleanup temporary files")?;
 
     if !output.status.success() {
-        eprintln!("Warning: Failed to cleanup {} in {}: {}", pattern, dir, String::from_utf8_lossy(&output.stderr));
+        eprintln!(
+            "Warning: Failed to cleanup {} in {}: {}",
+            pattern,
+            dir,
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(())
@@ -436,7 +461,9 @@ pub fn generate_health_report(health_reports: &[SessionHealth]) -> String {
                     SessionIssue::WorkspaceMissing(path) => format!("Workspace missing: {}", path),
                     SessionIssue::GitIssues(msg) => format!("Git issues: {}", msg),
                     SessionIssue::TmuxSocketIssues(msg) => format!("Tmux socket issues: {}", msg),
-                    SessionIssue::HighMemoryUsage(bytes) => format!("High memory usage: {} MB", bytes / 1024 / 1024),
+                    SessionIssue::HighMemoryUsage(bytes) => {
+                        format!("High memory usage: {} MB", bytes / 1024 / 1024)
+                    }
                 };
                 report.push_str(&format!("    ⚠️  {}\n", issue_desc));
             }

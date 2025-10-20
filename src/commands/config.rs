@@ -845,18 +845,14 @@ fn get_config_value(key: String) -> Result<()> {
         ["sync", "conflict_resolution"] => Some(config.sync.conflict_resolution.clone()),
         ["sync", "default_interval_secs"] => Some(config.sync.default_interval_secs.to_string()),
         ["settings", "default_shell"] => Some(config.settings.default_shell.clone()),
-        ["agents", agent_id, field] => {
-            config
-                .get_agent(agent_id)
-                .and_then(|agent| match *field {
-                    "branch" => Some(agent.branch.clone()),
-                    "worktree_path" => Some(agent.worktree_path.clone()),
-                    "model" => Some(agent.model.clone()),
-                    "description" => Some(agent.description.clone()),
-                    "status" => Some(agent.status.clone()),
-                    _ => None,
-                })
-        }
+        ["agents", agent_id, field] => config.get_agent(agent_id).and_then(|agent| match *field {
+            "branch" => Some(agent.branch.clone()),
+            "worktree_path" => Some(agent.worktree_path.clone()),
+            "model" => Some(agent.model.clone()),
+            "description" => Some(agent.description.clone()),
+            "status" => Some(agent.status.clone()),
+            _ => None,
+        }),
         _ => None,
     };
 
@@ -1141,7 +1137,8 @@ mod tests {
         assert!(yaml.contains("test-session"));
 
         // Test deserialization
-        let deserialized: SpriteConfig = serde_yaml::from_str(&yaml).expect("Failed to deserialize config");
+        let deserialized: SpriteConfig =
+            serde_yaml::from_str(&yaml).expect("Failed to deserialize config");
         assert_eq!(deserialized.agents.len(), 1);
         assert_eq!(deserialized.session_name, "test-session");
         assert_eq!(config.agents, deserialized.agents);
@@ -1194,7 +1191,7 @@ mod tests {
         // Since we can't actually modify the file in this test,
         // we'll test the ConfigChanges structure directly
         let mut changes = ConfigChanges::new();
-        changes.file_modified = false;  // Start with no changes
+        changes.file_modified = false; // Start with no changes
         changes.old_version = 1;
         changes.new_version = 2;
         changes.modified_agents.push("agent1".to_string());
@@ -1220,11 +1217,14 @@ mod tests {
         });
 
         // Test save
-        original_config.save_to_path(&config_path).expect("Failed to save config");
+        original_config
+            .save_to_path(&config_path)
+            .expect("Failed to save config");
         assert!(config_path.exists());
 
         // Test load
-        let loaded_config = SpriteConfig::load_from_path(&config_path).expect("Failed to load config");
+        let loaded_config =
+            SpriteConfig::load_from_path(&config_path).expect("Failed to load config");
         assert_eq!(loaded_config.agents.len(), 1);
         assert_eq!(loaded_config.agents[0].branch, "main");
         assert_eq!(loaded_config.agents[0].model, "claude-sonnet");

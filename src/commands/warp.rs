@@ -8,12 +8,7 @@ use std::env;
 use std::path::PathBuf;
 
 /// Execute the warp command with the given parameters.
-pub fn execute(
-    workspace: Option<String>,
-    list: bool,
-    print: bool,
-    relative: bool,
-) -> Result<()> {
+pub fn execute(workspace: Option<String>, list: bool, print: bool, relative: bool) -> Result<()> {
     // Load current configuration
     let config_path = ProjectConfig::config_path();
     if !config_path.exists() {
@@ -51,8 +46,7 @@ fn list_workspaces(config: &ProjectConfig) -> Result<()> {
     println!("=======================");
 
     // Main workspace
-    let main_workspace = git::get_git_root()
-        .context("Failed to get git repository root")?;
+    let main_workspace = git::get_git_root().context("Failed to get git repository root")?;
     println!("📁 main (root): {}", main_workspace.display());
 
     // Agent workspaces
@@ -80,8 +74,7 @@ fn list_workspaces(config: &ProjectConfig) -> Result<()> {
 
 /// Navigate to the main project directory
 fn warp_to_main_directory(print: bool, relative: bool) -> Result<()> {
-    let main_workspace = git::get_git_root()
-        .context("Failed to get git repository root")?;
+    let main_workspace = git::get_git_root().context("Failed to get git repository root")?;
 
     navigate_to_workspace(&main_workspace, print, relative)
 }
@@ -90,8 +83,7 @@ fn warp_to_main_directory(print: bool, relative: bool) -> Result<()> {
 fn find_workspace_path(config: &ProjectConfig, workspace_name: &str) -> Result<PathBuf> {
     // Check if it's "main"
     if workspace_name == "main" {
-        return git::get_git_root()
-            .context("Failed to get git repository root");
+        return git::get_git_root().context("Failed to get git repository root");
     }
 
     // Try to find agent by ID
@@ -101,14 +93,14 @@ fn find_workspace_path(config: &ProjectConfig, workspace_name: &str) -> Result<P
         } else {
             return Err(SpriteError::agent(
                 format!("Agent '{}' has no workspace configured", workspace_name),
-                Some(workspace_name.to_string())
-            ).into());
+                Some(workspace_name.to_string()),
+            )
+            .into());
         }
     }
 
     // Try to find agent workspace by path pattern
-    let main_root = git::get_git_root()
-        .context("Failed to get git repository root")?;
+    let main_root = git::get_git_root().context("Failed to get git repository root")?;
 
     let agents_dir = main_root.join("agents");
     let potential_workspace = agents_dir.join(workspace_name);
@@ -126,8 +118,9 @@ fn find_workspace_path(config: &ProjectConfig, workspace_name: &str) -> Result<P
     Err(SpriteError::validation(
         format!("Workspace '{}' not found", workspace_name),
         Some("workspace".to_string()),
-        Some(workspace_name.to_string())
-    ).into())
+        Some(workspace_name.to_string()),
+    )
+    .into())
 }
 
 /// Navigate to the specified workspace
@@ -163,10 +156,13 @@ fn navigate_to_workspace(workspace_path: &PathBuf, print: bool, relative: bool) 
 
         println!();
         println!("💡 To automatically change directory, use:");
-        println!("  cd $(sprite warp --print {})",
-                workspace_path.file_name()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("workspace"));
+        println!(
+            "  cd $(sprite warp --print {})",
+            workspace_path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("workspace")
+        );
     }
 
     Ok(())

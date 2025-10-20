@@ -7,8 +7,8 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 use predicates::str::contains;
 use std::fs;
-use tempfile::TempDir;
 use std::os::unix::fs::PermissionsExt;
+use tempfile::TempDir;
 
 /// Test the complete init workflow with default settings
 #[test]
@@ -78,13 +78,25 @@ fn test_complete_init_workflow_default() {
     #[cfg(unix)]
     {
         let setup_perms = fs::metadata(&setup_script).unwrap().permissions();
-        assert_eq!(setup_perms.mode() & 0o111, 0o111, "setup.sh should be executable");
+        assert_eq!(
+            setup_perms.mode() & 0o111,
+            0o111,
+            "setup.sh should be executable"
+        );
 
         let start_perms = fs::metadata(&start_script).unwrap().permissions();
-        assert_eq!(start_perms.mode() & 0o111, 0o111, "start-agents.sh should be executable");
+        assert_eq!(
+            start_perms.mode() & 0o111,
+            0o111,
+            "start-agents.sh should be executable"
+        );
 
         let attach_perms = fs::metadata(&attach_script).unwrap().permissions();
-        assert_eq!(attach_perms.mode() & 0o111, 0o111, "attach-session.sh should be executable");
+        assert_eq!(
+            attach_perms.mode() & 0o111,
+            0o111,
+            "attach-session.sh should be executable"
+        );
     }
 }
 
@@ -121,11 +133,18 @@ fn test_init_workflow_custom_agent_count() {
     let config_content = fs::read_to_string(&config_file).unwrap();
 
     for i in 1..=5 {
-        assert!(config_content.contains(&format!("- id: \"{}\"", i)), "config should contain agent {}", i);
+        assert!(
+            config_content.contains(&format!("- id: \"{}\"", i)),
+            "config should contain agent {}",
+            i
+        );
     }
 
     // Should not contain agent 6
-    assert!(!config_content.contains("- id: \"6\""), "config should not contain agent 6");
+    assert!(
+        !config_content.contains("- id: \"6\""),
+        "config should not contain agent 6"
+    );
 }
 
 /// Test init workflow with zero agents (empty configuration)
@@ -155,7 +174,11 @@ fn test_init_workflow_zero_agents() {
     // Should not create individual agent directories
     for i in 1..=5 {
         let agent_dir = agents_dir.join(i.to_string());
-        assert!(!agent_dir.exists(), "agent {} directory should not exist for 0 agents", i);
+        assert!(
+            !agent_dir.exists(),
+            "agent {} directory should not exist for 0 agents",
+            i
+        );
     }
 
     // Verify empty configuration was used
@@ -191,7 +214,8 @@ fn test_init_workflow_with_force() {
 
     // Run init again without force (should fail)
     let mut cmd_fail = Command::cargo_bin("sprit-mutil").unwrap();
-    cmd_fail.current_dir(&temp_path)
+    cmd_fail
+        .current_dir(&temp_path)
         .args(["init", "--agents", "3"])
         .assert()
         .failure()
@@ -199,17 +223,24 @@ fn test_init_workflow_with_force() {
 
     // Run init again with force (should succeed)
     let mut cmd_force = Command::cargo_bin("sprit-mutil").unwrap();
-    cmd_force.current_dir(&temp_path)
+    cmd_force
+        .current_dir(&temp_path)
         .args(["init", "--agents", "3", "--force"])
         .assert()
         .success();
 
     // Verify config was updated
     let new_content = fs::read_to_string(&config_file).unwrap();
-    assert_ne!(original_content, new_content, "config should be updated with force flag");
+    assert_ne!(
+        original_content, new_content,
+        "config should be updated with force flag"
+    );
 
     // Should now have 3 agents
-    assert!(new_content.contains("- id: \"3\""), "config should contain agent 3");
+    assert!(
+        new_content.contains("- id: \"3\""),
+        "config should contain agent 3"
+    );
 }
 
 /// Test init workflow error handling when not in git repository
@@ -261,9 +292,18 @@ fn test_init_workflow_large_agent_count() {
     let config_content = fs::read_to_string(&config_file).unwrap();
 
     // Check a few agents from the beginning, middle, and end
-    assert!(config_content.contains("- id: \"1\""), "config should contain agent 1");
-    assert!(config_content.contains("- id: \"25\""), "config should contain agent 25");
-    assert!(config_content.contains("- id: \"50\""), "config should contain agent 50");
+    assert!(
+        config_content.contains("- id: \"1\""),
+        "config should contain agent 1"
+    );
+    assert!(
+        config_content.contains("- id: \"25\""),
+        "config should contain agent 25"
+    );
+    assert!(
+        config_content.contains("- id: \"50\""),
+        "config should contain agent 50"
+    );
 }
 
 /// Test init workflow performance requirement (under 60 seconds)
@@ -291,10 +331,18 @@ fn test_init_workflow_performance_requirement() {
     let duration = start.elapsed();
 
     // Should complete in under 60 seconds (requirement is much less, but 60 is a reasonable test timeout)
-    assert!(duration.as_secs() < 60, "init should complete in under 60 seconds, took {:?}", duration);
+    assert!(
+        duration.as_secs() < 60,
+        "init should complete in under 60 seconds, took {:?}",
+        duration
+    );
 
     // Should complete very quickly (actual requirement is much less)
-    assert!(duration.as_secs() < 5, "init should complete very quickly, took {:?}", duration);
+    assert!(
+        duration.as_secs() < 5,
+        "init should complete very quickly, took {:?}",
+        duration
+    );
 }
 
 /// Test init workflow with nested directory structure
@@ -324,12 +372,19 @@ fn test_init_workflow_nested_directory() {
 
     // Verify directory structure was created in nested location
     let agents_dir = nested_path.join("agents");
-    assert!(agents_dir.exists(), "agents directory should exist in nested path");
+    assert!(
+        agents_dir.exists(),
+        "agents directory should exist in nested path"
+    );
 
     // Verify agent directories
     for i in 1..=2 {
         let agent_dir = agents_dir.join(i.to_string());
-        assert!(agent_dir.exists(), "agent {} directory should exist in nested path", i);
+        assert!(
+            agent_dir.exists(),
+            "agent {} directory should exist in nested path",
+            i
+        );
     }
 }
 
@@ -358,13 +413,22 @@ fn test_init_workflow_valid_yaml() {
     let config_content = fs::read_to_string(&config_file).unwrap();
 
     // Try to parse the YAML - this will panic if invalid
-    let parsed: serde_yaml::Value = serde_yaml::from_str(&config_content)
-        .expect("Generated config should be valid YAML");
+    let parsed: serde_yaml::Value =
+        serde_yaml::from_str(&config_content).expect("Generated config should be valid YAML");
 
     // Verify basic structure
-    assert!(parsed.get("agents").is_some(), "Config should have agents field");
-    assert!(parsed.get("version").is_some(), "Config should have version field");
-    assert!(parsed.get("session_name").is_some(), "Config should have session_name field");
+    assert!(
+        parsed.get("agents").is_some(),
+        "Config should have agents field"
+    );
+    assert!(
+        parsed.get("version").is_some(),
+        "Config should have version field"
+    );
+    assert!(
+        parsed.get("session_name").is_some(),
+        "Config should have session_name field"
+    );
 }
 
 /// Test init workflow creates all required file types
@@ -394,7 +458,10 @@ fn test_init_workflow_all_file_types() {
     let config_file = agents_dir.join("agents.yaml");
     assert!(config_file.exists(), "agents.yaml should exist");
     let config_content = fs::read_to_string(&config_file).unwrap();
-    assert!(config_content.contains("agents:"), "Config should contain agents section");
+    assert!(
+        config_content.contains("agents:"),
+        "Config should contain agents section"
+    );
 
     // Check script files
     let scripts_dir = agents_dir.join("scripts");
@@ -429,8 +496,12 @@ fn test_init_workflow_all_file_types() {
         for script in ["setup.sh", "start-agents.sh", "attach-session.sh"] {
             let script_path = scripts_dir.join(script);
             let metadata = fs::metadata(&script_path).unwrap();
-            assert_eq!(metadata.permissions().mode() & 0o111, 0o111,
-                      "Script {} should be executable", script);
+            assert_eq!(
+                metadata.permissions().mode() & 0o111,
+                0o111,
+                "Script {} should be executable",
+                script
+            );
         }
     }
 }

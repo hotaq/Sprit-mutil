@@ -199,14 +199,16 @@ fn get_suggestion_for_error(error_message: &str) -> String {
 pub fn format_list(items: &[&str], config: &AccessibilityConfig) -> String {
     if config.screen_reader {
         // For screen readers, use numbered list with semantic markers
-        items.iter()
+        items
+            .iter()
             .enumerate()
             .map(|(i, item)| format!("Item {}: {}", i + 1, item))
             .collect::<Vec<_>>()
             .join("\n")
     } else {
         // Regular bullet list
-        items.iter()
+        items
+            .iter()
             .map(|item| format!("• {}", item))
             .collect::<Vec<_>>()
             .join("\n")
@@ -214,7 +216,11 @@ pub fn format_list(items: &[&str], config: &AccessibilityConfig) -> String {
 }
 
 /// Format a table with accessibility in mind
-pub fn format_table(headers: &[&str], rows: &[Vec<String>], config: &AccessibilityConfig) -> String {
+pub fn format_table(
+    headers: &[&str],
+    rows: &[Vec<String>],
+    config: &AccessibilityConfig,
+) -> String {
     if config.screen_reader {
         // For screen readers, format as simple text with column labels
         let mut result = String::new();
@@ -252,12 +258,29 @@ pub fn format_table(headers: &[&str], rows: &[Vec<String>], config: &Accessibili
 }
 
 /// Format progress with accessibility in mind
-pub fn format_progress(current: usize, total: usize, description: &str, config: &AccessibilityConfig) -> String {
+pub fn format_progress(
+    current: usize,
+    total: usize,
+    description: &str,
+    config: &AccessibilityConfig,
+) -> String {
     if config.screen_reader {
-        format!("Progress: {} of {} complete. {}", current, total, description)
+        format!(
+            "Progress: {} of {} complete. {}",
+            current, total, description
+        )
     } else {
-        let percentage = if total > 0 { (current * 100) / total } else { 0 };
-        format!("({}%){} {}", percentage, if percentage < 100 { " " } else { "" }, description)
+        let percentage = if total > 0 {
+            (current * 100) / total
+        } else {
+            0
+        };
+        format!(
+            "({}%){} {}",
+            percentage,
+            if percentage < 100 { " " } else { "" },
+            description
+        )
     }
 }
 
@@ -267,7 +290,9 @@ pub fn validate_wcag_compliance(text: &str) -> Vec<String> {
 
     // Check for sufficient contrast indicators
     if text.contains("✅") || text.contains("❌") || text.contains("⚠️") {
-        issues.push("Consider using text alternatives to emojis for better accessibility".to_string());
+        issues.push(
+            "Consider using text alternatives to emojis for better accessibility".to_string(),
+        );
     }
 
     // Check for color-only information
@@ -290,7 +315,13 @@ pub fn validate_wcag_compliance(text: &str) -> Vec<String> {
 }
 
 /// Print help text in an accessible format
-pub fn print_help(command: &str, description: &str, usage: &str, options: &[(&str, &str)], config: &AccessibilityConfig) {
+pub fn print_help(
+    command: &str,
+    description: &str,
+    usage: &str,
+    options: &[(&str, &str)],
+    config: &AccessibilityConfig,
+) {
     if config.screen_reader {
         println!("Command: {}", command);
         println!("Description: {}", description);

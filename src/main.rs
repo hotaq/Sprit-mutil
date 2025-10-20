@@ -47,7 +47,11 @@ fn main() -> Result<()> {
             commands::attach::execute(session_name, list)?;
             Ok(())
         }
-        cli::Commands::Kill { session_name, force, all } => {
+        cli::Commands::Kill {
+            session_name,
+            force,
+            all,
+        } => {
             commands::kill::execute(session_name, force, all)?;
             Ok(())
         }
@@ -59,7 +63,14 @@ fn main() -> Result<()> {
             env_vars,
             sequential,
         } => {
-            commands::send::execute(&command, &args, timeout, work_dir.as_deref(), &env_vars, sequential)?;
+            commands::send::execute(
+                &command,
+                &args,
+                timeout,
+                work_dir.as_deref(),
+                &env_vars,
+                sequential,
+            )?;
             Ok(())
         }
         cli::Commands::Hey {
@@ -71,23 +82,49 @@ fn main() -> Result<()> {
             env_vars,
             interactive,
         } => {
-            commands::hey::execute(&agent, &command, &args, timeout, work_dir.as_deref(), &env_vars, interactive)?;
+            commands::hey::execute(
+                &agent,
+                &command,
+                &args,
+                timeout,
+                work_dir.as_deref(),
+                &env_vars,
+                interactive,
+            )?;
             Ok(())
         }
-        cli::Commands::Sync { agent, force, strategy, dry_run } => {
+        cli::Commands::Sync {
+            agent,
+            force,
+            strategy,
+            dry_run,
+        } => {
             commands::sync::execute(agent.as_deref(), force, &strategy, dry_run)?;
             Ok(())
         }
         cli::Commands::Remove { .. } => commands::remove::execute(),
-        cli::Commands::Warp { workspace, list, print, relative } => {
+        cli::Commands::Warp {
+            workspace,
+            list,
+            print,
+            relative,
+        } => {
             commands::warp::execute(workspace, list, print, relative)?;
             Ok(())
         }
-        cli::Commands::Zoom { agent, unzoom, list } => {
+        cli::Commands::Zoom {
+            agent,
+            unzoom,
+            list,
+        } => {
             commands::zoom::execute(agent, unzoom, list)?;
             Ok(())
         }
-        cli::Commands::Status { session_name, cleanup, detailed } => {
+        cli::Commands::Status {
+            session_name,
+            cleanup,
+            detailed,
+        } => {
             commands::status::execute(session_name, cleanup, detailed)?;
             Ok(())
         }

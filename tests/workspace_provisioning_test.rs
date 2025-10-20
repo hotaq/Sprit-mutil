@@ -1,10 +1,10 @@
 // Integration tests for workspace provisioning functionality
 
+use anyhow::Result;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
-use anyhow::Result;
 
 // Since this is a binary project, we'll test the CLI commands directly
 use assert_cmd::Command as AssertCommand;
@@ -14,7 +14,8 @@ fn test_cli_basic_functionality() -> Result<()> {
     // Test that the CLI responds to help
     AssertCommand::cargo_bin("sprit-mutil")?
         .args(&["--help"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("sprit-mutil"))
         .stdout(predicates::str::contains("init"))
         .stdout(predicates::str::contains("agents"));
@@ -22,7 +23,8 @@ fn test_cli_basic_functionality() -> Result<()> {
     // Test version
     AssertCommand::cargo_bin("sprit-mutil")?
         .args(&["--version"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("0.1.0"));
 
     Ok(())
@@ -37,7 +39,8 @@ fn test_init_requires_git_repo() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(temp_dir.path())
         .args(&["init"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("git"));
 
     Ok(())
@@ -50,7 +53,7 @@ fn test_init_creates_required_files() -> Result<()> {
 
     // Initialize sprite configuration
     let result = AssertCommand::cargo_bin("sprit-mutil")?
-        .current_dir(&repo_path)  // Explicitly set the working directory
+        .current_dir(&repo_path) // Explicitly set the working directory
         .args(&["init", "--force"])
         .assert();
 
@@ -79,20 +82,23 @@ fn test_init_error_handling() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Try to initialize again without force - should fail
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("already exists"));
 
     // Initialize again with force - should succeed
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Cleanup
     fs::remove_dir_all(repo_path.join("agents"))?;
@@ -109,19 +115,22 @@ fn test_agents_commands_require_config() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["agents", "list"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("Configuration file not found"));
 
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["agents", "validate"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("Configuration file not found"));
 
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["agents", "provision"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("Configuration file not found"));
 
     Ok(())
@@ -136,19 +145,22 @@ fn test_config_commands_require_config() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["config", "show"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("Configuration file not found"));
 
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["config", "validate"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("Configuration file not found"));
 
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["config", "status"])
-        .assert().failure()
+        .assert()
+        .failure()
         .stderr(predicates::str::contains("Configuration file not found"));
 
     Ok(())
@@ -166,7 +178,8 @@ fn test_workspace_provisioning_integration() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["agents", "provision", "--help"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("provision"))
         .stdout(predicates::str::contains("workspaces"));
 

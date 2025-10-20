@@ -7,9 +7,9 @@
 // - Session termination (kill command)
 // - Session recovery and cleanup
 
+use anyhow::Result;
 use std::process::Command;
 use tempfile::TempDir;
-use anyhow::Result;
 
 // Since this is a binary project, we'll test the CLI commands directly
 use assert_cmd::Command as AssertCommand;
@@ -23,13 +23,15 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // 1. Test start command
     let start_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["start", "--session-name", "test-session", "--detach"])
-        .assert().success();
+        .assert()
+        .success();
 
     let start_stdout = std::str::from_utf8(&start_result.get_output().stdout)?;
     assert!(start_stdout.contains("tmux session") || start_stdout.contains("Created"));
@@ -38,7 +40,8 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     let list_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let list_stdout = std::str::from_utf8(&list_result.get_output().stdout)?;
     assert!(list_stdout.contains("test-session"));
@@ -47,7 +50,8 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     let status_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status"])
-        .assert().success();
+        .assert()
+        .success();
 
     let status_stdout = std::str::from_utf8(&status_result.get_output().stdout)?;
     assert!(status_stdout.contains("Session Health Report"));
@@ -56,7 +60,8 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     let kill_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--force", "test-session"])
-        .assert().success();
+        .assert()
+        .success();
 
     let kill_stdout = std::str::from_utf8(&kill_result.get_output().stdout)?;
     assert!(kill_stdout.contains("killed successfully") || kill_stdout.contains("killed session"));
@@ -65,7 +70,8 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     let final_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let final_stdout = std::str::from_utf8(&final_result.get_output().stdout)?;
     assert!(!final_stdout.contains("test-session"));
@@ -84,13 +90,15 @@ fn test_attach_command_list_functionality() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Test attach --list with no sessions
     let result1 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout1 = std::str::from_utf8(&result1.get_output().stdout)?;
     assert!(stdout1.contains("No tmux sessions") || stdout1.contains("Available tmux sessions"));
@@ -99,13 +107,15 @@ fn test_attach_command_list_functionality() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["start", "--session-name", "list-test", "--detach"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Test attach --list with one session
     let result2 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout2 = std::str::from_utf8(&result2.get_output().stdout)?;
     assert!(stdout2.contains("list-test"));
@@ -115,7 +125,8 @@ fn test_attach_command_list_functionality() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--force", "list-test"])
-        .assert().success();
+        .assert()
+        .success();
 
     cleanup_sprite_config(&repo_path)?;
 
@@ -130,24 +141,28 @@ fn test_kill_command_session_selection() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Create two test sessions
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["start", "--session-name", "session-alpha", "--detach"])
-        .assert().success();
+        .assert()
+        .success();
 
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["start", "--session-name", "session-beta", "--detach"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Test killing specific session
     let kill_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--force", "session-alpha"])
-        .assert().success();
+        .assert()
+        .success();
 
     let kill_stdout = std::str::from_utf8(&kill_result.get_output().stdout)?;
     assert!(kill_stdout.contains("session-alpha"));
@@ -156,7 +171,8 @@ fn test_kill_command_session_selection() -> Result<()> {
     let list_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let list_stdout = std::str::from_utf8(&list_result.get_output().stdout)?;
     assert!(!list_stdout.contains("session-alpha"));
@@ -166,13 +182,15 @@ fn test_kill_command_session_selection() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--all", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Verify all sessions are killed
     let final_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let final_stdout = std::str::from_utf8(&final_result.get_output().stdout)?;
     assert!(!final_stdout.contains("session-alpha"));
@@ -191,13 +209,15 @@ fn test_status_command_functionality() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Test status with no sessions
     let result1 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout1 = std::str::from_utf8(&result1.get_output().stdout)?;
     assert!(stdout1.contains("No tmux sessions") || stdout1.contains("Session Health Report"));
@@ -206,7 +226,8 @@ fn test_status_command_functionality() -> Result<()> {
     let result2 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status", "--detailed"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout2 = std::str::from_utf8(&result2.get_output().stdout)?;
     assert!(stdout2.contains("No tmux sessions") || stdout2.contains("Session Health Report"));
@@ -215,13 +236,15 @@ fn test_status_command_functionality() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["start", "--session-name", "status-test", "--detach"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Test status with one session
     let result3 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout3 = std::str::from_utf8(&result3.get_output().stdout)?;
     assert!(stdout3.contains("Session Health Report"));
@@ -231,7 +254,8 @@ fn test_status_command_functionality() -> Result<()> {
     let result4 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status", "--detailed"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout4 = std::str::from_utf8(&result4.get_output().stdout)?;
     assert!(stdout4.contains("Detailed Session Information"));
@@ -241,7 +265,8 @@ fn test_status_command_functionality() -> Result<()> {
     let result5 = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status", "status-test"])
-        .assert().success();
+        .assert()
+        .success();
 
     let stdout5 = std::str::from_utf8(&result5.get_output().stdout)?;
     assert!(stdout5.contains("status-test"));
@@ -250,7 +275,8 @@ fn test_status_command_functionality() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--force", "status-test"])
-        .assert().success();
+        .assert()
+        .success();
 
     cleanup_sprite_config(&repo_path)?;
 
@@ -265,13 +291,15 @@ fn test_session_error_handling() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Test attaching to non-existent session
     let attach_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "non-existent-session"])
-        .assert().failure();
+        .assert()
+        .failure();
 
     let attach_stderr = std::str::from_utf8(&attach_result.get_output().stderr)?;
     assert!(attach_stderr.contains("does not exist") || attach_stderr.contains("Session"));
@@ -280,7 +308,8 @@ fn test_session_error_handling() -> Result<()> {
     let kill_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--force", "non-existent-session"])
-        .assert().failure();
+        .assert()
+        .failure();
 
     let kill_stderr = std::str::from_utf8(&kill_result.get_output().stderr)?;
     assert!(kill_stderr.contains("does not exist") || kill_stderr.contains("Session"));
@@ -289,7 +318,8 @@ fn test_session_error_handling() -> Result<()> {
     let status_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status", "non-existent-session"])
-        .assert().success();
+        .assert()
+        .success();
 
     let status_stdout = std::str::from_utf8(&status_result.get_output().stdout)?;
     assert!(status_stdout.contains("not found") || status_stdout.contains("No tmux sessions"));
@@ -304,21 +334,24 @@ fn test_session_help_commands() -> Result<()> {
     // Test start help
     AssertCommand::cargo_bin("sprit-mutil")?
         .args(&["start", "--help"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("Start supervision session"))
         .stdout(predicates::str::contains("session-name"));
 
     // Test attach help
     AssertCommand::cargo_bin("sprit-mutil")?
         .args(&["attach", "--help"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("Attach to existing session"))
         .stdout(predicates::str::contains("list"));
 
     // Test kill help
     AssertCommand::cargo_bin("sprit-mutil")?
         .args(&["kill", "--help"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("Terminate session"))
         .stdout(predicates::str::contains("force"))
         .stdout(predicates::str::contains("all"));
@@ -326,7 +359,8 @@ fn test_session_help_commands() -> Result<()> {
     // Test status help
     AssertCommand::cargo_bin("sprit-mutil")?
         .args(&["status", "--help"])
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicates::str::contains("Check session status and health"))
         .stdout(predicates::str::contains("cleanup"))
         .stdout(predicates::str::contains("detailed"));
@@ -342,7 +376,8 @@ fn test_concurrent_session_operations() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["init", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Create multiple sessions rapidly
     let session_names = vec!["concurrent-1", "concurrent-2", "concurrent-3"];
@@ -351,14 +386,16 @@ fn test_concurrent_session_operations() -> Result<()> {
         AssertCommand::cargo_bin("sprit-mutil")?
             .current_dir(&repo_path)
             .args(&["start", "--session-name", session_name, "--detach"])
-            .assert().success();
+            .assert()
+            .success();
     }
 
     // Verify all sessions exist
     let list_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let list_stdout = std::str::from_utf8(&list_result.get_output().stdout)?;
     for session_name in &session_names {
@@ -369,7 +406,8 @@ fn test_concurrent_session_operations() -> Result<()> {
     let status_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["status"])
-        .assert().success();
+        .assert()
+        .success();
 
     let status_stdout = std::str::from_utf8(&status_result.get_output().stdout)?;
     assert!(status_stdout.contains("Session Health Report"));
@@ -378,13 +416,15 @@ fn test_concurrent_session_operations() -> Result<()> {
     AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["kill", "--all", "--force"])
-        .assert().success();
+        .assert()
+        .success();
 
     // Verify cleanup
     let final_result = AssertCommand::cargo_bin("sprit-mutil")?
         .current_dir(&repo_path)
         .args(&["attach", "--list"])
-        .assert().success();
+        .assert()
+        .success();
 
     let final_stdout = std::str::from_utf8(&final_result.get_output().stdout)?;
     for session_name in &session_names {

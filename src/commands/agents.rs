@@ -188,7 +188,10 @@ fn remove_agent(agent_id: String, force: bool, keep_workspace: bool) -> Result<(
     let mut config = SpriteConfig::load().context("Failed to load configuration")?;
 
     // Find the agent
-    let agent_index = config.agents.iter().position(|a| a.id == agent_id)
+    let agent_index = config
+        .agents
+        .iter()
+        .position(|a| a.id == agent_id)
         .ok_or_else(|| SpriteError::config(format!("Agent {} does not exist.", agent_id)))?;
     let agent_config = &config.agents[agent_index];
 

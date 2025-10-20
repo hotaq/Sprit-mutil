@@ -25,10 +25,13 @@ pub fn execute(session_name: Option<String>, list: bool) -> Result<()> {
 
     // Check if session exists
     if !tmux::session_exists(&session_name)? {
-        return Err(SpriteError::session(format!(
-            "Session '{}' does not exist. Use --list to see available sessions.",
-            session_name
-        ), Some(session_name.clone()))
+        return Err(SpriteError::session(
+            format!(
+                "Session '{}' does not exist. Use --list to see available sessions.",
+                session_name
+            ),
+            Some(session_name.clone()),
+        )
         .into());
     }
 
@@ -38,7 +41,10 @@ pub fn execute(session_name: Option<String>, list: bool) -> Result<()> {
         .iter()
         .find(|s| s.name == session_name)
         .ok_or_else(|| {
-            SpriteError::session(format!("Session '{}' not found in session list", session_name), Some(session_name.clone()))
+            SpriteError::session(
+                format!("Session '{}' not found in session list", session_name),
+                Some(session_name.clone()),
+            )
         })?;
 
     // Attach to the session
@@ -78,8 +84,10 @@ fn find_default_session() -> Result<String> {
     }
 
     Err(SpriteError::session(
-        "No tmux sessions found. Use 'sprite start' to create a new session.", None::<String>
-    ).into())
+        "No tmux sessions found. Use 'sprite start' to create a new session.",
+        None::<String>,
+    )
+    .into())
 }
 
 /// List all available tmux sessions
@@ -104,11 +112,9 @@ fn list_available_sessions() -> Result<()> {
 
         let created_ago = format_time_ago(&session.created);
 
-        println!("  {} {} ({} windows) - {}",
-            status,
-            session.name,
-            session.windows,
-            created_ago
+        println!(
+            "  {} {} ({} windows) - {}",
+            status, session.name, session.windows, created_ago
         );
     }
 

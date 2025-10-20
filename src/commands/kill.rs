@@ -1,6 +1,8 @@
 use crate::error::SpriteError;
+use crate::utils::session_recovery::{
+    analyze_session_health, cleanup_temp_files, generate_health_report, RecoveryConfig,
+};
 use crate::utils::tmux;
-use crate::utils::session_recovery::{analyze_session_health, RecoveryConfig, generate_health_report, cleanup_temp_files};
 use anyhow::{Context, Result};
 use std::io::{self, Write};
 
@@ -41,10 +43,7 @@ pub fn execute(session_name: Option<String>, force: bool, all: bool) -> Result<(
     }
 
     // Get session info for display
-    let session_info = sessions
-        .iter()
-        .find(|s| s.name == target_session)
-        .unwrap();
+    let session_info = sessions.iter().find(|s| s.name == target_session).unwrap();
 
     // Confirm before killing unless force flag is set
     if !force {
@@ -84,7 +83,10 @@ fn kill_all_sessions(force: bool) -> Result<()> {
     for session in &sessions {
         // Perform cleanup before killing
         if let Err(e) = cleanup_session_resources(&session.name) {
-            eprintln!("  ⚠️  Warning: Failed to cleanup session '{}': {}", session.name, e);
+            eprintln!(
+                "  ⚠️  Warning: Failed to cleanup session '{}': {}",
+                session.name, e
+            );
         }
 
         match tmux::kill_session(&session.name) {
@@ -104,10 +106,16 @@ fn kill_all_sessions(force: bool) -> Result<()> {
     }
 
     if !failed_sessions.is_empty() {
-        println!("⚠️  Failed to kill {} session(s): {}", failed_sessions.len(), failed_sessions.join(", "));
-        return Err(SpriteError::tmux(
-            format!("Failed to kill some sessions: {}", failed_sessions.join(", "))
-        ).into());
+        println!(
+            "⚠️  Failed to kill {} session(s): {}",
+            failed_sessions.len(),
+            failed_sessions.join(", ")
+        );
+        return Err(SpriteError::tmux(format!(
+            "Failed to kill some sessions: {}",
+            failed_sessions.join(", ")
+        ))
+        .into());
     }
 
     Ok(())
@@ -126,15 +134,27 @@ fn find_default_session(sessions: &[tmux::SessionInfo]) -> Result<String> {
     }
 
     Err(SpriteError::session(
-        "No tmux sessions found. Use 'sprite start' to create a new session.", None::<String>
-    ).into())
+        "No tmux sessions found. Use 'sprite start' to create a new session.",
+        None::<String>,
+    )
+    .into())
 }
 
 /// Confirm session killing with user
 fn confirm_session_kill(session_info: &tmux::SessionInfo) -> Result<()> {
     println!("🎯 About to kill session:");
-    println!("   Name: {} ({} windows)", session_info.name, session_info.windows);
-    println!("   Status: {}", if session_info.attached { "🟢 Active" } else { "⚪ Detached" });
+    println!(
+        "   Name: {} ({} windows)",
+        session_info.name, session_info.windows
+    );
+    println!(
+        "   Status: {}",
+        if session_info.attached {
+            "🟢 Active"
+        } else {
+            "⚪ Detached"
+        }
+    );
 
     print!("❓ Are you sure you want to kill this session? [y/N] ");
     io::stdout().flush().context("Failed to flush stdout")?;
@@ -158,8 +178,15 @@ fn confirm_kill_all_sessions(sessions: &[tmux::SessionInfo]) -> Result<()> {
     println!("🎯 About to kill ALL {} tmux session(s):", sessions.len());
 
     for session in sessions {
-        let status = if session.attached { "🟢 Active" } else { "⚪ Detached" };
-        println!("   {} {} ({} windows)", status, session.name, session.windows);
+        let status = if session.attached {
+            "🟢 Active"
+        } else {
+            "⚪ Detached"
+        };
+        println!(
+            "   {} {} ({} windows)",
+            status, session.name, session.windows
+        );
     }
 
     print!("❓ Are you sure you want to kill ALL sessions? This action cannot be undone. [y/N] ");
@@ -205,7 +232,8 @@ pub fn check_session_health() -> Result<()> {
     println!("{}", report);
 
     // Check if any sessions need attention
-    let needs_attention = health_reports.iter()
+    let needs_attention = health_reports
+        .iter()
         .any(|h| h.status != crate::utils::session_recovery::SessionStatus::Healthy);
 
     if needs_attention {
@@ -228,7 +256,11 @@ pub fn cleanup_old_resources() -> Result<()> {
     let cleaned_sessions = crate::utils::session_recovery::cleanup_old_sessions(&config)?;
 
     if !cleaned_sessions.is_empty() {
-        println!("✅ Cleaned up {} old session(s): {}", cleaned_sessions.len(), cleaned_sessions.join(", "));
+        println!(
+            "✅ Cleaned up {} old session(s): {}",
+            cleaned_sessions.len(),
+            cleaned_sessions.join(", ")
+        );
     } else {
         println!("✅ No old sessions needed cleanup.");
     }
