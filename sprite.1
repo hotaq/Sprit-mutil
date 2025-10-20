@@ -1,0 +1,177 @@
+.\"
+.\" Man page for sprite
+.\"
+.TH SPRITE 1 "October 2024" "sprite 0.1.0" "User Commands"
+.SH NAME
+sprite \- Multi-Agent Workflow Toolkit for AI development
+.SH SYNOPSIS
+\fBsprite\fP [\fIGLOBAL-OPTIONS\fP] \fISUBCOMMAND\fP [\fISUBCOMMAND-OPTIONS\fP]
+.SH DESCRIPTION
+Sprite is a robust command-line toolkit for managing multiple AI coding agents in isolated tmux sessions with comprehensive workspace management and health monitoring.
+.PP
+It provides parallel development environments with isolated git worktrees, allowing multiple AI agents to work simultaneously without conflicts.
+.SH GLOBAL OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version information.
+.TP
+\fB\-\-verbose\fR
+Enable verbose output.
+.SH SUBCOMMANDS
+.SS init
+Initialize a new multi-agent environment.
+.TP
+\fB\-\-agents\fR <\fINUMBER\fP>
+Number of agents to create (default: 2).
+.TP
+\fB\-\-force\fR
+Force reinitialization, overwriting existing configuration.
+.TP
+\fB\-\-model\fR <\fIMODEL\fP>
+Default AI model for agents (default: claude-sonnet-4).
+.SS start
+Start a new multi-agent session.
+.TP
+\fB\-\-session\fR <\fINAME\fP>
+Custom session name (default: sprite-session).
+.TP
+\fB\-\-layout\fR <\fITYPE\fP>
+Session layout: tiled, focus, vertical, horizontal, dashboard.
+.TP
+\fB\-\-detach\fR
+Start session in background (detached mode).
+.SS attach
+Attach to an existing session.
+.TP
+\fB\-\-list\fR, \fB\-l\fR
+List all available sessions.
+.TP
+[\fISESSION\fR]
+Session name to attach to.
+.SS kill
+Terminate a running session.
+.TP
+[\fISESSION\fR]
+Session name to terminate (default: sprite-session).
+.TP
+\fB\-\-force\fR
+Force termination without confirmation.
+.SS status
+Show system and session status.
+.TP
+\fB\-\-session\fR <\fINAME\fP>
+Show status for specific session.
+.TP
+\fB\-\-recover\fR
+Attempt to recover orphaned sessions.
+.TP
+\fB\-\-cleanup\fR
+Clean up temporary files and resources.
+.TP
+\fB\-\-watch\fR
+Continuous monitoring mode.
+.SS agents
+Manage AI agents.
+.TP
+\fBlist\fR
+List all configured agents.
+.TP
+\fBcreate\fR <\fIID\fP>
+Create a new agent.
+.TP
+\fBremove\fR <\fIID\fP>
+Remove an existing agent.
+.TP
+\fBshow\fR [\fIID\fP]
+Show agent details.
+.TP
+\fBvalidate\fR
+Validate all agent workspaces.
+.TP
+\fBprovision\fR [\fIID\fP]
+Create missing agent workspaces.
+.SS config
+Configuration management.
+.TP
+\fBshow\fR
+Display complete configuration.
+.TP
+\fBget\fR <\fIKEY\fP>
+Get configuration value.
+.TP
+\fBset\fR <\fIKEY\fP> <\fIVALUE\fP>
+Set configuration value.
+.TP
+\fBvalidate\fR
+Validate configuration and workspaces.
+.TP
+\fBstatus\fR
+Show configuration status and changes.
+.SS help
+Print this message or the help of the given subcommand.
+.SH EXAMPLES
+.PP
+Initialize a new project with 3 agents:
+.sp
+.nf
+\fB$ sprite init --agents 3\fR
+.fi
+.PP
+Start a session and attach to it:
+.sp
+.nf
+\fB$ sprite start\fR
+\fB$ sprite attach sprite-session\fR
+.fi
+.PP
+List all agents:
+.sp
+.nf
+\fB$ sprite agents list\fR
+.fi
+.PP
+Check system status:
+.sp
+.nf
+\fB$ sprite status\fR
+.fi
+.SH FILES
+.TP
+\fIagents/agents.yaml\fR
+Main configuration file.
+.TP
+\fIagents/logs/sprite.log\fR
+Application log file.
+.TP
+\fIagents/1/\fR, \fIagents/2/\fR, ...
+Agent workspace directories.
+.SH ENVIRONMENT
+.TP
+\fBRUST_LOG\fR
+Set logging level (trace, debug, info, warn, error).
+.SH EXIT STATUS
+.TP
+0
+Success.
+.TP
+1
+General error.
+.TP
+2
+Usage error.
+.SH SEE ALSO
+.BR tmux (1),
+.BR git (1),
+.BR cargo (1)
+.SH AUTHOR
+hotaq <your-email@example.com>
+.SH RESOURCES
+.PP
+Project homepage: <https://github.com/hotaq/Sprit-mutil>
+.br
+Documentation: <https://docs.rs/sprite>
+.br
+Report bugs: <https://github.com/hotaq/Sprit-mutil/issues>

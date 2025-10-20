@@ -16,30 +16,163 @@ A robust command-line toolkit for managing multiple AI coding agents in isolated
 
 ### Prerequisites
 
-- Rust 1.75+
+- Rust 1.75+ (for installation from source)
 - Git
 - Tmux
 - Bash shell
 
-### Installation
+## 📦 Installation
+
+### 🚀 Quick Install (One-liner)
+
+```bash
+# Automatic installation - tries the best method for your system
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/install.sh | bash
+
+# Or download and run the installer
+wget https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/install.sh -O install.sh
+chmod +x install.sh
+./install.sh
+```
+
+### Method 1: Install from crates.io (Recommended)
+
+```bash
+# Install directly from crates.io
+cargo install sprite
+
+# Or use the emerging uvx-like tool for Rust
+cargo binstall sprite  # Binary installation (faster, no compilation)
+```
+
+### Method 2: Install from GitHub (Latest)
+
+```bash
+# Install the latest version from GitHub
+cargo install --git https://github.com/hotaq/Sprit-mutil.git
+
+# Install specific version
+cargo install --git https://github.com/hotaq/Sprit-mutil.git --tag v0.1.0
+```
+
+### Method 3: Using Homebrew (macOS)
+
+```bash
+# If you have homebrew tap for Rust tools
+brew install sprite
+
+# Or install via cargo-brew
+cargo install cargo-brew
+cargo brew install sprite
+```
+
+### Method 4: Package Manager Installation
+
+#### Arch Linux / AUR
+```bash
+# Using paru (AUR helper)
+paru -S sprite-git
+
+# Using yay (AUR helper)
+yay -S sprite-git
+
+# Manual installation from AUR
+git clone https://aur.archlinux.org/sprite-git.git
+cd sprite-git
+makepkg -si
+```
+
+#### Nix / NixOS
+```bash
+# Using nix-env
+nix-env -iA nixpkgs.sprite
+
+# Using Nix flakes (in your flake.nix)
+{
+  inputs.sprite.url = "github:hotaq/Sprit-mutil";
+  outputs = { self, sprite }: {
+    packages.x86_64-linux.default = sprite.packages.x86_64-linux.default;
+  };
+}
+
+# Or directly with nix-shell
+nix-shell -p sprite
+```
+
+#### Windows Package Manager
+
+```powershell
+# On Windows with Scoop
+scoop install sprite
+
+# Or via cargo-scoop
+cargo install cargo-scoop
+cargo scoop install sprite
+
+# Using Chocolatey
+choco install sprite
+```
+
+### Method 5: Download Pre-compiled Binary
+
+```bash
+# Download the appropriate binary for your platform
+curl -L https://github.com/hotaq/Sprit-mutil/releases/latest/download/sprite-x86_64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv sprite /usr/local/bin/
+
+# Or for macOS
+curl -L https://github.com/hotaq/Sprit-mutil/releases/latest/download/sprite-x86_64-apple-darwin.tar.gz | tar xz
+sudo mv sprite /usr/local/bin/
+```
+
+### Method 6: Build from Source
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd mutilagent
+git clone https://github.com/hotaq/Sprit-mutil.git
+cd Sprit-mutil
 
-# Build the project
-cargo build --release
-
-# Install globally (optional)
+# Build and install
 cargo install --path .
+
+# Or build in release mode and copy manually
+cargo build --release
+cp target/release/sprite ~/.local/bin/
 ```
+
+### Verify Installation
+
+```bash
+# Check that sprite is installed
+sprite --version
+
+# See help
+sprite --help
+```
+
+### Update Sprite
+
+```bash
+# Update if installed via cargo install
+cargo install --force sprite
+
+# Update if installed from git
+cargo install --force --git https://github.com/hotaq/Sprit-mutil.git sprite
+```
+
+## 🎯 Quick Start (After Installation)
 
 ### Initialize a New Project
 
 ```bash
+# Navigate to your git repository
+cd /path/to/your/project
+
 # Initialize a new multi-agent environment
 sprite init
+
+# Start with 3 agents
+sprite init --agents 3
 
 # Start a session with all agents
 sprite start

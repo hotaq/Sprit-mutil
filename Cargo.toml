@@ -1,18 +1,31 @@
 [package]
-name = "sprit-mutil"
+name = "sprite"
 version = "0.1.0"
 edition = "2021"
-description = "A robust command-line toolkit for managing multiple AI coding agents in parallel development workflows"
-authors = ["hotaq"]
+description = "A robust command-line toolkit for managing multiple AI coding agents in isolated tmux sessions with comprehensive workspace management and health monitoring"
+authors = ["hotaq hootoo2016@gmail.com"]
 license = "MIT"
 repository = "https://github.com/hotaq/Sprit-mutil"
+homepage = "https://github.com/hotaq/Sprit-mutil"
+documentation = "https://docs.rs/sprite"
+readme = "README.md"
+keywords = ["cli", "multi-agent", "ai", "tmux", "workspace"]
+categories = ["command-line-utilities", "development-tools"]
+rust-version = "1.75"
+include = [
+    "src/**/*.rs",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+    "agents/profiles/*.sh"
+]
 
 [[bin]]
-name = "sprit-mutil"
+name = "sprite"
 path = "src/main.rs"
 
 [lib]
-name = "sprit_mutil"
+name = "sprite"
 path = "src/lib.rs"
 
 [dependencies]
