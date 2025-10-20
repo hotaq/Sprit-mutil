@@ -14,34 +14,13 @@ A powerful CLI tool that lets you manage multiple AI coding agents simultaneousl
 
 ## 🚀 Quick Start
 
-### Installation Comparison
-
-| Method | Command | Speed | Dependencies | Best For |
-|--------|---------|-------|--------------|----------|
-| **UV-Style** | `uv tool install .` | ⚡ Fast | Python + uv | Python developers |
-| **Binary Install** | `cargo binstall hotaq/sprit-mutil` | ⚡ Fast | Rust + cargo-binstall | Quick setup |
-| **Traditional** | `cargo install --git https://github.com/hotaq/Sprit-mutil.git` | 🐢 Slow | Rust + cargo | Full control |
-| **Smart Script** | `curl ... install-uv.sh \| bash` | 🚀 Auto | Varies | Most users |
-
-### One-Command Installation (Modern)
+### Installation
 
 ```bash
-# Method 1: UV-Style (like 'uv tool install specify-cli')
-git clone https://github.com/hotaq/Sprit-mutil.git && cd Sprit-mutil
-uv tool install .
-
-# Method 2: Smart Installer (detects best method)
-curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install-uv.sh | bash
-
-# Method 3: Binary Installation (no compilation)
-cargo binstall hotaq/sprit-mutil
-
-# Method 4: Traditional Cargo
-cargo install --git https://github.com/hotaq/Sprit-mutil.git
-
-# Verify installation
-sprite --version
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
 ```
+
+*That's it! The installer will automatically detect your system and use the best installation method.*
 
 ### Your First Multi-Agent Project
 
@@ -271,62 +250,34 @@ sprite status --cleanup
 # Adjust resource limits in agents/agents.yaml
 ```
 
-## 📦 Installation Methods
+## 🚨 Troubleshooting
 
-### Method 1: UV-Style Install (Recommended)
+### "command not found: sprite"
 ```bash
-# Like 'uv tool install' - most modern approach
-git clone https://github.com/hotaq/Sprit-mutil.git && cd Sprit-mutil
-uv tool install .
-
-# Or using our smart installer
-curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install-uv.sh | bash
+# Restart your terminal or run:
+export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Method 2: Using Cargo
+### "Permission denied"
 ```bash
-# Binary installation (no compilation)
-cargo binstall hotaq/sprit-mutil
-
-# From GitHub (latest)
-cargo install --git https://github.com/hotaq/Sprit-mutil.git
-
-# Note: There's a name conflict on crates.io, so we use GitHub
+chmod +x ~/.local/bin/sprite
 ```
 
-### Method 3: Package Managers
+### "Not a git repository"
 ```bash
-# macOS with Homebrew
-brew install sprite
-
-# Arch Linux with AUR
-paru -S sprite-git
-
-# Nix/NixOS
-nix-env -iA nixpkgs.sprite
-
-# Windows with Scoop
-scoop install sprite
+# Always run sprite commands from within a git repository
+cd /path/to/your/git/project
+sprite init
 ```
 
-### Method 4: Pre-compiled Binary
+### Installation failed?
 ```bash
-# Linux
-curl -L https://github.com/hotaq/Sprit-mutil/releases/latest/download/sprite-x86_64-unknown-linux-gnu.tar.gz | tar xz
-sudo mv sprite /usr/local/bin/
-
-# macOS
-curl -L https://github.com/hotaq/Sprit-mutil/releases/latest/download/sprite-x86_64-apple-darwin.tar.gz | tar xz
-sudo mv sprite /usr/local/bin/
+# Make sure you have git and tmux installed:
+# macOS: brew install git tmux
+# Ubuntu/Debian: sudo apt-get install git tmux
+# Then try again:
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
 ```
-
-## 🏗️ System Requirements
-
-- **Operating System**: Linux, macOS, or Windows
-- **Git**: Required for workspace management
-- **Tmux**: Required for session management
-- **Rust 1.75+**: Only needed for building from source
-- **Bash**: Required for installation scripts
 
 ## 🎯 Tips and Best Practices
 
