@@ -155,7 +155,7 @@ fn find_target_pane(panes: &[tmux::PaneInfo], agent_id: &str) -> Result<usize> {
 }
 
 /// Zoom to the specified pane
-fn zoom_to_pane(session_name: &str, pane_index: usize) -> Result<()> {
+fn zoom_to_pane(_session_name: &str, pane_index: usize) -> Result<()> {
     println!("🔍 Zooming to pane {}...", pane_index + 1);
 
     // Use tmux's select-pane command to focus on the pane

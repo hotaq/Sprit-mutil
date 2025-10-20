@@ -117,6 +117,12 @@ pub struct SpriteConfig {
     metadata: ConfigMetadata,
 }
 
+impl Default for SpriteConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SessionConfig {
     pub name: String,
@@ -621,6 +627,12 @@ pub struct ConfigChanges {
     pub modified_agents: Vec<String>,
     pub session_changed: bool,
     pub sync_changed: bool,
+}
+
+impl Default for ConfigChanges {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ConfigChanges {

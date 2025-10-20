@@ -68,6 +68,7 @@ struct SyncContext {
     /// Current git branch
     current_branch: String,
     /// Git repository root
+    #[allow(dead_code)]
     git_root: PathBuf,
 }
 
@@ -163,8 +164,7 @@ fn determine_sync_context(agent_id: Option<String>) -> Result<SyncContext> {
 /// Extract agent ID from a relative path.
 fn extract_agent_id_from_path(path: &str) -> Option<String> {
     // Check if path is in agents/ directory
-    if path.starts_with("agents/") {
-        let remaining = &path[7..]; // Remove "agents/" prefix
+    if let Some(remaining) = path.strip_prefix("agents/") {
 
         // Check if the remaining part is just an agent ID (like "1", "2", etc.)
         if remaining.is_empty() {
@@ -198,7 +198,7 @@ fn extract_agent_id_from_path(path: &str) -> Option<String> {
 /// Sync the main worktree (pull from remote).
 fn sync_main_worktree(
     context: &SyncContext,
-    conflict_strategy: ConflictResolution,
+    _conflict_strategy: ConflictResolution,
     dry_run: bool,
     force: bool,
 ) -> Result<()> {
@@ -407,6 +407,7 @@ fn defer_switch_back(original_branch: &str) -> Result<()> {
 }
 
 /// Check if we need to update tasks.md with completed tasks
+#[allow(dead_code)]
 fn mark_task_completed(task_id: &str) -> Result<()> {
     let tasks_path = PathBuf::from("specs/001-multi-agent-toolkit/tasks.md");
 

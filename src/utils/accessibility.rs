@@ -3,6 +3,8 @@
 //! This module provides accessibility features to ensure the CLI is usable
 //! by people with disabilities, including screen reader support and WCAG compliance.
 
+#![allow(dead_code)]
+
 use std::env;
 use std::io::{self, Write};
 
@@ -14,8 +16,10 @@ pub struct AccessibilityConfig {
     /// Whether to disable colors (NO_COLOR support)
     pub no_color: bool,
     /// Whether to use high contrast mode
+    #[allow(dead_code)]
     pub high_contrast: bool,
     /// Whether to use verbose output for better context
+    #[allow(dead_code)]
     pub verbose: bool,
 }
 
@@ -54,6 +58,7 @@ fn should_disable_color() -> bool {
 }
 
 /// Print accessible text with proper formatting
+#[allow(dead_code)]
 pub fn print_accessible(text: &str, config: &AccessibilityConfig) {
     let formatted_text = format_for_accessibility(text, config);
     println!("{}", formatted_text);
@@ -149,18 +154,19 @@ fn replace_emojis_simple(text: &str) -> String {
         .replace("❌", "✗")
         .replace("⚠️", "⚠")
         .replace("ℹ️", "ℹ")
-        .replace("📡", "📡")
-        .replace("🔄", "🔄")
-        .replace("📁", "📁")
-        .replace("🎬", "🎬")
-        .replace("📋", "📋")
-        .replace("🔍", "🔍")
-        .replace("💡", "💡")
-        .replace("🧹", "🧹")
+        .replace("📡", "[BROADCAST]")
+        .replace("🔄", "[SYNC]")
+        .replace("📁", "[DIR]")
+        .replace("🎬", "[SESSION]")
+        .replace("📋", "[LIST]")
+        .replace("🔍", "[SEARCH]")
+        .replace("💡", "[INFO]")
+        .replace("🧹", "[CLEAN]")
         .replace("→", "->")
 }
 
 /// Replace emojis with text equivalents
+#[allow(dead_code)]
 fn replace_emojis_with_text(text: &str) -> String {
     text.replace("✅", "SUCCESS")
         .replace("❌", "ERROR")

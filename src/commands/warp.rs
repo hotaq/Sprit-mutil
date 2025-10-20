@@ -124,7 +124,7 @@ fn find_workspace_path(config: &ProjectConfig, workspace_name: &str) -> Result<P
 }
 
 /// Navigate to the specified workspace
-fn navigate_to_workspace(workspace_path: &PathBuf, print: bool, relative: bool) -> Result<()> {
+fn navigate_to_workspace(workspace_path: &std::path::Path, print: bool, relative: bool) -> Result<()> {
     let display_path = if relative {
         // Try to make path relative to current directory using simple logic
         match env::current_dir() {
@@ -133,13 +133,13 @@ fn navigate_to_workspace(workspace_path: &PathBuf, print: bool, relative: bool) 
                 if let Ok(relative_path) = workspace_path.strip_prefix(&current_dir) {
                     relative_path.to_path_buf()
                 } else {
-                    workspace_path.clone()
+                    workspace_path.to_path_buf()
                 }
             }
-            Err(_) => workspace_path.clone(),
+            Err(_) => workspace_path.to_path_buf(),
         }
     } else {
-        workspace_path.clone()
+        workspace_path.to_path_buf()
     };
 
     if print {

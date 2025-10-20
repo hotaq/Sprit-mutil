@@ -217,6 +217,7 @@ fn cleanup_session_resources(session_name: &str) -> Result<()> {
 }
 
 /// Check and display session health
+#[allow(dead_code)]
 pub fn check_session_health() -> Result<()> {
     println!("🏥 Checking session health...");
 
@@ -244,6 +245,7 @@ pub fn check_session_health() -> Result<()> {
 }
 
 /// Clean up old sessions and temporary files
+#[allow(dead_code)]
 pub fn cleanup_old_resources() -> Result<()> {
     println!("🧹 Starting cleanup of old resources...");
 

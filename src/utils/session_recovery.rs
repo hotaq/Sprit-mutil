@@ -3,6 +3,8 @@
 //! This module provides functions for detecting orphaned sessions, cleaning up
 //! dead resources, and recovering from session failures.
 
+#![allow(dead_code)]
+
 use crate::utils::tmux::{kill_session, list_sessions, SessionInfo};
 use anyhow::{Context, Result};
 use std::fs;
@@ -323,7 +325,7 @@ pub fn cleanup_session_resources(session_name: &str) -> Result<()> {
 
     for pattern in temp_patterns {
         if let Ok(output) = Command::new("find")
-            .args(&["/tmp", "-name", &pattern, "-delete"])
+            .args(["/tmp", "-name", &pattern, "-delete"])
             .output()
         {
             if !output.status.success() {
@@ -405,7 +407,7 @@ pub fn cleanup_temp_files(config: &RecoveryConfig) -> Result<()> {
 /// Clean up files matching a pattern in a directory
 fn cleanup_directory(dir: &str, pattern: &str) -> Result<()> {
     let output = Command::new("find")
-        .args(&[dir, "-name", pattern, "-mtime", "+1", "-delete"])
+        .args([dir, "-name", pattern, "-mtime", "+1", "-delete"])
         .output()
         .context("Failed to cleanup temporary files")?;
 
