@@ -18,7 +18,7 @@ A powerful CLI tool that lets you manage multiple AI coding agents simultaneousl
 
 ```bash
 # Install automatically (works on macOS, Linux, Windows)
-curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
 
 # Or use cargo (if you have Rust)
 cargo install sprite
@@ -259,7 +259,7 @@ sprite status --cleanup
 
 ### Method 1: One-Command Install (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
 ```
 
 ### Method 2: Using Cargo

@@ -153,6 +153,6 @@ jobs:
             ```
 
             ### Changes
-            See the [CHANGELOG](CHANGELOG.md) for detailed changes.
+            See the [CHANGELOG](docs/CHANGELOG.md) for detailed changes.
           draft: false
           prerelease: false
