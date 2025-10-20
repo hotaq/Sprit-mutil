@@ -146,6 +146,17 @@ pub enum Commands {
         #[arg(short, long)]
         list: bool,
     },
+    /// Check session status and health
+    Status {
+        /// Check specific session
+        session_name: Option<String>,
+        /// Clean up old sessions and temporary files
+        #[arg(long)]
+        cleanup: bool,
+        /// Show detailed health information
+        #[arg(long)]
+        detailed: bool,
+    },
 }
 
 #[derive(Subcommand)]

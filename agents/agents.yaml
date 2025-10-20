@@ -1,18 +1,99 @@
+version: '1.0'
 agents:
-  '2':
-    branch: agents/2
-    worktree_path: agents/2
-    model: claude-sonnet-4
-    description: Agent 2 workspace
-  '1':
-    branch: agents/1
-    worktree_path: agents/1
-    model: claude-sonnet-4
-    description: Agent 1 workspace
-session:
-  name: test-session-change
-  profile: profile0
+- id: '1'
+  branch: agents/1
+  worktree_path: agents/1
+  model: claude-sonnet-4
+  description: Agent 1 workspace
+  status: inactive
+  config:
+    env_vars: {}
+    work_dir: null
+    startup_commands: []
+    resource_limits:
+      max_memory_mb: 1024
+      max_cpu_percent: 80
+      operation_timeout_secs: 300
+      max_concurrent_ops: 3
+      max_disk_mb: 5120
+    shell: null
+    default_timeout_secs: 300
+    auto_sync: false
+    custom_settings: {}
+- id: '2'
+  branch: agents/2
+  worktree_path: agents/2
+  model: claude-sonnet-4
+  description: Agent 2 workspace
+  status: inactive
+  config:
+    env_vars: {}
+    work_dir: null
+    startup_commands: []
+    resource_limits:
+      max_memory_mb: 1024
+      max_cpu_percent: 80
+      operation_timeout_secs: 300
+      max_concurrent_ops: 3
+      max_disk_mb: 5120
+    shell: null
+    default_timeout_secs: 300
+    auto_sync: false
+    custom_settings: {}
+- id: '3'
+  branch: agents/3
+  worktree_path: agents/3
+  model: claude-sonnet-4
+  description: Agent 3 workspace
+  status: inactive
+  config:
+    env_vars: {}
+    work_dir: null
+    startup_commands: []
+    resource_limits:
+      max_memory_mb: 1024
+      max_cpu_percent: 80
+      operation_timeout_secs: 300
+      max_concurrent_ops: 3
+      max_disk_mb: 5120
+    shell: null
+    default_timeout_secs: 300
+    auto_sync: false
+    custom_settings: {}
+session_name: sprite-session
 sync:
   auto_sync: false
+  default_interval_secs: 300
   conflict_resolution: manual
-  exclude_branches: []
+  exclude_branches:
+  - main
+  - master
+  pre_sync_hooks: []
+  post_sync_hooks: []
+settings:
+  default_shell: bash
+  global_env_vars: {}
+  logging:
+    log_file: agents/logs/sprite.log
+    level: info
+    log_to_stdout: true
+    rotation:
+      max_size_mb: 100
+      max_files: 5
+  performance:
+    max_concurrent_ops: 10
+    default_timeout_secs: 300
+    enable_monitoring: true
+    memory_limit_mb: 1024
+    cpu_limit_percent: 80
+  security:
+    allowed_paths:
+    - agents/
+    blocked_commands:
+    - rm -rf
+    - sudo
+    - su
+    - chmod 777
+    strict_path_validation: true
+    max_command_length: 1000
+    allow_shell_execution: false

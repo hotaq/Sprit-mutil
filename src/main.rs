@@ -43,13 +43,53 @@ fn main() -> Result<()> {
             commands::start::execute(session_name, layout, detach)?;
             Ok(())
         }
-        cli::Commands::Attach { .. } => commands::attach::execute(),
-        cli::Commands::Kill { .. } => commands::kill::execute(),
-        cli::Commands::Send { .. } => commands::send::execute(),
-        cli::Commands::Hey { .. } => commands::hey::execute(),
-        cli::Commands::Sync { .. } => commands::sync::execute(),
+        cli::Commands::Attach { session_name, list } => {
+            commands::attach::execute(session_name, list)?;
+            Ok(())
+        }
+        cli::Commands::Kill { session_name, force, all } => {
+            commands::kill::execute(session_name, force, all)?;
+            Ok(())
+        }
+        cli::Commands::Send {
+            command,
+            args,
+            timeout,
+            work_dir,
+            env_vars,
+            sequential,
+        } => {
+            commands::send::execute(&command, &args, timeout, work_dir.as_deref(), &env_vars, sequential)?;
+            Ok(())
+        }
+        cli::Commands::Hey {
+            agent,
+            command,
+            args,
+            timeout,
+            work_dir,
+            env_vars,
+            interactive,
+        } => {
+            commands::hey::execute(&agent, &command, &args, timeout, work_dir.as_deref(), &env_vars, interactive)?;
+            Ok(())
+        }
+        cli::Commands::Sync { agent, force, strategy, dry_run } => {
+            commands::sync::execute(agent.as_deref(), force, &strategy, dry_run)?;
+            Ok(())
+        }
         cli::Commands::Remove { .. } => commands::remove::execute(),
-        cli::Commands::Warp { .. } => commands::warp::execute(),
-        cli::Commands::Zoom { .. } => commands::zoom::execute(),
+        cli::Commands::Warp { workspace, list, print, relative } => {
+            commands::warp::execute(workspace, list, print, relative)?;
+            Ok(())
+        }
+        cli::Commands::Zoom { agent, unzoom, list } => {
+            commands::zoom::execute(agent, unzoom, list)?;
+            Ok(())
+        }
+        cli::Commands::Status { session_name, cleanup, detailed } => {
+            commands::status::execute(session_name, cleanup, detailed)?;
+            Ok(())
+        }
     }
 }

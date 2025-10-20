@@ -3,6 +3,17 @@
 Cargo.lock
 **/*.rs.bk
 *.pdb
+*.rlib
+*.prof*
+.env*
+
+# Universal
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
 
 # Sprite-specific
 /agents/*/target/

@@ -7,6 +7,14 @@ authors = ["hotaq"]
 license = "MIT"
 repository = "https://github.com/hotaq/Sprit-mutil"
 
+[[bin]]
+name = "sprit-mutil"
+path = "src/main.rs"
+
+[lib]
+name = "sprit_mutil"
+path = "src/lib.rs"
+
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }

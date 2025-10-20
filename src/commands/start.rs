@@ -144,7 +144,7 @@ fn setup_agent_panes(session_name: &str, config: &SpriteConfig) -> Result<()> {
     let panes = tmux::get_session_panes(session_name)
         .context("Failed to get session panes for agent setup")?;
 
-    for (index, (agent_id, agent_config)) in config.agents.iter().enumerate() {
+    for (index, agent_config) in config.agents.iter().enumerate() {
         let workspace_path = &agent_config.worktree_path;
         let pane_target = if index < panes.len() {
             panes[index].index.to_string()
@@ -158,19 +158,19 @@ fn setup_agent_panes(session_name: &str, config: &SpriteConfig) -> Result<()> {
         if let Err(e) = tmux::send_keys_with_delay(session_name, &pane_target, &cmd, 50) {
             eprintln!(
                 "⚠️  Warning: Failed to setup agent {} workspace: {}",
-                agent_id, e
+                agent_config.id, e
             );
         }
 
         // Display agent information
         let info_cmd = format!(
             "echo '🤖 Agent {} - {}'",
-            agent_id, agent_config.description
+            agent_config.id, agent_config.description
         );
         if let Err(e) = tmux::send_keys_with_delay(session_name, &pane_target, &info_cmd, 50) {
             eprintln!(
                 "⚠️  Warning: Failed to display agent {} info: {}",
-                agent_id, e
+                agent_config.id, e
             );
         }
 
@@ -179,7 +179,7 @@ fn setup_agent_panes(session_name: &str, config: &SpriteConfig) -> Result<()> {
         if let Err(e) = tmux::send_keys_with_delay(session_name, &pane_target, git_cmd, 50) {
             eprintln!(
                 "⚠️  Warning: Failed to show git status for agent {}: {}",
-                agent_id, e
+                agent_config.id, e
             );
         }
     }
@@ -213,7 +213,7 @@ fn create_supervisor_pane(session_name: &str, config: &SpriteConfig) -> Result<(
         • sprite attach - Reattach to session",
         config.agents.len(),
         session_name,
-        config.session.profile
+        "tiled"
     );
 
     // Use the supervisor window as target

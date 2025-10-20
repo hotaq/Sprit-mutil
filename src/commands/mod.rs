@@ -7,6 +7,7 @@ pub mod kill;
 pub mod remove;
 pub mod send;
 pub mod start;
+pub mod status;
 pub mod sync;
 pub mod warp;
 pub mod zoom;
