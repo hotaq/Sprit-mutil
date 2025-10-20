@@ -69,6 +69,7 @@ impl Default for ResourceLimits {
 
 /// Simplified agent configuration for compatibility
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
 pub struct SimpleAgentConfig {
     pub branch: String,
     pub worktree_path: String,
@@ -124,6 +125,7 @@ impl Default for SpriteConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
 pub struct SessionConfig {
     pub name: String,
     pub profile: String,
