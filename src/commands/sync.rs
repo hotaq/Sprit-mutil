@@ -165,7 +165,6 @@ fn determine_sync_context(agent_id: Option<String>) -> Result<SyncContext> {
 fn extract_agent_id_from_path(path: &str) -> Option<String> {
     // Check if path is in agents/ directory
     if let Some(remaining) = path.strip_prefix("agents/") {
-
         // Check if the remaining part is just an agent ID (like "1", "2", etc.)
         if remaining.is_empty() {
             return None;
