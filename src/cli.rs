@@ -1,4 +1,4 @@
-use clap::Subcommand;
+use clap::{Subcommand, ValueEnum};
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -146,6 +146,55 @@ pub enum Commands {
         #[arg(short, long)]
         list: bool,
     },
+    /// Check session status and health
+    Status {
+        /// Check specific session
+        session_name: Option<String>,
+        /// Clean up old sessions and temporary files
+        #[arg(long)]
+        cleanup: bool,
+        /// Show detailed health information
+        #[arg(long)]
+        detailed: bool,
+    },
+    /// Show extended help and documentation
+    Guide {
+        /// Command to get help for
+        command: Option<String>,
+        /// Search help content
+        #[arg(long)]
+        search: Option<String>,
+        /// Show usage patterns
+        #[arg(long)]
+        patterns: bool,
+        /// Show troubleshooting guides
+        #[arg(long)]
+        troubleshooting: bool,
+        /// Show quick reference
+        #[arg(long)]
+        quick: bool,
+        /// Show accessible help (screen reader friendly)
+        #[arg(long)]
+        accessible: bool,
+        /// Show usage patterns for specific category
+        #[arg(long, value_enum)]
+        category: Option<HelpCategory>,
+    },
+}
+
+/// Help system command categories.
+#[derive(ValueEnum, Debug, Clone)]
+pub enum HelpCategory {
+    /// Getting started guides
+    GettingStarted,
+    /// Daily workflow patterns
+    DailyWorkflow,
+    /// Troubleshooting guides
+    Troubleshooting,
+    /// Advanced usage
+    Advanced,
+    /// Collaboration workflows
+    Collaboration,
 }
 
 #[derive(Subcommand)]

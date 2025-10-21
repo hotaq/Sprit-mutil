@@ -1,326 +1,367 @@
-# Sprite Multi-Agent Workflow Toolkit
+# Sprite Multi-Agent Workflow Toolkit 🤖
 
-A robust command-line toolkit for managing multiple AI coding agents with isolated workspaces, git branch management, and tmux session orchestration.
+A powerful CLI tool that lets you manage multiple AI coding agents simultaneously, each working in isolated environments. Perfect for collaborative AI development, parallel task processing, and organized workflow management.
+
+## 🎯 What Problems Does Sprite Solve?
+
+**Tired of managing multiple AI sessions manually?** Sprite automates the entire workflow:
+
+- **🔄 Parallel Development**: Run multiple AI agents simultaneously, each with their own workspace
+- **🏠 Isolated Environments**: Each agent works in a separate git worktree with dedicated branches
+- **📊 Session Management**: Organize and monitor all your AI sessions from one interface
+- **🔧 Auto-Provisioning**: Automatically sets up workspaces, branches, and tmux sessions
+- **💾 Smart Recovery**: Detects and fixes issues with orphaned sessions or broken workspaces
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd sprit-mutil
-
-# Build the project
-cargo build --release
-
-# Add to PATH (optional)
-export PATH=$PWD/target/release:$PATH
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
 ```
 
-### Initial Setup
+*That's it! The installer will automatically detect your system and use the best installation method.*
+
+### Your First Multi-Agent Project
 
 ```bash
-# Initialize a new Sprite environment with 3 agents
+# 1. Navigate to your project (must be a git repository)
+cd /path/to/your/project
+
+# 2. Initialize with 3 AI agents
 sprite init --agents 3
 
-# Or with custom configuration
-sprite init --force --agents 5
+# 3. Start your multi-agent session
+sprite start
+
+# 4. Attach to the session
+sprite attach sprite-session
 ```
 
-## 📋 Current Status
+**That's it!** You now have 3 AI agents working in parallel, each in their own isolated workspace.
 
-### ✅ Phase 1: Project Foundation (Complete)
-- Core CLI structure with Clap
-- Error handling system
-- Logging infrastructure
-- Configuration models
+## 🛠️ How It Works: The Solution
 
-### ✅ Phase 2: Core Infrastructure (Complete)
-- Git utilities and worktree management
-- Tmux session management
-- Security validation
-- File system utilities
+### The Problem Sprite Solves
 
-### ✅ Phase 3: User Story 1 - Quick Environment Setup (Complete)
-- **T021**: Complete init command logic with progress indicators
-- **T022**: Template system with embedded compile-time constants
-- **T023**: Directory structure creation with proper permissions
-- **T024**: Git repository validation and edge case handling
-- **T025**: Template creation (shell scripts, tmux profiles, configuration)
-- **T026**: Git repository validation
-- **T027**: Template system for configuration, scripts, and profiles
-- **T028**: Edge case handling for existing configurations
+Before Sprite:
+```bash
+# Manual setup for each agent
+git worktree add agent1 main
+cd agent1
+tmux new-session -d -s agent1
+# Repeat for agent2, agent3...
+```
 
-### ✅ Phase 4: User Story 2 - Agent Configuration Management (Complete)
-- **T031**: Complete config command logic in `src/commands/config.rs`
-- **T032**: YAML parsing and validation for agent configurations
-- **T033**: Git worktree creation in `src/utils/git.rs`
-- **T034**: Branch creation and management logic
-- **T035**: Workspace validation logic
-- **T037**: Agents subcommands (list, create, remove) in `src/commands/agents.rs`
-- **T038**: Comprehensive error handling for git operations
+After Sprite:
+```bash
+sprite init --agents 3
+sprite start
+# Everything is automated!
+```
 
-## 🛠️ Available Commands
+### Architecture Overview
 
-### Environment Management
+```
+Your Project/
+├── agents/
+│   ├── agents.yaml      # Configuration file
+│   ├── 1/               # Agent 1 workspace (git worktree)
+│   │   └── (your project files)
+│   ├── 2/               # Agent 2 workspace
+│   ├── 3/               # Agent 3 workspace
+│   ├── scripts/         # Helper scripts
+│   └── profiles/        # Tmux layouts
+├── src/                 # Your main project
+└── README.md
+```
+
+### Each Agent Gets:
+- **Isolated Workspace**: Separate git worktree with dedicated branch
+- **Independent Session**: Individual tmux pane/window
+- **Resource Limits**: Configurable memory and CPU constraints
+- **Task Isolation**: Changes don't affect other agents until you merge
+
+## 📋 Essential Commands
+
+### Daily Workflow Commands
 
 ```bash
-# Initialize Sprite environment
-sprite init [--force] [--agents <N>]
+# Start a new session with all agents
+sprite start
 
-# Configuration management
-sprite config show                    # Show current configuration
-sprite config validate                 # Validate configuration
-sprite config get <key>               # Get configuration value
-sprite config set <key> <value>       # Set configuration value
-sprite config edit                    # Edit configuration file
+# List active sessions
+sprite attach --list
 
-# Agent management
-sprite agents list                     # List all configured agents
-sprite agents create <id> [options]    # Create new agent
-sprite agents remove <id> [options]    # Remove agent
-sprite agents show [id]                # Show agent details
-sprite agents validate                 # Validate agent workspaces
-sprite agents provision [id]           # Provision workspaces
+# Attach to an existing session
+sprite attach sprite-session
+
+# Check system health
+sprite status
+
+# End a session safely
+sprite kill sprite-session
 ```
 
-### Session Management (Planned)
+### Agent Management
 
 ```bash
-# Session control
-sprite start [options]                 # Start supervision session
-sprite attach [session]                # Attach to existing session
-sprite kill [session]                  # Terminate session
+# List all agents and their status
+sprite agents list
 
-# Agent communication
-sprite send <command>                  # Send command to all agents
-sprite hey <agent> <command>           # Send command to specific agent
+# Create a new agent
+sprite agents create 4 --description "Documentation agent"
+
+# Show detailed agent information
+sprite agents show 1
+
+# Validate all agent workspaces
+sprite agents validate
+
+# Fix workspace issues
+sprite agents provision
 ```
 
-## 🧪 Testing Current Phase (Phase 4)
-
-### Prerequisites
-- Rust 1.75+
-- Git repository (Sprite must be run from within a git repo)
-- Basic understanding of git worktrees
-
-### Test Suite
-
-#### 1. Environment Setup Testing
+### Configuration Management
 
 ```bash
-# Test 1: Basic initialization
-cargo run -- init --agents 2
+# View complete configuration
+sprite config show
 
-# Expected: Creates agents/ directory with:
-# - agents/agents.yaml (configuration)
-# - agents/1/ and agents/2/ directories
-# - agents/scripts/ and agents/profiles/ directories
+# Get specific setting
+sprite config get agents.1.model
 
-# Test 2: Configuration validation
-cargo run -- config validate
+# Change a setting
+sprite config set session_name "my-session"
 
-# Expected: Shows configuration validation results
-
-# Test 3: Agent listing
-cargo run -- agents list
-
-# Expected: Lists configured agents with workspace status
+# Validate configuration
+sprite config validate
 ```
 
-#### 2. Agent Management Testing
+## 🎮 Session Layouts
+
+Choose the perfect layout for your workflow:
 
 ```bash
-# Test 4: Create new agent
-cargo run -- agents create 3 --description "Test agent 3"
+# Tiled layout (default) - best for monitoring all agents
+sprite start --layout tiled
 
-# Expected: Creates agent 3 with workspace and branch
+# Focus mode - concentrate on one agent at a time
+sprite start --layout focus
 
-# Test 5: Show agent details
-cargo run -- agents show 3
+# Vertical split - agents on left, supervisor on right
+sprite start --layout vertical
 
-# Expected: Shows detailed information about agent 3
-
-# Test 6: Validate workspaces
-cargo run -- agents validate
-
-# Expected: Validates all agent workspaces and reports status
-
-# Test 7: Provision workspaces
-cargo run -- agents provision
-
-# Expected: Creates missing workspaces and fixes branch issues
+# Dashboard - 6-panel overview
+sprite start --layout dashboard
 ```
 
-#### 3. Configuration Management Testing
+## 💡 Real-World Use Cases
 
+### Use Case 1: Collaborative Code Development
 ```bash
-# Test 8: Show configuration
-cargo run -- config show
+# Agent 1: Frontend development
+# Agent 2: Backend API development
+# Agent 3: Testing and documentation
 
-# Expected: Displays complete configuration structure
-
-# Test 9: Get configuration values
-cargo run -- config get agents.1.model
-
-# Expected: Shows model setting for agent 1
-
-# Test 10: Set configuration values
-cargo run -- config set session.name "my-session"
-
-# Expected: Updates session name in configuration
-
-# Test 11: Configuration validation
-cargo run -- config validate
-
-# Expected: Validates configuration structure and workspaces
+sprite init --agents 3
+sprite start --layout tiled
+# All agents work simultaneously on different aspects
 ```
 
-#### 4. Edge Case Testing
-
+### Use Case 2: Code Review and Refactoring
 ```bash
-# Test 12: Duplicate agent creation
-cargo run -- agents create 1
+# Agent 1: Reviews code for bugs
+# Agent 2: Suggests improvements
+# Agent 3: Implements refactoring
 
-# Expected: Error - Agent 1 already exists
-
-# Test 13: Invalid agent ID
-cargo run -- agents create "../invalid"
-
-# Expected: Error - Invalid agent ID format
-
-# Test 14: Force reinitialization
-cargo run -- init --force --agents 1
-
-# Expected: Overwrites existing configuration
+sprite agents create reviewer --description "Code reviewer"
+sprite agents create improver --description "Code improver"
+sprite agents create refactor --description "Refactoring agent"
+sprite start
 ```
 
-### Expected Test Results
+### Use Case 3: Research and Documentation
+```bash
+# Agent 1: Research task
+# Agent 2: Documentation writing
+# Agent 3: Example code generation
 
-#### ✅ Successful Test Indicators:
-- Commands execute without errors
-- Configuration files are properly created/updated
-- Git worktrees are correctly established
-- Agent status reports are accurate
-- Error handling provides clear feedback
-
-#### ⚠️ Expected Issues:
-- Agent workspaces may show "wrong branch" status initially
-- Git worktree operations require clean git state
-- Some tmux-related commands are not yet implemented
-
-## 📁 Project Structure
-
-```
-sprit-mutil/
-├── src/
-│   ├── commands/
-│   │   ├── init.rs          # Environment initialization
-│   │   ├── config.rs        # Configuration management
-│   │   ├── agents.rs        # Agent management
-│   │   └── mod.rs           # Command exports
-│   ├── utils/
-│   │   ├── git.rs           # Git utilities
-│   │   ├── tmux.rs          # Tmux session management
-│   │   └── mod.rs           # Utility exports
-│   ├── models/
-│   │   ├── agent.rs         # Agent models
-│   │   ├── config.rs        # Configuration models
-│   │   └── mod.rs           # Model exports
-│   ├── cli.rs               # CLI structure
-│   ├── error.rs             # Error types
-│   └── main.rs              # Application entry
-├── agents/                  # Generated workspace
-│   ├── agents.yaml          # Agent configuration
-│   ├── 1/, 2/, 3/           # Agent workspaces
-│   ├── scripts/             # Helper scripts
-│   └── profiles/            # Tmux profiles
-└── Cargo.toml               # Project dependencies
+sprite init --agents 3
+# Each agent researches and documents different topics
 ```
 
-## 🔧 Configuration
+## 🔧 Configuration File
 
-### Agent Configuration (agents/agents.yaml)
+Sprite uses a simple YAML file (`agents/agents.yaml`):
 
 ```yaml
+version: '1.0'
 agents:
-  '1':
-    branch: agents/1
-    worktree_path: agents/1
-    model: claude-sonnet-4
-    description: Agent 1 workspace
-  '2':
-    branch: agents/2
-    worktree_path: agents/2
-    model: claude-sonnet-4
-    description: Agent 2 workspace
+- id: '1'
+  branch: agents/1
+  worktree_path: agents/1
+  model: claude-sonnet-4
+  description: Agent 1 workspace
+  status: inactive
+  config:
+    resource_limits:
+      max_memory_mb: 1024
+      max_cpu_percent: 80
+      operation_timeout_secs: 300
 
-session:
-  name: sprite-session
-  profile: profile0
-
-sync:
-  auto_sync: false
-  conflict_resolution: manual
-  exclude_branches: []
+session_name: sprite-session
+settings:
+  logging:
+    level: info
+    log_to_stdout: true
+  security:
+    allowed_paths:
+    - agents/
 ```
 
-## 🚧 Upcoming Features
+## 🚨 Troubleshooting Common Issues
 
-### Phase 5: Session Management (Planned)
-- Tmux session creation and management
-- Multi-agent supervision
-- Command broadcasting
-- Session persistence
-
-### Phase 6: Agent Communication (Planned)
-- Command distribution system
-- Result collection
-- Error handling and retries
-- Performance monitoring
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **"Not a git repository"**
-   - Solution: Run sprite commands from within a git repository
-
-2. **"Workspace already exists"**
-   - Solution: Use `--force` flag or remove existing workspace
-
-3. **"Agent already exists"**
-   - Solution: Use a different agent ID or remove existing agent first
-
-4. **Git worktree errors**
-   - Solution: Ensure git repository is in a clean state
-
-### Debug Mode
-
+### "Not a git repository"
 ```bash
-# Enable debug logging
-RUST_LOG=debug cargo run -- <command>
-
-# Build with debug symbols
-cargo build
-
-# Run tests
-cargo test
+# Solution: Always run from within a git repository
+cd /path/to/your/git/project
+sprite init
 ```
+
+### "Session already exists"
+```bash
+# Solution: Kill existing session or use different name
+sprite kill sprite-session
+# OR
+sprite start --session new-session
+```
+
+### "Agent workspace on wrong branch"
+```bash
+# Solution: Fix workspace provisioning
+sprite agents provision
+```
+
+### High memory usage
+```bash
+# Solution: Check status and clean up
+sprite status --cleanup
+# Adjust resource limits in agents/agents.yaml
+```
+
+## 🚨 Troubleshooting
+
+### "command not found: sprite"
+```bash
+# Restart your terminal or run:
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+### "Permission denied"
+```bash
+chmod +x ~/.local/bin/sprite
+```
+
+### "Not a git repository"
+```bash
+# Always run sprite commands from within a git repository
+cd /path/to/your/git/project
+sprite init
+```
+
+### Installation failed?
+```bash
+# Make sure you have git and tmux installed:
+# macOS: brew install git tmux
+# Ubuntu/Debian: sudo apt-get install git tmux
+# Then try again:
+curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/install.sh | bash
+```
+
+## 🎯 Tips and Best Practices
+
+### For Best Performance
+1. **Start with 2-3 agents** and add more as needed
+2. **Use appropriate layouts** for your workflow
+3. **Regular status checks** with `sprite status`
+4. **Clean up sessions** when done with `sprite kill`
+
+### For Team Collaboration
+1. **Share configuration** via `agents/agents.yaml`
+2. **Use descriptive agent names** and purposes
+3. **Set resource limits** to prevent system overload
+4. **Regular workspace validation** with `sprite agents validate`
+
+### For Development Workflow
+1. **Integrate with CI/CD** for automated testing
+2. **Use git branches** effectively for parallel development
+3. **Monitor system resources** during long sessions
+4. **Backup configurations** for team consistency
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+We welcome contributions! Here's how to get started:
+
+```bash
+# Clone and set up for development
+git clone https://github.com/hotaq/Sprit-mutil.git
+cd Sprit-mutil
+cargo build
+cargo test
+
+# Make your changes
+# ... code changes ...
+
+# Run tests and linting
+cargo test
+cargo clippy
+cargo fmt
+
+# Submit a pull request
+```
+
+### Areas to Contribute:
+- 🆕 New agent models and integrations
+- 🎨 Additional session layouts and themes
+- 📊 Enhanced monitoring and metrics
+- 🐛 Bug fixes and performance improvements
+- 📚 Documentation improvements
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🔗 Links
 
-Built with Rust, Clap, and a passion for improving developer workflows.
+- **Documentation**: <https://docs.rs/sprite>
+- **Repository**: <https://github.com/hotaq/Sprit-mutil>
+- **Issues**: <https://github.com/hotaq/Sprit-mutil/issues>
+- **Releases**: <https://github.com/hotaq/Sprit-mutil/releases>
+
+## 🚀 Quick Reference
+
+```bash
+# Essential workflow
+sprite init --agents 3    # Setup
+sprite start              # Start session
+sprite attach sprite-session  # Join session
+sprite status             # Check health
+sprite kill sprite-session  # End session
+
+# Agent management
+sprite agents list         # See agents
+sprite agents create 4     # Add agent
+sprite agents show 1       # Agent details
+
+# Configuration
+sprite config show         # View config
+sprite config get key      # Get setting
+sprite config set key val  # Change setting
+```
+
+---
+
+**Sprite transforms how you work with AI agents** - from manual session management to automated, organized, and efficient multi-agent workflows.
+
+*Start your multi-agent journey today! 🚀*

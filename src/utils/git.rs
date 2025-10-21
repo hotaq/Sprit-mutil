@@ -578,6 +578,143 @@ pub fn get_remote_url(remote: Option<&str>) -> Result<String> {
     Ok(url)
 }
 
+/// Delete a git branch.
+pub fn delete_branch(branch: &str, force: bool) -> Result<()> {
+    if !branch_exists(branch)? {
+        return Err(SpriteError::git(format!("Branch '{}' does not exist", branch)).into());
+    }
+
+    let mut args = vec!["branch", "-d"];
+    if force {
+        args.push("-D");
+    }
+    args.push(branch);
+
+    let output = Command::new("git")
+        .args(&args)
+        .output()
+        .with_context(|| format!("Failed to delete branch '{}'", branch))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::git_with_source(
+            format!("Failed to delete branch '{}'", branch),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
+/// Check if a branch has been merged into the current branch.
+pub fn is_branch_merged(branch: &str) -> Result<bool> {
+    let output = Command::new("git")
+        .args(["merge-base", "--is-ancestor", branch, "HEAD"])
+        .output()
+        .with_context(|| format!("Failed to check if branch '{}' is merged", branch))?;
+
+    Ok(output.status.success())
+}
+
+/// Get a list of all branches that contain the given commit.
+#[allow(dead_code)]
+pub fn get_branches_containing_commit(commit: &str) -> Result<Vec<String>> {
+    let output = Command::new("git")
+        .args(["branch", "--contains", commit])
+        .output()
+        .with_context(|| format!("Failed to get branches containing commit '{}'", commit))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::git_with_source(
+            format!("Failed to get branches containing commit '{}'", commit),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    let branches_str = String::from_utf8_lossy(&output.stdout);
+    let branches: Vec<String> = branches_str
+        .lines()
+        .map(|line| line.trim().trim_start_matches("* ").to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    Ok(branches)
+}
+
+/// Force remove a git branch, even if it has unmerged changes.
+#[allow(dead_code)]
+pub fn force_delete_branch(branch: &str) -> Result<()> {
+    delete_branch(branch, true)
+}
+
+/// Safely remove a git branch, checking if it's merged first.
+#[allow(dead_code)]
+pub fn safe_delete_branch(branch: &str) -> Result<()> {
+    if !is_branch_merged(branch)? {
+        return Err(SpriteError::git(format!(
+            "Branch '{}' has unmerged changes. Use --force to delete anyway.",
+            branch
+        ))
+        .into());
+    }
+
+    delete_branch(branch, false)
+}
+
+/// Get the current commit hash of a branch.
+#[allow(dead_code)]
+pub fn get_branch_commit(branch: &str) -> Result<String> {
+    let output = Command::new("git")
+        .args(["rev-parse", &format!("refs/heads/{}", branch)])
+        .output()
+        .with_context(|| format!("Failed to get commit hash for branch '{}'", branch))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::git_with_source(
+            format!("Failed to get commit hash for branch '{}'", branch),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    Ok(commit)
+}
+
+/// Merge a branch into the current branch.
+pub fn merge_branch(branch: &str) -> Result<()> {
+    if !branch_exists(branch)? {
+        return Err(SpriteError::git(format!("Branch '{}' does not exist", branch)).into());
+    }
+
+    let output = Command::new("git")
+        .args(["merge", "--no-ff", branch])
+        .output()
+        .with_context(|| format!("Failed to merge branch '{}'", branch))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::git_with_source(
+            format!("Failed to merge branch '{}'", branch),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
+/// Check if there are merge conflicts after a merge operation.
+pub fn has_merge_conflicts() -> Result<bool> {
+    let output = Command::new("git")
+        .args(["diff", "--name-only", "--diff-filter=U"])
+        .output()
+        .with_context(|| "Failed to check for merge conflicts")?;
+
+    let conflicts_str = String::from_utf8_lossy(&output.stdout);
+    Ok(!conflicts_str.trim().is_empty())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

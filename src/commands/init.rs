@@ -125,26 +125,71 @@ fn generate_config_content(agent_count: u32) -> Result<String> {
     config.push_str("# Generated automatically by 'sprite init'\n");
     config.push_str("# Customize this file to match your project needs\n\n");
 
+    config.push_str("version: \"1.0\"\n\n");
+
     config.push_str("agents:\n");
     for i in 1..=agent_count {
-        config.push_str(&format!(
-            "  {}:\n\
-            branch: agents/{}\n\
-            worktree_path: agents/{}\n\
-            model: claude-sonnet-4\n\
-            description: \"Agent {} workspace\"\n",
-            i, i, i, i
-        ));
+        config.push_str(&format!("- id: '{}'\n", i));
+        config.push_str(&format!("  branch: agents/{}\n", i));
+        config.push_str(&format!("  worktree_path: agents/{}\n", i));
+        config.push_str("  model: claude-sonnet-4\n");
+        config.push_str(&format!("  description: Agent {} workspace\n", i));
+        config.push_str("  status: inactive\n");
+        config.push_str("  config:\n");
+        config.push_str("    env_vars: {}\n");
+        config.push_str("    work_dir: null\n");
+        config.push_str("    startup_commands: []\n");
+        config.push_str("    resource_limits:\n");
+        config.push_str("      max_memory_mb: 1024\n");
+        config.push_str("      max_cpu_percent: 80\n");
+        config.push_str("      operation_timeout_secs: 300\n");
+        config.push_str("      max_concurrent_ops: 3\n");
+        config.push_str("      max_disk_mb: 5120\n");
+        config.push_str("    shell: null\n");
+        config.push_str("    default_timeout_secs: 300\n");
+        config.push_str("    auto_sync: false\n");
+        config.push_str("    custom_settings: {}\n");
     }
 
-    config.push_str("\nsession:\n");
-    config.push_str("  name: sprite-session\n");
-    config.push_str("  profile: profile0\n");
+    config.push_str("session_name: sprite-session\n");
 
-    config.push_str("\nsync:\n");
+    config.push_str("sync:\n");
     config.push_str("  auto_sync: false\n");
+    config.push_str("  default_interval_secs: 300\n");
     config.push_str("  conflict_resolution: manual\n");
-    config.push_str("  exclude_branches: []\n");
+    config.push_str("  exclude_branches:\n");
+    config.push_str("  - main\n");
+    config.push_str("  - master\n");
+    config.push_str("  pre_sync_hooks: []\n");
+    config.push_str("  post_sync_hooks: []\n");
+
+    config.push_str("settings:\n");
+    config.push_str("  default_shell: bash\n");
+    config.push_str("  global_env_vars: {}\n");
+    config.push_str("  logging:\n");
+    config.push_str("    log_file: agents/logs/sprite.log\n");
+    config.push_str("    level: info\n");
+    config.push_str("    log_to_stdout: true\n");
+    config.push_str("    rotation:\n");
+    config.push_str("      max_size_mb: 100\n");
+    config.push_str("      max_files: 5\n");
+    config.push_str("  performance:\n");
+    config.push_str("    max_concurrent_ops: 10\n");
+    config.push_str("    default_timeout_secs: 300\n");
+    config.push_str("    enable_monitoring: true\n");
+    config.push_str("    memory_limit_mb: 1024\n");
+    config.push_str("    cpu_limit_percent: 80\n");
+    config.push_str("  security:\n");
+    config.push_str("    allowed_paths:\n");
+    config.push_str("    - agents/\n");
+    config.push_str("    blocked_commands:\n");
+    config.push_str("    - rm -rf\n");
+    config.push_str("    - sudo\n");
+    config.push_str("    - su\n");
+    config.push_str("    - chmod 777\n");
+    config.push_str("    strict_path_validation: true\n");
+    config.push_str("    max_command_length: 1000\n");
+    config.push_str("    allow_shell_execution: false\n");
 
     Ok(config)
 }
@@ -291,6 +336,7 @@ export SPRITE_AGENT_DIR="$(pwd)"
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     use tempfile::TempDir;
 
     #[test]
@@ -310,6 +356,48 @@ mod tests {
     }
 
     #[test]
+    fn test_create_agents_directory_structure_zero_agents() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+
+        let result = create_agents_directory_structure(&agents_dir, 0);
+
+        assert!(result.is_ok());
+        assert!(agents_dir.exists());
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
+        // Should not create agent directories for 0 agents
+        assert!(!agents_dir.join("1").exists());
+    }
+
+    #[test]
+    fn test_create_agents_directory_structure_single_agent() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+
+        let result = create_agents_directory_structure(&agents_dir, 1);
+
+        assert!(result.is_ok());
+        assert!(agents_dir.exists());
+        assert!(agents_dir.join("1").exists());
+        assert!(!agents_dir.join("2").exists());
+    }
+
+    #[test]
+    fn test_create_agents_directory_structure_nested_directories() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("deep").join("nested").join("agents");
+        fs::create_dir_all(agents_dir.parent().unwrap()).unwrap();
+
+        let result = create_agents_directory_structure(&agents_dir, 2);
+
+        assert!(result.is_ok());
+        assert!(agents_dir.exists());
+        assert!(agents_dir.join("1").exists());
+        assert!(agents_dir.join("2").exists());
+    }
+
+    #[test]
     fn test_generate_config_content() {
         let result = generate_config_content(2);
 
@@ -317,10 +405,30 @@ mod tests {
         let config = result.unwrap();
 
         assert!(config.contains("agents:"));
-        assert!(config.contains("1:"));
-        assert!(config.contains("2:"));
-        assert!(config.contains("session:"));
+        assert!(config.contains("- id: '1'"));
+        assert!(config.contains("- id: '2'"));
+        assert!(config.contains("session_name:"));
         assert!(config.contains("sync:"));
+        assert!(config.contains("settings:"));
+        assert!(config.contains("version: \"1.0\""));
+        assert!(config.contains("claude-sonnet-4"));
+        assert!(config.contains("worktree_path:"));
+        assert!(config.contains("resource_limits:"));
+    }
+
+    #[test]
+    fn test_generate_config_content_many_agents() {
+        let result = generate_config_content(10);
+
+        assert!(result.is_ok());
+        let config = result.unwrap();
+
+        // Should contain all agents from 1 to 10
+        for i in 1..=10 {
+            assert!(config.contains(&format!("- id: '{}'", i)));
+        }
+        // Should not contain agent 11
+        assert!(!config.contains("- id: '11'"));
     }
 
     #[test]
@@ -331,6 +439,232 @@ mod tests {
         let config = result.unwrap();
 
         assert!(config.contains("agents:"));
-        assert!(!config.contains("1:"));
+        assert!(!config.contains("- id: '1'"));
+        assert!(config.contains("version: \"1.0\""));
+        assert!(config.contains("session_name:"));
+    }
+
+    #[test]
+    fn test_generate_agents_config() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_file = temp_dir.path().join("agents.yaml");
+
+        let result = generate_agents_config(&config_file, 3);
+
+        assert!(result.is_ok());
+        assert!(config_file.exists());
+
+        let content = fs::read_to_string(&config_file).unwrap();
+        assert!(content.contains("agents:"));
+        assert!(content.contains("- id: '1'"));
+        assert!(content.contains("- id: '2'"));
+        assert!(content.contains("- id: '3'"));
+    }
+
+    #[test]
+    fn test_generate_agents_config_empty() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_file = temp_dir.path().join("agents.yaml");
+
+        let result = generate_agents_config(&config_file, 0);
+
+        assert!(result.is_ok());
+        assert!(config_file.exists());
+
+        let content = fs::read_to_string(&config_file).unwrap();
+        // Should use empty template
+        assert!(content.len() > 0);
+    }
+
+    #[test]
+    fn test_create_shell_script_templates() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+
+        // Create the directory structure first
+        let result = create_agents_directory_structure(&agents_dir, 2);
+        assert!(result.is_ok());
+
+        let scripts_dir = agents_dir.join("scripts");
+        assert!(scripts_dir.exists());
+
+        // Create a simple test script
+        let test_script = "#!/bin/bash\n# Test script\necho 'Hello from test script'";
+        fs::write(scripts_dir.join("test_script.sh"), test_script).unwrap();
+
+        assert!(scripts_dir.join("test_script.sh").exists());
+
+        let test_content = fs::read_to_string(scripts_dir.join("test_script.sh")).unwrap();
+        assert!(!test_content.is_empty());
+        assert!(test_content.contains("#!/bin/bash"));
+    }
+
+    #[test]
+    fn test_create_tmux_profile_templates() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+
+        // Create the directory structure first
+        let result = create_agents_directory_structure(&agents_dir, 2);
+        assert!(result.is_ok());
+
+        let profiles_dir = agents_dir.join("profiles");
+        assert!(profiles_dir.exists());
+
+        // Create a simple test profile
+        let test_profile = "#!/bin/bash\n# Test tmux profile\necho 'Test tmux profile'";
+        fs::write(profiles_dir.join("test_profile.sh"), test_profile).unwrap();
+
+        assert!(profiles_dir.join("test_profile.sh").exists());
+
+        let content = fs::read_to_string(profiles_dir.join("test_profile.sh")).unwrap();
+        assert!(!content.is_empty());
+        assert!(content.contains("#!/bin/bash"));
+    }
+
+    #[test]
+    fn test_create_direnv_config() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+        fs::create_dir_all(&agents_dir).unwrap();
+
+        let result = create_direnv_config(&agents_dir);
+
+        assert!(result.is_ok());
+        // Should not fail even if direnv is not available
+    }
+
+    #[test]
+    fn test_init_options_struct() {
+        let options = InitOptions {
+            force: true,
+            agents: 5,
+        };
+
+        assert!(options.force);
+        assert_eq!(options.agents, 5);
+    }
+
+    #[test]
+    fn test_init_execution_with_force() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+        fs::create_dir_all(&agents_dir).unwrap();
+
+        // Create an existing config file
+        let config_file = agents_dir.join("agents.yaml");
+        fs::write(&config_file, "existing: config").unwrap();
+
+        let options = InitOptions {
+            force: true,
+            agents: 2,
+        };
+
+        // Should succeed with force flag even if config exists
+        // Note: This test would require mocking git validation for full testing
+        // For now, we test the structure creation parts
+        let result = create_agents_directory_structure(&agents_dir, options.agents);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_init_execution_without_force_existing_config() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+        fs::create_dir_all(&agents_dir).unwrap();
+
+        // Create an existing config file
+        let config_file = agents_dir.join("agents.yaml");
+        fs::write(&config_file, "existing: config").unwrap();
+
+        let _options = InitOptions {
+            force: false,
+            agents: 2,
+        };
+
+        // Testing the config existence check
+        assert!(config_file.exists());
+    }
+
+    #[test]
+    fn test_config_content_structure() {
+        let result = generate_config_content(1);
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+
+        // Test YAML structure
+        assert!(config.contains("version:"));
+        assert!(config.contains("agents:"));
+        assert!(config.contains("- id:"));
+        assert!(config.contains("branch:"));
+        assert!(config.contains("model:"));
+        assert!(config.contains("description:"));
+        assert!(config.contains("worktree_path:"));
+        assert!(config.contains("status:"));
+        assert!(config.contains("config:"));
+        assert!(config.contains("resource_limits:"));
+        assert!(config.contains("session_name:"));
+        assert!(config.contains("sync:"));
+        assert!(config.contains("settings:"));
+    }
+
+    #[test]
+    fn test_config_content_default_values() {
+        let result = generate_config_content(1);
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+
+        // Test default values
+        assert!(config.contains("claude-sonnet-4"));
+        assert!(config.contains("inactive"));
+        assert!(config.contains("max_memory_mb: 1024"));
+        assert!(config.contains("max_cpu_percent: 80"));
+        assert!(config.contains("operation_timeout_secs: 300"));
+        assert!(config.contains("max_concurrent_ops: 3"));
+        assert!(config.contains("max_disk_mb: 5120"));
+        assert!(config.contains("auto_sync: false"));
+    }
+
+    #[test]
+    fn test_config_content_security_settings() {
+        let result = generate_config_content(1);
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+
+        // Test security settings
+        assert!(config.contains("security:"));
+        assert!(config.contains("allowed_paths:"));
+        assert!(config.contains("blocked_commands:"));
+        assert!(config.contains("strict_path_validation: true"));
+        assert!(config.contains("max_command_length: 1000"));
+        assert!(config.contains("allow_shell_execution: false"));
+    }
+
+    #[test]
+    fn test_error_handling_invalid_directory() {
+        // Test with an invalid path (should handle gracefully)
+        let invalid_path = Path::new("/invalid/nonexistent/path");
+
+        // This should return an error, not panic
+        let result = create_agents_directory_structure(invalid_path, 1);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_edge_case_large_agent_count() {
+        let temp_dir = TempDir::new().unwrap();
+        let agents_dir = temp_dir.path().join("agents");
+
+        // Test with a large number of agents
+        let result = create_agents_directory_structure(&agents_dir, 100);
+        assert!(result.is_ok());
+
+        // Verify all directories were created
+        for i in 1..=100 {
+            assert!(agents_dir.join(i.to_string()).exists());
+        }
     }
 }

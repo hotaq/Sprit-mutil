@@ -259,6 +259,56 @@ impl SpriteError {
         }
     }
 
+    /// Create a config not found error.
+    pub fn config_not_found(path: impl Into<String>) -> Self {
+        Self::Config {
+            message: format!("Configuration file not found: {}", path.into()),
+            source: None,
+        }
+    }
+
+    /// Create an agent not found error.
+    pub fn agent_not_found(agent_id: impl Into<String>) -> Self {
+        let id = agent_id.into();
+        Self::Agent {
+            message: format!("Agent '{}' not found", id),
+            agent_id: Some(id.clone()),
+        }
+    }
+
+    /// Create an agent not active error.
+    pub fn agent_not_active(agent_id: impl Into<String>) -> Self {
+        let id = agent_id.into();
+        Self::Agent {
+            message: format!("Agent '{}' is not active", id),
+            agent_id: Some(id.clone()),
+        }
+    }
+
+    /// Create a session not found error.
+    pub fn session_not_found(message: impl Into<String>) -> Self {
+        Self::Session {
+            message: message.into(),
+            session_name: None,
+        }
+    }
+
+    /// Create a sync operation error.
+    pub fn sync(message: impl Into<String>) -> Self {
+        Self::Git {
+            operation: message.into(),
+            source: None,
+        }
+    }
+
+    /// Create a pane not found error.
+    pub fn pane_not_found(message: impl Into<String>) -> Self {
+        Self::Tmux {
+            operation: message.into(),
+            source: None,
+        }
+    }
+
     /// Get a user-friendly suggestion for resolving this error.
     pub fn suggestion(&self) -> Option<String> {
         match self {

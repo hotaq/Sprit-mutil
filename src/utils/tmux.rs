@@ -612,6 +612,38 @@ pub fn get_pane_cwd(session: &str, pane_index: usize) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
+/// Get the current working directory of a pane by pane ID.
+pub fn get_pane_current_path(session: &str, pane_id: &str) -> Result<String> {
+    let output = Command::new("tmux")
+        .args([
+            "display-message",
+            "-p",
+            "-t",
+            &format!("{}.{}", session, pane_id),
+            "#{pane_current_path}",
+        ])
+        .output()
+        .with_context(|| {
+            format!(
+                "Failed to get current path for pane '{}' in session '{}'",
+                pane_id, session
+            )
+        })?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!(
+                "Failed to get current path for pane '{}' in session '{}'",
+                pane_id, session
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
 /// Send a command to a specific pane with optional delay.
 pub fn send_keys_with_delay(
     session: &str,
@@ -719,6 +751,149 @@ pub fn rename_window(session: &str, window_index: &str, new_name: &str) -> Resul
     }
 
     Ok(())
+}
+
+/// Send a command to a specific pane (compatibility function for communication module).
+/// This function provides a simplified interface for the communication module.
+#[allow(dead_code)]
+pub fn send_command_to_pane(session: &str, pane: &str, command: &str) -> Result<()> {
+    send_keys(session, pane, command)
+}
+
+/// Focus on a specific pane (for zoom functionality).
+#[allow(dead_code)]
+pub fn focus_pane(session: &str, pane: &str) -> Result<()> {
+    let output = Command::new("tmux")
+        .args(["select-pane", "-t", &format!("{}.{}", session, pane)])
+        .output()
+        .with_context(|| format!("Failed to focus pane '{}' in session '{}'", pane, session))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!("Failed to focus pane '{}' in session '{}'", pane, session),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
+/// Zoom a pane to full size (or unzoom if already zoomed).
+#[allow(dead_code)]
+pub fn zoom_pane(session: &str, pane: &str) -> Result<()> {
+    let output = Command::new("tmux")
+        .args(["resize-pane", "-Z", "-t", &format!("{}.{}", session, pane)])
+        .output()
+        .with_context(|| format!("Failed to zoom pane '{}' in session '{}'", pane, session))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!("Failed to zoom pane '{}' in session '{}'", pane, session),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
+/// Get list of all panes in a session with their details.
+pub fn list_panes(session: &str) -> Result<Vec<PaneDetails>> {
+    let output = Command::new("tmux")
+        .args(["list-panes", "-a", "-t", session])
+        .output()
+        .with_context(|| format!("Failed to list panes for session '{}'", session))?;
+
+    if !output.status.success() {
+        return Err(SpriteError::tmux_with_source(
+            format!("Failed to list panes for session '{}'", session),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    let panes_str = String::from_utf8_lossy(&output.stdout);
+    parse_panes_details(&panes_str)
+}
+
+/// Detailed information about a tmux pane.
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct PaneDetails {
+    /// Full pane identifier (session:window.pane)
+    pub id: String,
+    /// Session name
+    pub session: String,
+    /// Window index
+    pub window: usize,
+    /// Pane index
+    pub pane: usize,
+    /// Current working directory
+    pub current_path: Option<String>,
+    /// Current command running in pane
+    pub current_command: Option<String>,
+    /// Pane title
+    pub title: Option<String>,
+    /// Whether pane is active
+    pub active: bool,
+}
+
+/// Parse detailed pane information from tmux output.
+fn parse_panes_details(output: &str) -> Result<Vec<PaneDetails>> {
+    let mut panes = Vec::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        // Parse tmux list-panes format with -a flag
+        // Format: session_name:window_index.pane_index [details]
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.is_empty() {
+            continue;
+        }
+
+        let pane_id = parts[0];
+        let id_parts: Vec<&str> = pane_id.split(':').collect();
+        if id_parts.len() != 2 {
+            continue;
+        }
+
+        let session = id_parts[0].to_string();
+        let window_pane = id_parts[1];
+        let wp_parts: Vec<&str> = window_pane.split('.').collect();
+        if wp_parts.len() != 2 {
+            continue;
+        }
+
+        let window = wp_parts[0].parse::<usize>().unwrap_or(0);
+        let pane = wp_parts[1].parse::<usize>().unwrap_or(0);
+
+        // Extract additional information from the rest of the line
+        let current_command = parts
+            .iter()
+            .find(|part| part.starts_with('[') && part.ends_with(']'))
+            .map(|cmd| {
+                cmd.trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .to_string()
+            });
+
+        panes.push(PaneDetails {
+            id: pane_id.to_string(),
+            session,
+            window,
+            pane,
+            current_path: None, // Would need additional tmux commands to get this
+            current_command,
+            title: None,   // Would need additional tmux commands to get this
+            active: false, // Would need additional tmux commands to get this
+        });
+    }
+
+    Ok(panes)
 }
 
 #[cfg(test)]
