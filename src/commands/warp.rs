@@ -293,7 +293,6 @@ pub fn enhanced_quick_warp(workspace_name: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::utils::workspace::{WorkspaceInfo, WorkspaceType};
 
     #[test]

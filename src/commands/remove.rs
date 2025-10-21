@@ -352,8 +352,6 @@ fn prompt_for_branch_deletion(branch: &str) -> Result<bool> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_remove_command_basic() {
         // This test would require mocking and a test git repository

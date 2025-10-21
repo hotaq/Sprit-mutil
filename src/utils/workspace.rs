@@ -545,7 +545,6 @@ pub fn generate_workspace_aliases() -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
     use std::path::PathBuf;
 
     #[test]

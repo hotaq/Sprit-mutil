@@ -797,7 +797,7 @@ mod tests {
         let config_file = agents_dir.join("agents.yaml");
         fs::write(&config_file, "existing: config").unwrap();
 
-        let options = InitOptions {
+        let _options = InitOptions {
             force: true,
             agents: 2,
         };
