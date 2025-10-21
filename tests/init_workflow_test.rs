@@ -242,21 +242,34 @@ fn test_init_workflow_with_force() {
     );
 }
 
-/// Test init workflow error handling when not in git repository
+/// Test init workflow when not in git repository (should auto-initialize)
 #[test]
 fn test_init_workflow_not_git_repository() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path();
 
-    // Don't initialize git repository
+    // Don't initialize git repository - sprite should do it automatically
 
-    // Run sprite init (should fail)
+    // Run sprite init (should succeed and auto-init git)
     let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
-        .arg("init")
+        .args(["init", "--agents", "2"])
         .assert()
-        .failure()
-        .stderr(contains("Failed to validate git repository"));
+        .success()
+        .stdout(contains("Git repository initialized"));
+
+    // Verify git was initialized
+    assert!(temp_path.join(".git").exists(), "Git should be initialized");
+
+    // Verify worktrees were created
+    assert!(
+        temp_path.join("agents/1").exists(),
+        "Agent 1 worktree should exist"
+    );
+    assert!(
+        temp_path.join("agents/2").exists(),
+        "Agent 2 worktree should exist"
+    );
 }
 
 /// Test init workflow edge case with very large agent count

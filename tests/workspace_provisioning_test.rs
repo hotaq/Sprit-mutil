@@ -31,17 +31,24 @@ fn test_cli_basic_functionality() -> Result<()> {
 }
 
 #[test]
-fn test_init_requires_git_repo() -> Result<()> {
+fn test_init_auto_initializes_git() -> Result<()> {
     // Create a temporary directory that is NOT a git repository
     let temp_dir = TempDir::new()?;
 
-    // Try to initialize sprite configuration - should fail without git
+    // Initialize sprite - should auto-initialize git
     AssertCommand::cargo_bin("sprite")?
         .current_dir(temp_dir.path())
-        .args(&["init"])
+        .args(&["init", "--agents", "2"])
         .assert()
-        .failure()
-        .stderr(predicates::str::contains("git"));
+        .success()
+        .stdout(predicates::str::contains("Git repository initialized"));
+
+    // Verify git was initialized
+    assert!(temp_dir.path().join(".git").exists());
+
+    // Verify worktrees were created
+    assert!(temp_dir.path().join("agents/1").exists());
+    assert!(temp_dir.path().join("agents/2").exists());
 
     Ok(())
 }

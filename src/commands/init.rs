@@ -121,6 +121,9 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
 
     if !has_commits {
         println!("   📌 No commits found. Creating initial commit...");
+
+        // Ensure git user is configured (needed for commits in CI)
+        ensure_git_user_configured()?;
     } else {
         println!("   📌 Adding agents configuration...");
     }
@@ -135,15 +138,18 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
         anyhow::bail!("Failed to stage agents directory");
     }
 
-    // Check if there's anything to commit
-    let status_output = Command::new("git")
-        .args(["status", "--porcelain"])
-        .output()
-        .context("Failed to check git status")?;
+    // If there are no commits, we MUST create one (branches need a commit)
+    // If there are commits, check if there's anything to commit
+    if has_commits {
+        let status_output = Command::new("git")
+            .args(["status", "--porcelain"])
+            .output()
+            .context("Failed to check git status")?;
 
-    if status_output.stdout.is_empty() {
-        println!("   ℹ️  No changes to commit");
-        return Ok(());
+        if status_output.stdout.is_empty() {
+            println!("   ℹ️  No changes to commit");
+            return Ok(());
+        }
     }
 
     // Commit
@@ -155,7 +161,43 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
     if output.status.success() {
         println!("   ✅ Changes committed");
     } else {
-        println!("   ℹ️  Commit skipped (possibly already committed)");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Failed to create commit: {}", stderr);
+    }
+
+    Ok(())
+}
+
+/// Ensure git user is configured (for CI environments)
+fn ensure_git_user_configured() -> Result<()> {
+    // Check if user.name is set
+    let name_check = Command::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .map(|o| o.status.success() && !o.stdout.is_empty())
+        .unwrap_or(false);
+
+    if !name_check {
+        // Set a default user name
+        Command::new("git")
+            .args(["config", "user.name", "Sprite"])
+            .output()
+            .context("Failed to set git user.name")?;
+    }
+
+    // Check if user.email is set
+    let email_check = Command::new("git")
+        .args(["config", "user.email"])
+        .output()
+        .map(|o| o.status.success() && !o.stdout.is_empty())
+        .unwrap_or(false);
+
+    if !email_check {
+        // Set a default user email
+        Command::new("git")
+            .args(["config", "user.email", "sprite@localhost"])
+            .output()
+            .context("Failed to set git user.email")?;
     }
 
     Ok(())
@@ -165,9 +207,23 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
 fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
     println!("🌳 Setting up agent worktrees...");
 
+    // First, prune any stale worktree entries
+    // Run this twice to ensure all stale entries are removed
+    prune_stale_worktrees()?;
+    prune_stale_worktrees()?;
+
     for i in 1..=agent_count {
         let branch_name = format!("agents/{}", i);
         let worktree_path = format!("agents/{}", i);
+
+        // Check if worktree is already registered
+        if is_worktree_registered(&worktree_path)? {
+            println!(
+                "   ℹ️  Worktree {} already registered, removing...",
+                worktree_path
+            );
+            remove_worktree(&worktree_path)?;
+        }
 
         // Create branch if it doesn't exist
         println!("   🔀 Creating branch: {}", branch_name);
@@ -196,12 +252,16 @@ fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
             })?;
         }
 
-        // Create worktree
+        // Create worktree (with force flag to override any stale entries)
         println!("   📁 Creating worktree: {}", worktree_path);
-        let output = Command::new("git")
-            .args(["worktree", "add", &worktree_path, &branch_name])
-            .output()
-            .context("Failed to create worktree")?;
+        let mut cmd = Command::new("git");
+        cmd.args(["worktree", "add"]);
+
+        // Try with --force flag first to handle edge cases
+        cmd.arg("--force");
+        cmd.args([&worktree_path, &branch_name]);
+
+        let output = cmd.output().context("Failed to create worktree")?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -223,6 +283,54 @@ fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
         for line in worktrees.lines() {
             println!("   {}", line);
         }
+    }
+
+    Ok(())
+}
+
+/// Prune stale worktree entries
+fn prune_stale_worktrees() -> Result<()> {
+    let output = Command::new("git")
+        .args(["worktree", "prune"])
+        .output()
+        .context("Failed to prune worktrees")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // Don't fail on prune errors, just warn
+        println!("   ⚠️  Warning: Failed to prune worktrees: {}", stderr);
+    }
+
+    Ok(())
+}
+
+/// Check if a worktree is registered
+fn is_worktree_registered(path: &str) -> Result<bool> {
+    let output = Command::new("git")
+        .args(["worktree", "list", "--porcelain"])
+        .output()
+        .context("Failed to list worktrees")?;
+
+    if !output.status.success() {
+        return Ok(false);
+    }
+
+    let worktree_list = String::from_utf8_lossy(&output.stdout);
+    // Check if the path appears in the worktree list
+    Ok(worktree_list.contains(&format!("worktree {}", path)))
+}
+
+/// Remove a worktree registration
+fn remove_worktree(path: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["worktree", "remove", path, "--force"])
+        .output()
+        .context("Failed to remove worktree")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // If remove fails, the worktree might not exist - that's okay
+        println!("   ⚠️  Warning: {}", stderr);
     }
 
     Ok(())
