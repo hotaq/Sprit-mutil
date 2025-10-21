@@ -75,21 +75,26 @@ fn wait_for_session_ready_with_panes(
             if let Ok(stdout) = String::from_utf8(output.stdout) {
                 // Check if the exact session name exists (not just contains)
                 if stdout.lines().any(|line| line.trim() == session_name) {
-                    // Session exists, now check if it has the expected panes
-                    if let Ok(pane_output) = Command::new("tmux")
-                        .args(&["list-panes", "-t", session_name])
-                        .output()
-                    {
-                        if pane_output.status.success() {
-                            if let Ok(pane_stdout) = String::from_utf8(pane_output.stdout) {
-                                let pane_count = pane_stdout.lines().count();
-                                if pane_count >= expected_panes {
-                                    // Session exists and has enough panes - give it extra time to stabilize
-                                    thread::sleep(Duration::from_millis(500));
-                                    return true;
+                    // Session exists, now check if it has the expected panes with retry
+                    for _pane_attempt in 0..5 {
+                        if let Ok(pane_output) = Command::new("tmux")
+                            .args(&["list-panes", "-t", session_name])
+                            .output()
+                        {
+                            if pane_output.status.success() {
+                                if let Ok(pane_stdout) = String::from_utf8(pane_output.stdout) {
+                                    let pane_count = pane_stdout.lines().count();
+                                    if pane_count >= expected_panes {
+                                        // Session exists and has enough panes - give it extra time to stabilize
+                                        thread::sleep(Duration::from_millis(500));
+                                        return true;
+                                    }
                                 }
                             }
                         }
+
+                        // Wait before retrying pane detection
+                        thread::sleep(Duration::from_millis(200));
                     }
                 }
             }
@@ -125,6 +130,16 @@ fn wait_for_session_ready_with_panes(
                 "Session '{}' never became ready. Current sessions:\n{}",
                 session_name, stdout
             );
+        }
+    }
+
+    // Also check panes for the session if it exists
+    if let Ok(output) = Command::new("tmux")
+        .args(&["list-panes", "-t", session_name])
+        .output()
+    {
+        if let Ok(stdout) = String::from_utf8(output.stdout) {
+            eprintln!("Session '{}' panes:\n{}", session_name, stdout);
         }
     }
 

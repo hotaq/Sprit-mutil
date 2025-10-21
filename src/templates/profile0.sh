@@ -11,6 +11,7 @@ SPRITE_SESSION="${SPRITE_SESSION:-sprite-session}"
 AGENT_COUNT="${AGENT_COUNT:-3}"
 
 echo "🖼️  Applying tmux Profile 0: Top + Split Bottom"
+echo "🔧 Session: $SPRITE_SESSION, Agents: $AGENT_COUNT"
 
 # Kill existing session if it exists
 tmux kill-session -t "$SPRITE_SESSION" 2>/dev/null || true
@@ -59,7 +60,14 @@ fi
 # Set balanced layout
 tmux select-layout -t "$SPRITE_SESSION:supervisor" main-horizontal
 
+# Add a small delay to ensure everything is properly set up
+sleep 0.1
+
 echo "✅ Profile 0 applied successfully!"
 echo "🖱️  Mouse support enabled - Click to switch between panels"
 echo "⌨️  Keyboard shortcuts: Ctrl+B then Arrow keys to navigate"
 echo "🎮 Use 'sprite attach' to connect to the session"
+
+# Debug output: show created panes
+echo "🔍 Created panes:"
+tmux list-panes -t "$SPRITE_SESSION" 2>/dev/null || echo "   (Could not list panes)"

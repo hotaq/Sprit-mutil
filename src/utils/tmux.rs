@@ -468,7 +468,17 @@ pub fn set_environment(session: &str, env_vars: &HashMap<String, String>) -> Res
 }
 
 /// Execute a tmux profile script in a session.
+#[allow(dead_code)]
 pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> Result<()> {
+    execute_profile_script_with_agent_count(session, script_path, 3)
+}
+
+/// Execute a tmux profile script in a session with specific agent count.
+pub fn execute_profile_script_with_agent_count(
+    session: &str,
+    script_path: &std::path::Path,
+    agent_count: u32,
+) -> Result<()> {
     if !script_path.exists() {
         return Err(SpriteError::filesystem(
             format!("Profile script not found: {}", script_path.display()),
@@ -477,13 +487,17 @@ pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> R
         .into());
     }
 
-    println!("📜 Executing profile script: {}", script_path.display());
+    println!(
+        "📜 Executing profile script: {} with {} agents",
+        script_path.display(),
+        agent_count
+    );
 
     // Execute the profile script as a bash script with environment variables
     let output = Command::new("bash")
         .arg(script_path)
         .env("SPRITE_SESSION", session)
-        .env("AGENT_COUNT", "3") // Default, can be made dynamic later
+        .env("AGENT_COUNT", agent_count.to_string())
         .output()
         .with_context(|| {
             format!(
@@ -503,26 +517,55 @@ pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> R
     }
 
     println!("   ✅ Profile script executed successfully");
+
+    // Give tmux a moment to fully process the profile script, especially in CI
+    std::thread::sleep(std::time::Duration::from_millis(200));
+
     Ok(())
 }
 
 /// Get information about panes in a session.
 pub fn get_session_panes(session: &str) -> Result<Vec<PaneInfo>> {
-    let output = Command::new("tmux")
-        .args(["list-panes", "-t", session])
-        .output()
-        .with_context(|| format!("Failed to list panes for session '{}'", session))?;
+    get_session_panes_with_retry(session, 3)
+}
 
-    if !output.status.success() {
-        return Err(SpriteError::tmux_with_source(
-            format!("Failed to list panes for session '{}'", session),
-            String::from_utf8_lossy(&output.stderr),
-        )
-        .into());
+/// Get information about panes in a session with retry logic for CI environments.
+pub fn get_session_panes_with_retry(session: &str, max_retries: u32) -> Result<Vec<PaneInfo>> {
+    for attempt in 0..max_retries {
+        let output = Command::new("tmux")
+            .args(["list-panes", "-t", session])
+            .output()
+            .with_context(|| format!("Failed to list panes for session '{}'", session))?;
+
+        if output.status.success() {
+            let panes_str = String::from_utf8_lossy(&output.stdout);
+            match parse_panes_list(&panes_str) {
+                Ok(panes) if !panes.is_empty() => return Ok(panes),
+                Ok(_) => {
+                    // Empty panes list, might need to wait longer
+                }
+                Err(e) => {
+                    if attempt == max_retries - 1 {
+                        return Err(e);
+                    }
+                    // Continue to retry
+                }
+            }
+        } else if attempt == max_retries - 1 {
+            return Err(SpriteError::tmux_with_source(
+                format!("Failed to list panes for session '{}'", session),
+                String::from_utf8_lossy(&output.stderr),
+            )
+            .into());
+        }
+
+        // Wait before retry with exponential backoff
+        let delay = std::time::Duration::from_millis(100 * (1 << attempt)); // 100ms, 200ms, 400ms
+        std::thread::sleep(delay);
     }
 
-    let panes_str = String::from_utf8_lossy(&output.stdout);
-    parse_panes_list(&panes_str)
+    // Should never reach here, but return empty result if all retries fail
+    Ok(Vec::new())
 }
 
 /// Information about a tmux pane.
