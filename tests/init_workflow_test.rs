@@ -262,8 +262,14 @@ fn test_init_workflow_not_git_repository() {
     assert!(temp_path.join(".git").exists(), "Git should be initialized");
 
     // Verify worktrees were created
-    assert!(temp_path.join("agents/1").exists(), "Agent 1 worktree should exist");
-    assert!(temp_path.join("agents/2").exists(), "Agent 2 worktree should exist");
+    assert!(
+        temp_path.join("agents/1").exists(),
+        "Agent 1 worktree should exist"
+    );
+    assert!(
+        temp_path.join("agents/2").exists(),
+        "Agent 2 worktree should exist"
+    );
 }
 
 /// Test init workflow edge case with very large agent count
