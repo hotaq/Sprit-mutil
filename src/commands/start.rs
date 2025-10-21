@@ -138,8 +138,8 @@ fn create_tmux_session(
     // Send initial setup commands to each agent pane
     setup_agent_panes(session_name, config)?;
 
-    // Create supervisor control pane if not already present
-    create_supervisor_pane(session_name, config)?;
+    // Profile script already created supervisor pane, just send info to it
+    send_supervisor_info(session_name, config)?;
 
     println!("✅ Tmux session '{}' created successfully", session_name);
     Ok(())
@@ -196,13 +196,12 @@ fn setup_agent_panes(session_name: &str, config: &SpriteConfig) -> Result<()> {
     Ok(())
 }
 
-/// Create a supervisor control pane for managing the session
-fn create_supervisor_pane(session_name: &str, config: &SpriteConfig) -> Result<()> {
-    println!("🎮 Creating supervisor control pane...");
+/// Send supervisor info to the existing supervisor pane (created by profile script)
+fn send_supervisor_info(session_name: &str, config: &SpriteConfig) -> Result<()> {
+    println!("🎮 Configuring supervisor control pane...");
 
-    // Create a new window for supervisor using tmux utility
-    let _window_id = tmux::create_window(session_name, "supervisor")
-        .context("Failed to create supervisor window")?;
+    // Profile script already created the supervisor window, so we just send info to it
+    // No need to create a new window
 
     // Display supervisor information
     let supervisor_info = format!(

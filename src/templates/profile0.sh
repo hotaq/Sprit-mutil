@@ -38,11 +38,13 @@ else
     tmux send-keys -t "$SPRITE_SESSION:supervisor.1" "cd agents/2 && echo '🤖 Agent 2 Workspace'" C-m
     tmux send-keys -t "$SPRITE_SESSION:supervisor.2" "cd agents/3 && echo '🤖 Agent 3 Workspace'" C-m
 
-    # Create additional windows for extra agents
-    for i in $(seq 4 $AGENT_COUNT); do
-        tmux new-window -t "$SPRITE_SESSION" -n "agent-$i"
-        tmux send-keys -t "$SPRITE_SESSION:agent-$i" "cd agents/$i && echo '🤖 Agent $i Workspace'" C-m
-    done
+    # Create additional windows for extra agents (only if > 3)
+    if [ "$AGENT_COUNT" -gt 3 ]; then
+        for i in $(seq 4 $AGENT_COUNT); do
+            tmux new-window -t "$SPRITE_SESSION" -n "agent-$i"
+            tmux send-keys -t "$SPRITE_SESSION:agent-$i" "cd agents/$i && echo '🤖 Agent $i Workspace'" C-m
+        done
+    fi
 fi
 
 # Set balanced layout
