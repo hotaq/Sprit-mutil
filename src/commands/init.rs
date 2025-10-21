@@ -165,9 +165,21 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
 fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
     println!("🌳 Setting up agent worktrees...");
 
+    // First, prune any stale worktree entries
+    prune_stale_worktrees()?;
+
     for i in 1..=agent_count {
         let branch_name = format!("agents/{}", i);
         let worktree_path = format!("agents/{}", i);
+
+        // Check if worktree is already registered
+        if is_worktree_registered(&worktree_path)? {
+            println!(
+                "   ℹ️  Worktree {} already registered, removing...",
+                worktree_path
+            );
+            remove_worktree(&worktree_path)?;
+        }
 
         // Create branch if it doesn't exist
         println!("   🔀 Creating branch: {}", branch_name);
@@ -223,6 +235,54 @@ fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
         for line in worktrees.lines() {
             println!("   {}", line);
         }
+    }
+
+    Ok(())
+}
+
+/// Prune stale worktree entries
+fn prune_stale_worktrees() -> Result<()> {
+    let output = Command::new("git")
+        .args(["worktree", "prune"])
+        .output()
+        .context("Failed to prune worktrees")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // Don't fail on prune errors, just warn
+        println!("   ⚠️  Warning: Failed to prune worktrees: {}", stderr);
+    }
+
+    Ok(())
+}
+
+/// Check if a worktree is registered
+fn is_worktree_registered(path: &str) -> Result<bool> {
+    let output = Command::new("git")
+        .args(["worktree", "list", "--porcelain"])
+        .output()
+        .context("Failed to list worktrees")?;
+
+    if !output.status.success() {
+        return Ok(false);
+    }
+
+    let worktree_list = String::from_utf8_lossy(&output.stdout);
+    // Check if the path appears in the worktree list
+    Ok(worktree_list.contains(&format!("worktree {}", path)))
+}
+
+/// Remove a worktree registration
+fn remove_worktree(path: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["worktree", "remove", path, "--force"])
+        .output()
+        .context("Failed to remove worktree")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // If remove fails, the worktree might not exist - that's okay
+        println!("   ⚠️  Warning: {}", stderr);
     }
 
     Ok(())
