@@ -424,46 +424,30 @@ pub fn execute_profile_script(session: &str, script_path: &std::path::Path) -> R
 
     println!("📜 Executing profile script: {}", script_path.display());
 
-    // Clear the session first
-    let output = Command::new("tmux")
-        .args(["send-keys", "-t", session, "C-l", "C-c"])
+    // Execute the profile script as a bash script with environment variables
+    let output = Command::new("bash")
+        .arg(script_path)
+        .env("SPRITE_SESSION", session)
+        .env("AGENT_COUNT", "3") // Default, can be made dynamic later
         .output()
-        .context("Failed to clear tmux session")?;
+        .with_context(|| {
+            format!(
+                "Failed to execute profile script: {}",
+                script_path.display()
+            )
+        })?;
 
     if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
         return Err(SpriteError::tmux_with_source(
-            "Failed to clear tmux session",
-            String::from_utf8_lossy(&output.stderr),
+            format!("Profile script execution failed: {}", script_path.display()),
+            format!("stdout: {}\nstderr: {}", stdout, stderr),
         )
         .into());
     }
 
-    // Read and execute the profile script
-    let script_content = std::fs::read_to_string(script_path)
-        .with_context(|| format!("Failed to read profile script: {}", script_path.display()))?;
-
-    // Split script into lines and execute each command
-    for line in script_content.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-
-        // Execute the command in the tmux session
-        let output = Command::new("tmux")
-            .args(["send-keys", "-t", session, line, "C-m"])
-            .output()
-            .with_context(|| format!("Failed to execute tmux command: {}", line))?;
-
-        if !output.status.success() {
-            eprintln!("⚠️  Warning: Failed to execute tmux command: {}", line);
-            eprintln!("   Error: {}", String::from_utf8_lossy(&output.stderr));
-        }
-
-        // Small delay to allow commands to execute
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    }
-
+    println!("   ✅ Profile script executed successfully");
     Ok(())
 }
 
