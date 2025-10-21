@@ -64,23 +64,14 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Cargo version: $VERSION"
 
-      - name: Generate .cargo/config.toml for GitHub Packages
-        run: |
-          mkdir -p .cargo
-          cat > .cargo/config.toml << 'EOF'
-          [registry.github]
-          index = "sparse+https://github.com/hotaq/Sprit-mutil.git/registry/index/"
-          [registries.github]
-          index = "sparse+https://github.com/hotaq/Sprit-mutil.git/registry/index/"
-          EOF
-
       - name: Configure Cargo for GitHub Packages
         run: |
           # Configure cargo to use GitHub Packages registry
-          echo '[registry.github]' >> ~/.cargo/config.toml
-          echo 'index = "sparse+https://github.com/hotaq/Sprit-mutil.git/registry/index/"' >> ~/.cargo/config.toml
-          echo '[registries.github]' >> ~/.cargo/config.toml
-          echo 'index = "sparse+https://github.com/hotaq/Sprit-mutil.git/registry/index/"' >> ~/.cargo/config.toml
+          mkdir -p ~/.cargo
+          cat > ~/.cargo/config.toml << 'EOF'
+          [registry.github]
+          index = "https://github.com/hotaq/Sprit-mutil.git/registry/index/"
+          EOF
 
       - name: Login to GitHub Packages
         run: echo "${{ secrets.GITHUB_TOKEN }}" | cargo login --registry github
