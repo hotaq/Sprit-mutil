@@ -6,9 +6,15 @@
 // - Session health monitoring (status command)
 // - Session termination (kill command)
 // - Session recovery and cleanup
+//
+// IMPORTANT: These tests must run sequentially to avoid tmux session conflicts.
+// Run with: cargo test --test session_management_test -- --test-threads=1
+// CI is configured to run these tests sequentially automatically.
 
 use anyhow::Result;
 use std::process::Command;
+use std::thread;
+use std::time::Duration;
 use tempfile::TempDir;
 use uuid::Uuid;
 
@@ -41,7 +47,53 @@ impl Drop for SessionGuard {
         let _ = Command::new("tmux")
             .args(&["kill-session", "-t", &self.session_name])
             .output();
+
+        // Give tmux a moment to fully clean up the session
+        thread::sleep(Duration::from_millis(100));
     }
+}
+
+/// Helper to wait for tmux session to be fully created and registered
+fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
+    for attempt in 0..max_attempts {
+        if let Ok(output) = Command::new("tmux")
+            .args(&["list-sessions", "-F", "#{session_name}"])
+            .output()
+        {
+            if let Ok(stdout) = String::from_utf8(output.stdout) {
+                // Check if the exact session name exists (not just contains)
+                if stdout.lines().any(|line| line.trim() == session_name) {
+                    // Give it a bit more time to fully initialize panes
+                    thread::sleep(Duration::from_millis(200));
+                    return true;
+                }
+            }
+        }
+
+        if attempt % 5 == 4 {
+            // Log progress every 5 attempts (500ms)
+            eprintln!(
+                "Still waiting for session '{}' (attempt {}/{})",
+                session_name,
+                attempt + 1,
+                max_attempts
+            );
+        }
+
+        thread::sleep(Duration::from_millis(100));
+    }
+
+    // One final check with debug output
+    if let Ok(output) = Command::new("tmux").args(&["list-sessions"]).output() {
+        if let Ok(stdout) = String::from_utf8(output.stdout) {
+            eprintln!(
+                "Session '{}' never became ready. Current sessions:\n{}",
+                session_name, stdout
+            );
+        }
+    }
+
+    false
 }
 
 #[test]
@@ -299,6 +351,13 @@ fn test_status_command_functionality() -> Result<()> {
         .assert()
         .success();
 
+    // Wait for session to be fully ready
+    assert!(
+        wait_for_session_ready(&session_name, 20),
+        "Session {} did not become ready in time",
+        session_name
+    );
+
     // Test status with one session
     let result3 = AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
@@ -465,11 +524,8 @@ fn test_concurrent_session_operations() -> Result<()> {
         generate_unique_session_name("concurrent-3"),
     ];
 
-    // Create guards for cleanup
-    let _guards: Vec<SessionGuard> = session_names
-        .iter()
-        .map(|name| SessionGuard::new(name.clone()))
-        .collect();
+    // Create guards for cleanup as we create sessions
+    let mut _guards: Vec<SessionGuard> = Vec::new();
 
     for session_name in &session_names {
         AssertCommand::cargo_bin("sprite")?
@@ -477,7 +533,20 @@ fn test_concurrent_session_operations() -> Result<()> {
             .args(&["start", "--session-name", session_name, "--detach"])
             .assert()
             .success();
+
+        // Create guard after successful session creation
+        _guards.push(SessionGuard::new(session_name.clone()));
+
+        // Wait for each session to be fully ready before creating the next
+        assert!(
+            wait_for_session_ready(session_name, 20),
+            "Session {} did not become ready in time",
+            session_name
+        );
     }
+
+    // Give tmux server a moment to fully register all sessions
+    thread::sleep(Duration::from_millis(500));
 
     // Verify all sessions exist
     let list_result = AssertCommand::cargo_bin("sprite")?
@@ -488,7 +557,12 @@ fn test_concurrent_session_operations() -> Result<()> {
 
     let list_stdout = std::str::from_utf8(&list_result.get_output().stdout)?;
     for session_name in &session_names {
-        assert!(list_stdout.contains(session_name));
+        assert!(
+            list_stdout.contains(session_name),
+            "Session {} not found in list output: {}",
+            session_name,
+            list_stdout
+        );
     }
 
     // Check status for all sessions
