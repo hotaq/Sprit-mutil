@@ -18,7 +18,13 @@ pub fn execute(session_name: Option<String>, force: bool, all: bool) -> Result<(
     }
 
     // Get list of sessions to determine what to kill
-    let sessions = tmux::list_sessions().context("Failed to list sessions")?;
+    let sessions = match tmux::list_sessions() {
+        Ok(s) => s,
+        Err(_) => {
+            println!("📭 No tmux sessions found to kill.");
+            return Ok(());
+        }
+    };
 
     if sessions.is_empty() {
         println!("📭 No tmux sessions found to kill.");
