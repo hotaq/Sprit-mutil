@@ -14,6 +14,11 @@ tmux kill-session -t "$SPRITE_SESSION" 2>/dev/null || true
 
 # Create new session with supervisor window
 tmux new-session -d -s "$SPRITE_SESSION" -n "supervisor"
+
+# Enable mouse support for better navigation
+tmux set-option -g mouse on
+tmux set-option -t "$SPRITE_SESSION" mouse on
+
 tmux send-keys -t "$SPRITE_SESSION:supervisor" "echo '🎯 Supervisor Control Panel'" C-m
 
 if [ "$AGENT_COUNT" -ge 1 ]; then
@@ -50,4 +55,6 @@ fi
 tmux select-layout -t "$SPRITE_SESSION:supervisor" main-vertical
 
 echo "✅ Profile 1 applied successfully!"
+echo "🖱️  Mouse support enabled - Click to switch between panels"
+echo "⌨️  Keyboard shortcuts: Ctrl+B then Arrow keys to navigate"
 echo "🎮 Use 'sprite attach' to connect to the session"

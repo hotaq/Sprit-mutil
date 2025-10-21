@@ -22,6 +22,10 @@ tmux kill-session -t "$SPRITE_SESSION" 2>/dev/null || true
 # Create new session
 tmux new-session -d -s "$SPRITE_SESSION"
 
+# Enable mouse support for better navigation
+tmux set-option -g mouse on
+tmux set-option -t "$SPRITE_SESSION" mouse on
+
 if [ "$AGENT_COUNT" -ge 1 ]; then
     # Set up main agent as large bottom pane
     tmux send-keys -t "$SPRITE_SESSION:0" "cd agents/$MAIN_AGENT && echo '🎯 Main Agent $MAIN_AGENT (Large View)'" C-m
@@ -69,6 +73,8 @@ fi
 # Set main-horizontal layout
 tmux select-layout -t "$SPRITE_SESSION:main" main-horizontal
 
-echo "✅ Profile 4 applied successfully!"
+echo "✅ profile4 applied successfully!"
+echo "🖱️  Mouse support enabled - Click to switch between panels"
+echo "⌨️  Keyboard shortcuts: Ctrl+B then Arrow keys to navigate"
 echo "🎯 Main agent: $MAIN_AGENT"
 echo "🎮 Use 'sprite attach' to connect to the session"
