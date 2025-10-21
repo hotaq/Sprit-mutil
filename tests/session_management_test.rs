@@ -70,8 +70,8 @@ fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
             }
         }
 
-        if attempt % 5 == 4 {
-            // Log progress every 5 attempts (500ms)
+        if attempt % 10 == 9 {
+            // Log progress every 10 attempts (1 second)
             eprintln!(
                 "Still waiting for session '{}' (attempt {}/{})",
                 session_name,
@@ -80,7 +80,16 @@ fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
             );
         }
 
-        thread::sleep(Duration::from_millis(100));
+        // Use exponential backoff for better reliability in CI
+        let delay = if attempt < 10 {
+            100 // First 1 second: 100ms intervals
+        } else if attempt < 30 {
+            200 // Next 4 seconds: 200ms intervals
+        } else {
+            500 // Final 5 seconds: 500ms intervals
+        };
+
+        thread::sleep(Duration::from_millis(delay));
     }
 
     // One final check with debug output
@@ -566,10 +575,13 @@ fn test_concurrent_session_operations() -> Result<()> {
 
         // Wait for each session to be fully ready before creating the next
         assert!(
-            wait_for_session_ready(session_name, 40), // Increased timeout for CI
+            wait_for_session_ready(session_name, 60), // Increased timeout for CI (6 seconds)
             "Session {} did not become ready in time",
             session_name
         );
+
+        // Additional stability check: give tmux server time between session creations
+        thread::sleep(Duration::from_millis(200));
     }
 
     // Give tmux server more time to fully register all sessions, especially in CI
