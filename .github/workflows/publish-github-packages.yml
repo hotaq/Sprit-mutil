@@ -30,8 +30,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y tmux git
 
-      - name: Run tests
-        run: cargo test --verbose
+      - name: Run unit tests
+        run: cargo test --lib --bins --verbose
+
+      - name: Run integration tests (must be sequential for tmux)
+        run: |
+          # Run tmux-dependent tests sequentially to avoid session conflicts
+          cargo test --test init_workflow_test --verbose -- --test-threads=1
+          cargo test --test session_management_test --verbose -- --test-threads=1
 
       - name: Run clippy
         run: cargo clippy -- -D warnings
