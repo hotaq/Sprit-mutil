@@ -68,6 +68,9 @@ pub fn execute(
     // Create tmux session
     create_tmux_session(&session_name, &config, &profile, detach)?;
 
+    // Update agent status to Active after successful session creation
+    update_agent_status_to_active(&config)?;
+
     if !detach {
         println!("✅ Session created successfully!");
         println!("💡 Use 'sprite attach' to rejoin the session");
@@ -236,6 +239,46 @@ fn send_supervisor_info(session_name: &str, config: &SpriteConfig) -> Result<()>
     let help_cmd = "echo 'Type \"sprite --help\" for command reference'";
     if let Err(e) = tmux::send_keys_with_delay(session_name, "supervisor", help_cmd, 50) {
         eprintln!("⚠️  Warning: Failed to show help command: {}", e);
+    }
+
+    Ok(())
+}
+
+/// Update agent status to Active in the configuration after successful session creation
+fn update_agent_status_to_active(_config: &crate::commands::config::SpriteConfig) -> Result<()> {
+    println!("🔄 Activating agents...");
+
+    // Load current configuration
+    let mut current_config = crate::commands::config::SpriteConfig::load()
+        .context("Failed to load configuration for status update")?;
+
+    let mut updated_count = 0;
+
+    // Update each agent's status to Active if it's currently Inactive
+    for agent in &mut current_config.agents {
+        if agent.status == "Inactive" {
+            agent.status = "Active".to_string();
+            updated_count += 1;
+            println!("  ✅ Agent {} is now Active", agent.id);
+        } else {
+            println!(
+                "  ℹ️  Agent {} already has status: {}",
+                agent.id, agent.status
+            );
+        }
+    }
+
+    if updated_count > 0 {
+        // Save the updated configuration
+        current_config
+            .save()
+            .context("Failed to save updated configuration")?;
+        println!(
+            "📝 Configuration updated: {} agents activated",
+            updated_count
+        );
+    } else {
+        println!("ℹ️  No agents needed activation");
     }
 
     Ok(())

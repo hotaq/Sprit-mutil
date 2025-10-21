@@ -217,29 +217,21 @@ fn parse_session_age(_created_str: &str) -> Result<u64> {
 
 /// Check workspace integrity for a session
 fn check_workspace_integrity(session_name: &str) -> Result<Option<SessionIssue>> {
-    // Try to find the workspace directory for this session
-    // This is a simplified check - in practice, we'd need to track
-    // session->workspace mappings
-    let workspace_dirs = vec![
-        format!("agents/{}", session_name),
-        format!(".sprites/{}", session_name),
-    ];
+    // Check if we're in a valid sprite workspace (current directory should have agents.yaml)
+    let agents_config = Path::new("agents/agents.yaml");
 
-    for workspace_dir in workspace_dirs {
-        if Path::new(&workspace_dir).exists() {
-            // Check if it's a valid git repository
-            if Path::new(&format!("{}/.git", workspace_dir)).exists() {
-                return Ok(None);
-            } else {
-                return Ok(Some(SessionIssue::GitIssues(format!(
-                    "Workspace {} is not a git repository",
-                    workspace_dir
-                ))));
-            }
+    if agents_config.exists() {
+        // Check if it's a valid git repository
+        if Path::new(".git").exists() {
+            return Ok(None);
+        } else {
+            return Ok(Some(SessionIssue::GitIssues(
+                "Current directory is not a git repository".to_string(),
+            )));
         }
     }
 
-    // If we can't find a workspace, consider it orphaned
+    // If we can't find the agents configuration, consider it orphaned
     Ok(Some(SessionIssue::WorkspaceMissing(format!(
         "No workspace found for session {}",
         session_name
