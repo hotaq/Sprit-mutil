@@ -39,6 +39,7 @@ Done! You now have 3 AI agents ready to work.
 
 ```bash
 sprite start              # Start all agents
+sprite start --force      # Replace existing session
 sprite attach             # Join the session
 sprite kill               # Stop all agents
 sprite status             # Check system health
@@ -109,6 +110,8 @@ sprite init --agents 3
 
 **"Session already exists"**
 ```bash
+sprite start --force        # Quick: Kill old + start new
+# OR
 sprite kill sprite-session  # Stop the old one
 sprite start                # Start fresh
 ```
