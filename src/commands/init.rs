@@ -72,7 +72,7 @@ pub fn execute(options: InitOptions) -> Result<()> {
 
     println!("🎯 Next steps:");
     println!("   1. Review agents/agents.yaml and customize agent configurations");
-    println!("   2. Run 'sprite install' to create agent worktrees");
+    println!("   2. Run 'sprite agents provision' to create agent worktrees");
     println!("   3. Run 'sprite start' to begin supervision session");
 
     Ok(())

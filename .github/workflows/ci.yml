@@ -45,17 +45,12 @@ jobs:
     - name: Build
       run: cargo build --verbose
 
-    - name: Run unit tests
-      run: cargo test --lib
-
-    - name: Run init workflow tests
-      run: cargo test --test init_workflow_test
-
-    - name: Run session management tests (sequential)
-      run: cargo test --test session_management_test -- --test-threads=1
-
-    - name: Run workspace provisioning tests
-      run: cargo test --test workspace_provisioning_test
+    - name: Run all tests
+      run: |
+        cargo test --lib
+        cargo test --test init_workflow_test
+        cargo test --test workspace_provisioning_test
+        cargo test --test session_management_test -- --test-threads=1
 
   build:
     name: Build
