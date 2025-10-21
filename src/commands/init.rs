@@ -486,61 +486,49 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
-    fn test_create_agents_directory_structure() {
+    fn test_create_base_directory_structure() {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        let result = create_agents_directory_structure(&agents_dir, 3);
+        let result = create_base_directory_structure(&agents_dir);
 
         assert!(result.is_ok());
         assert!(agents_dir.exists());
         assert!(agents_dir.join("scripts").exists());
         assert!(agents_dir.join("profiles").exists());
-        assert!(agents_dir.join("1").exists());
-        assert!(agents_dir.join("2").exists());
-        assert!(agents_dir.join("3").exists());
-    }
-
-    #[test]
-    fn test_create_agents_directory_structure_zero_agents() {
-        let temp_dir = TempDir::new().unwrap();
-        let agents_dir = temp_dir.path().join("agents");
-
-        let result = create_agents_directory_structure(&agents_dir, 0);
-
-        assert!(result.is_ok());
-        assert!(agents_dir.exists());
-        assert!(agents_dir.join("scripts").exists());
-        assert!(agents_dir.join("profiles").exists());
-        // Should not create agent directories for 0 agents
+        // Agent directories are NOT created by this function anymore
         assert!(!agents_dir.join("1").exists());
+        assert!(!agents_dir.join("2").exists());
+        assert!(!agents_dir.join("3").exists());
     }
 
     #[test]
-    fn test_create_agents_directory_structure_single_agent() {
+    fn test_create_base_directory_structure_idempotent() {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        let result = create_agents_directory_structure(&agents_dir, 1);
+        // Call twice to ensure it's idempotent
+        let result1 = create_base_directory_structure(&agents_dir);
+        let result2 = create_base_directory_structure(&agents_dir);
 
-        assert!(result.is_ok());
+        assert!(result1.is_ok());
+        assert!(result2.is_ok());
         assert!(agents_dir.exists());
-        assert!(agents_dir.join("1").exists());
-        assert!(!agents_dir.join("2").exists());
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
     }
 
     #[test]
-    fn test_create_agents_directory_structure_nested_directories() {
+    fn test_create_base_directory_structure_nested() {
         let temp_dir = TempDir::new().unwrap();
-        let agents_dir = temp_dir.path().join("deep").join("nested").join("agents");
-        fs::create_dir_all(agents_dir.parent().unwrap()).unwrap();
+        let agents_dir = temp_dir.path().join("agents");
 
-        let result = create_agents_directory_structure(&agents_dir, 2);
+        let result = create_base_directory_structure(&agents_dir);
 
         assert!(result.is_ok());
         assert!(agents_dir.exists());
-        assert!(agents_dir.join("1").exists());
-        assert!(agents_dir.join("2").exists());
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
     }
 
     #[test]
@@ -627,8 +615,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        // Create the directory structure first
-        let result = create_agents_directory_structure(&agents_dir, 2);
+        // Create the base directory structure first
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
 
         let scripts_dir = agents_dir.join("scripts");
@@ -650,8 +638,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        // Create the directory structure first
-        let result = create_agents_directory_structure(&agents_dir, 2);
+        // Create the base directory structure first
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
 
         let profiles_dir = agents_dir.join("profiles");
@@ -709,7 +697,7 @@ mod tests {
         // Should succeed with force flag even if config exists
         // Note: This test would require mocking git validation for full testing
         // For now, we test the structure creation parts
-        let result = create_agents_directory_structure(&agents_dir, options.agents);
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
     }
 
@@ -795,7 +783,7 @@ mod tests {
         let invalid_path = Path::new("/invalid/nonexistent/path");
 
         // This should return an error, not panic
-        let result = create_agents_directory_structure(invalid_path, 1);
+        let result = create_base_directory_structure(invalid_path);
         assert!(result.is_err());
     }
 
@@ -804,13 +792,17 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        // Test with a large number of agents
-        let result = create_agents_directory_structure(&agents_dir, 100);
+        // Test with a large number of agents (but we only test base structure now)
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
 
-        // Verify all directories were created
-        for i in 1..=100 {
-            assert!(agents_dir.join(i.to_string()).exists());
-        }
+        // Verify base directories were created
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
+
+        // Agent directories are NOT created by this function anymore
+        // They are created by setup_agent_worktrees
+        assert!(!agents_dir.join("1").exists());
+        assert!(!agents_dir.join("100").exists());
     }
 }
