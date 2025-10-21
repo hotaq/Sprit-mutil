@@ -135,15 +135,18 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
         anyhow::bail!("Failed to stage agents directory");
     }
 
-    // Check if there's anything to commit
-    let status_output = Command::new("git")
-        .args(["status", "--porcelain"])
-        .output()
-        .context("Failed to check git status")?;
+    // If there are no commits, we MUST create one (branches need a commit)
+    // If there are commits, check if there's anything to commit
+    if has_commits {
+        let status_output = Command::new("git")
+            .args(["status", "--porcelain"])
+            .output()
+            .context("Failed to check git status")?;
 
-    if status_output.stdout.is_empty() {
-        println!("   ℹ️  No changes to commit");
-        return Ok(());
+        if status_output.stdout.is_empty() {
+            println!("   ℹ️  No changes to commit");
+            return Ok(());
+        }
     }
 
     // Commit
@@ -155,7 +158,8 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
     if output.status.success() {
         println!("   ✅ Changes committed");
     } else {
-        println!("   ℹ️  Commit skipped (possibly already committed)");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Failed to create commit: {}", stderr);
     }
 
     Ok(())
@@ -166,6 +170,8 @@ fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
     println!("🌳 Setting up agent worktrees...");
 
     // First, prune any stale worktree entries
+    // Run this twice to ensure all stale entries are removed
+    prune_stale_worktrees()?;
     prune_stale_worktrees()?;
 
     for i in 1..=agent_count {
@@ -208,12 +214,16 @@ fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
             })?;
         }
 
-        // Create worktree
+        // Create worktree (with force flag to override any stale entries)
         println!("   📁 Creating worktree: {}", worktree_path);
-        let output = Command::new("git")
-            .args(["worktree", "add", &worktree_path, &branch_name])
-            .output()
-            .context("Failed to create worktree")?;
+        let mut cmd = Command::new("git");
+        cmd.args(["worktree", "add"]);
+
+        // Try with --force flag first to handle edge cases
+        cmd.arg("--force");
+        cmd.args([&worktree_path, &branch_name]);
+
+        let output = cmd.output().context("Failed to create worktree")?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
