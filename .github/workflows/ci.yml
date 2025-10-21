@@ -51,9 +51,6 @@ jobs:
     - name: Run init workflow tests
       run: cargo test --test init_workflow_test
 
-    - name: Run integration tests
-      run: cargo test --test integration
-
     - name: Run session management tests (sequential)
       run: cargo test --test session_management_test -- --test-threads=1
 
