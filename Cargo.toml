@@ -1,6 +1,6 @@
 [package]
 name = "sprite"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "A robust command-line toolkit for managing multiple AI coding agents in isolated tmux sessions with comprehensive workspace management and health monitoring"
 authors = ["hotaq hootoo2016@gmail.com"]
