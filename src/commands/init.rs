@@ -1,8 +1,8 @@
 use crate::error::SpriteError;
-use crate::utils::git;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Instant;
 
 #[cfg(unix)]
@@ -18,8 +18,8 @@ pub fn execute(options: InitOptions) -> Result<()> {
 
     println!("🚀 Initializing Sprite multi-agent environment...");
 
-    // T026: Validate git repository
-    git::validate_git_repository().context("Failed to validate git repository")?;
+    // Step 1: Ensure git repository exists
+    ensure_git_repository()?;
 
     // T028: Handle edge case - existing configuration
     let agents_dir = PathBuf::from("agents");
@@ -32,20 +32,28 @@ pub fn execute(options: InitOptions) -> Result<()> {
         .into());
     }
 
-    // Create directory structure
-    create_agents_directory_structure(&agents_dir, options.agents)?;
+    // Step 2: Create directory structure (only scripts and profiles, not agent dirs)
+    create_base_directory_structure(&agents_dir)?;
 
-    // Generate configuration file
+    // Step 3: Generate configuration file
     generate_agents_config(&config_file, options.agents)?;
 
-    // Create shell script templates
+    // Step 4: Create shell script templates
     create_shell_script_templates(&agents_dir)?;
 
-    // Create tmux profile templates
+    // Step 5: Create tmux profile templates
     create_tmux_profile_templates(&agents_dir)?;
 
-    // Create .envrc for direnv if direnv is available
+    // Step 6: Create .envrc for direnv if direnv is available
     create_direnv_config(&agents_dir)?;
+
+    // Step 7: Commit configuration to git
+    ensure_initial_commit(&agents_dir)?;
+
+    // Step 8: Create agent branches and worktrees
+    if options.agents > 0 {
+        setup_agent_worktrees(options.agents)?;
+    }
 
     let duration = start_time.elapsed();
     println!(
@@ -72,13 +80,156 @@ pub fn execute(options: InitOptions) -> Result<()> {
 
     println!("🎯 Next steps:");
     println!("   1. Review agents/agents.yaml and customize agent configurations");
-    println!("   2. Run 'sprite agents provision' to create agent worktrees");
-    println!("   3. Run 'sprite start' to begin supervision session");
+    println!("   2. Run 'sprite start' to begin supervision session");
+    println!();
+    println!("💡 Pro tip: Everything is ready! You can start coding immediately.");
 
     Ok(())
 }
 
-fn create_agents_directory_structure(agents_dir: &Path, agent_count: u32) -> Result<()> {
+/// Ensure git repository exists, initialize if needed
+fn ensure_git_repository() -> Result<()> {
+    // Check if .git exists
+    if !PathBuf::from(".git").exists() {
+        println!("📦 No git repository found. Initializing...");
+        let output = Command::new("git")
+            .args(["init"])
+            .output()
+            .context("Failed to run git init")?;
+
+        if !output.status.success() {
+            anyhow::bail!("Failed to initialize git repository");
+        }
+        println!("   ✅ Git repository initialized");
+    } else {
+        println!("   ✅ Git repository detected");
+    }
+
+    Ok(())
+}
+
+/// Ensure at least one commit exists
+fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
+    println!("📝 Setting up git commit...");
+
+    // Check if there are any commits
+    let has_commits = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    if !has_commits {
+        println!("   📌 No commits found. Creating initial commit...");
+    } else {
+        println!("   📌 Adding agents configuration...");
+    }
+
+    // Stage agents directory
+    let output = Command::new("git")
+        .args(["add", agents_dir.to_str().unwrap()])
+        .output()
+        .context("Failed to stage agents directory")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Failed to stage agents directory");
+    }
+
+    // Check if there's anything to commit
+    let status_output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .output()
+        .context("Failed to check git status")?;
+
+    if status_output.stdout.is_empty() {
+        println!("   ℹ️  No changes to commit");
+        return Ok(());
+    }
+
+    // Commit
+    let output = Command::new("git")
+        .args(["commit", "-m", "Initialize Sprite multi-agent environment"])
+        .output()
+        .context("Failed to create commit")?;
+
+    if output.status.success() {
+        println!("   ✅ Changes committed");
+    } else {
+        println!("   ℹ️  Commit skipped (possibly already committed)");
+    }
+
+    Ok(())
+}
+
+/// Create agent branches and worktrees
+fn setup_agent_worktrees(agent_count: u32) -> Result<()> {
+    println!("🌳 Setting up agent worktrees...");
+
+    for i in 1..=agent_count {
+        let branch_name = format!("agents/{}", i);
+        let worktree_path = format!("agents/{}", i);
+
+        // Create branch if it doesn't exist
+        println!("   🔀 Creating branch: {}", branch_name);
+        let branch_exists = Command::new("git")
+            .args(["rev-parse", "--verify", &branch_name])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+
+        if !branch_exists {
+            let output = Command::new("git")
+                .args(["branch", &branch_name])
+                .output()
+                .context("Failed to create branch")?;
+
+            if !output.status.success() {
+                anyhow::bail!("Failed to create branch: {}", branch_name);
+            }
+        }
+
+        // Remove placeholder directory if it exists
+        let worktree_dir = PathBuf::from(&worktree_path);
+        if worktree_dir.exists() {
+            fs::remove_dir_all(&worktree_dir).with_context(|| {
+                format!("Failed to remove placeholder directory: {}", worktree_path)
+            })?;
+        }
+
+        // Create worktree
+        println!("   📁 Creating worktree: {}", worktree_path);
+        let output = Command::new("git")
+            .args(["worktree", "add", &worktree_path, &branch_name])
+            .output()
+            .context("Failed to create worktree")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            anyhow::bail!("Failed to create worktree {}: {}", worktree_path, stderr);
+        }
+        println!("   ✅ Agent {} worktree ready", i);
+    }
+
+    // Show worktree list
+    println!();
+    println!("📋 Git worktree status:");
+    let output = Command::new("git")
+        .args(["worktree", "list"])
+        .output()
+        .context("Failed to list worktrees")?;
+
+    if output.status.success() {
+        let worktrees = String::from_utf8_lossy(&output.stdout);
+        for line in worktrees.lines() {
+            println!("   {}", line);
+        }
+    }
+
+    Ok(())
+}
+
+/// Create base directory structure (without agent directories)
+fn create_base_directory_structure(agents_dir: &Path) -> Result<()> {
     println!("📁 Creating directory structure...");
 
     // Create main agents directory
@@ -92,12 +243,7 @@ fn create_agents_directory_structure(agents_dir: &Path, agent_count: u32) -> Res
     let profiles_dir = agents_dir.join("profiles");
     fs::create_dir_all(&profiles_dir).context("Failed to create profiles directory")?;
 
-    // Create individual agent directories
-    for i in 1..=agent_count {
-        let agent_dir = agents_dir.join(i.to_string());
-        fs::create_dir_all(&agent_dir)
-            .with_context(|| format!("Failed to create agent {} directory", i))?;
-    }
+    println!("   ✅ Base directories created");
 
     Ok(())
 }
@@ -340,61 +486,49 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
-    fn test_create_agents_directory_structure() {
+    fn test_create_base_directory_structure() {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        let result = create_agents_directory_structure(&agents_dir, 3);
+        let result = create_base_directory_structure(&agents_dir);
 
         assert!(result.is_ok());
         assert!(agents_dir.exists());
         assert!(agents_dir.join("scripts").exists());
         assert!(agents_dir.join("profiles").exists());
-        assert!(agents_dir.join("1").exists());
-        assert!(agents_dir.join("2").exists());
-        assert!(agents_dir.join("3").exists());
-    }
-
-    #[test]
-    fn test_create_agents_directory_structure_zero_agents() {
-        let temp_dir = TempDir::new().unwrap();
-        let agents_dir = temp_dir.path().join("agents");
-
-        let result = create_agents_directory_structure(&agents_dir, 0);
-
-        assert!(result.is_ok());
-        assert!(agents_dir.exists());
-        assert!(agents_dir.join("scripts").exists());
-        assert!(agents_dir.join("profiles").exists());
-        // Should not create agent directories for 0 agents
+        // Agent directories are NOT created by this function anymore
         assert!(!agents_dir.join("1").exists());
+        assert!(!agents_dir.join("2").exists());
+        assert!(!agents_dir.join("3").exists());
     }
 
     #[test]
-    fn test_create_agents_directory_structure_single_agent() {
+    fn test_create_base_directory_structure_idempotent() {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        let result = create_agents_directory_structure(&agents_dir, 1);
+        // Call twice to ensure it's idempotent
+        let result1 = create_base_directory_structure(&agents_dir);
+        let result2 = create_base_directory_structure(&agents_dir);
 
-        assert!(result.is_ok());
+        assert!(result1.is_ok());
+        assert!(result2.is_ok());
         assert!(agents_dir.exists());
-        assert!(agents_dir.join("1").exists());
-        assert!(!agents_dir.join("2").exists());
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
     }
 
     #[test]
-    fn test_create_agents_directory_structure_nested_directories() {
+    fn test_create_base_directory_structure_nested() {
         let temp_dir = TempDir::new().unwrap();
-        let agents_dir = temp_dir.path().join("deep").join("nested").join("agents");
-        fs::create_dir_all(agents_dir.parent().unwrap()).unwrap();
+        let agents_dir = temp_dir.path().join("agents");
 
-        let result = create_agents_directory_structure(&agents_dir, 2);
+        let result = create_base_directory_structure(&agents_dir);
 
         assert!(result.is_ok());
         assert!(agents_dir.exists());
-        assert!(agents_dir.join("1").exists());
-        assert!(agents_dir.join("2").exists());
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
     }
 
     #[test]
@@ -481,8 +615,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        // Create the directory structure first
-        let result = create_agents_directory_structure(&agents_dir, 2);
+        // Create the base directory structure first
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
 
         let scripts_dir = agents_dir.join("scripts");
@@ -504,8 +638,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        // Create the directory structure first
-        let result = create_agents_directory_structure(&agents_dir, 2);
+        // Create the base directory structure first
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
 
         let profiles_dir = agents_dir.join("profiles");
@@ -563,7 +697,7 @@ mod tests {
         // Should succeed with force flag even if config exists
         // Note: This test would require mocking git validation for full testing
         // For now, we test the structure creation parts
-        let result = create_agents_directory_structure(&agents_dir, options.agents);
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
     }
 
@@ -649,7 +783,7 @@ mod tests {
         let invalid_path = Path::new("/invalid/nonexistent/path");
 
         // This should return an error, not panic
-        let result = create_agents_directory_structure(invalid_path, 1);
+        let result = create_base_directory_structure(invalid_path);
         assert!(result.is_err());
     }
 
@@ -658,13 +792,17 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let agents_dir = temp_dir.path().join("agents");
 
-        // Test with a large number of agents
-        let result = create_agents_directory_structure(&agents_dir, 100);
+        // Test with a large number of agents (but we only test base structure now)
+        let result = create_base_directory_structure(&agents_dir);
         assert!(result.is_ok());
 
-        // Verify all directories were created
-        for i in 1..=100 {
-            assert!(agents_dir.join(i.to_string()).exists());
-        }
+        // Verify base directories were created
+        assert!(agents_dir.join("scripts").exists());
+        assert!(agents_dir.join("profiles").exists());
+
+        // Agent directories are NOT created by this function anymore
+        // They are created by setup_agent_worktrees
+        assert!(!agents_dir.join("1").exists());
+        assert!(!agents_dir.join("100").exists());
     }
 }
