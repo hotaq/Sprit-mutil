@@ -5,7 +5,12 @@ use crate::utils::tmux;
 use anyhow::{Context, Result};
 
 /// Execute start command with provided arguments
-pub fn execute(session_name: Option<String>, layout: String, detach: bool) -> Result<()> {
+pub fn execute(
+    session_name: Option<String>,
+    layout: String,
+    detach: bool,
+    force: bool,
+) -> Result<()> {
     let session_name = session_name.unwrap_or_else(|| "sprite-session".to_string());
 
     // Load configuration
@@ -28,9 +33,16 @@ pub fn execute(session_name: Option<String>, layout: String, detach: bool) -> Re
 
     // Check if session already exists
     if tmux::session_exists(&session_name)? {
-        if !detach {
+        if force {
+            println!(
+                "🔄 Force mode: Killing existing session '{}'...",
+                session_name
+            );
+            tmux::kill_session_force(&session_name)?;
+            println!("   ✅ Old session killed");
+        } else if !detach {
             return Err(SpriteError::session(
-                format!("Session '{}' already exists. Use 'sprite attach' to join or 'sprite kill' to terminate.", session_name),
+                format!("Session '{}' already exists. Use 'sprite start --force' to replace it, 'sprite attach' to join, or 'sprite kill' to terminate.", session_name),
                 Some(session_name),
             )
             .into());

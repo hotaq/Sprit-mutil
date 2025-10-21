@@ -39,8 +39,9 @@ fn main() -> Result<()> {
             session_name,
             layout,
             detach,
+            force,
         } => {
-            commands::start::execute(session_name, layout, detach)?;
+            commands::start::execute(session_name, layout, detach, force)?;
             Ok(())
         }
         cli::Commands::Attach { session_name, list } => {
