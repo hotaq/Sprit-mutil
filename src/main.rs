@@ -157,5 +157,13 @@ fn main() -> Result<()> {
             commands::help::execute(args)?;
             Ok(())
         }
+        cli::Commands::Update {
+            check,
+            yes,
+            version,
+        } => {
+            commands::update::execute(check, yes, version)?;
+            Ok(())
+        }
     }
 }

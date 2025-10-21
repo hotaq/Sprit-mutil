@@ -22,6 +22,19 @@ curl -fsSL https://raw.githubusercontent.com/hotaq/Sprit-mutil/main/scripts/inst
 
 *That's it! The installer will automatically detect your system and use the best installation method.*
 
+### Updating
+
+```bash
+# Check if updates are available
+sprite update --check
+
+# Update to the latest version
+sprite update
+
+# Update without confirmation prompt
+sprite update --yes
+```
+
 ### Your First Multi-Agent Project
 
 ```bash
