@@ -25,7 +25,7 @@ fn test_cli_basic_functionality() -> Result<()> {
         .args(&["--version"])
         .assert()
         .success()
-        .stdout(predicates::str::contains("0.1.0"));
+        .stdout(predicates::str::contains("0.2.0"));
 
     Ok(())
 }

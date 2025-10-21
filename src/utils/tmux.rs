@@ -81,15 +81,21 @@ pub fn kill_session_force(name: &str) -> Result<()> {
 /// Attach to a tmux session.
 #[allow(dead_code)]
 pub fn attach_session(name: &str) -> Result<()> {
-    let output = Command::new("tmux")
+    use std::process::Stdio;
+
+    // Use spawn with inherit to let tmux take over the terminal properly
+    // This works better with modern terminals like Warp
+    let status = Command::new("tmux")
         .args(["attach", "-t", name])
-        .output()
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status()
         .with_context(|| format!("Failed to attach to tmux session '{}'", name))?;
 
-    if !output.status.success() {
-        return Err(SpriteError::tmux_with_source(
-            format!("Failed to attach to tmux session '{}'", name),
-            String::from_utf8_lossy(&output.stderr),
+    if !status.success() {
+        return Err(SpriteError::tmux(
+            format!("Failed to attach to tmux session '{}'. This may be due to terminal compatibility. Try: tmux attach -t {} or sprite start --force", name, name),
         )
         .into());
     }
