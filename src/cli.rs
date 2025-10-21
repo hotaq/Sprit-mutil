@@ -180,6 +180,18 @@ pub enum Commands {
         #[arg(long, value_enum)]
         category: Option<HelpCategory>,
     },
+    /// Update sprite to the latest version
+    Update {
+        /// Only check for updates without installing
+        #[arg(long)]
+        check: bool,
+        /// Skip confirmation prompt
+        #[arg(short, long)]
+        yes: bool,
+        /// Update to specific version
+        #[arg(long)]
+        version: Option<String>,
+    },
 }
 
 /// Help system command categories.

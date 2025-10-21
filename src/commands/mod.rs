@@ -10,5 +10,6 @@ pub mod send;
 pub mod start;
 pub mod status;
 pub mod sync;
+pub mod update;
 pub mod warp;
 pub mod zoom;
