@@ -1,0 +1,16 @@
+# Example Cargo configuration for GitHub Packages
+# Copy this file to .cargo/config.toml in your project or home directory
+
+[registries.github]
+index = "sparse+https://github.com/hotaq/Sprit-mutil.git/registry/index/"
+
+# Alternative format (also works):
+# [registry.github]
+# index = "sparse+https://github.com/hotaq/Sprit-mutil.git/registry/index/"
+
+# For private repositories, you might need:
+# [source.crates-io]
+# replace-with = "github"
+
+# [source.github]
+# registry = "https://github.com/hotaq/Sprit-mutil.git/registry/index/"

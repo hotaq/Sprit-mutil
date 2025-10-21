@@ -68,6 +68,8 @@ pub fn execute(
     // Create tmux session
     create_tmux_session(&session_name, &config, &profile, detach)?;
 
+    // Give the tmux session a moment to fully initialize before updating status
+    std::thread::sleep(std::time::Duration::from_millis(300));
     // Update agent status to Active after successful session creation
     update_agent_status_to_active(&config)?;
 
@@ -130,8 +132,13 @@ fn create_tmux_session(
     let agents_dir = std::path::PathBuf::from("agents");
     let profile_script = agents_dir.join("profiles").join(format!("{}.sh", profile));
 
-    // Execute the profile script using the tmux utility
-    tmux::execute_profile_script(session_name, &profile_script).with_context(|| {
+    // Execute the profile script using the tmux utility with correct agent count
+    tmux::execute_profile_script_with_agent_count(
+        session_name,
+        &profile_script,
+        config.agents.len() as u32,
+    )
+    .with_context(|| {
         format!(
             "Failed to execute profile script: {}",
             profile_script.display()
