@@ -18,7 +18,16 @@ pub fn execute(session_name: Option<String>, cleanup: bool, detailed: bool) -> R
 
     // Get session health information
     let config = RecoveryConfig::default();
-    let health_reports = analyze_session_health(&config)?;
+    let health_reports = match analyze_session_health(&config) {
+        Ok(reports) => reports,
+        Err(_) => {
+            // Handle case where tmux server is not running or no sessions exist
+            println!("📭 No tmux sessions found.");
+            println!();
+            println!("💡 Use 'sprite start' to create a new session.");
+            return Ok(());
+        }
+    };
 
     if health_reports.is_empty() {
         println!("📭 No tmux sessions found.");
@@ -245,8 +254,6 @@ fn show_recommendations(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_status_execution() {
         // This test would need mocking to work properly in isolation

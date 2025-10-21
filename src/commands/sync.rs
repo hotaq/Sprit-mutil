@@ -5,6 +5,7 @@ use crate::models::ConflictResolution;
 use crate::utils::git;
 use anyhow::{Context, Result};
 use std::path::PathBuf;
+use tokio::process::Command as TokioCommand;
 
 /// Execute the sync command with the given parameters.
 pub fn execute(agent: Option<&str>, force: bool, strategy: &str, dry_run: bool) -> Result<()> {
@@ -403,6 +404,371 @@ fn defer_switch_back(original_branch: &str) -> Result<()> {
         );
     }
     Ok(())
+}
+
+/// Sync status tracking and reporting
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct SyncStatus {
+    pub start_time: std::time::SystemTime,
+    pub end_time: Option<std::time::SystemTime>,
+    pub context_type: String,
+    pub operations_completed: Vec<SyncOperation>,
+    pub conflicts_detected: Vec<MergeConflict>,
+    pub success: bool,
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct SyncOperation {
+    pub operation_type: String,
+    pub description: String,
+    pub start_time: std::time::SystemTime,
+    pub end_time: Option<std::time::SystemTime>,
+    pub success: bool,
+    pub output: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct MergeConflict {
+    pub file_path: String,
+    pub conflict_type: String,
+    pub detected_at: std::time::SystemTime,
+}
+
+/// Sync hooks and pre/post processing
+#[allow(dead_code)]
+pub struct SyncHooks {
+    pub pre_sync_hooks: Vec<SyncHook>,
+    pub post_sync_hooks: Vec<SyncHook>,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct SyncHook {
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
+    pub working_dir: Option<PathBuf>,
+    pub required: bool,
+    pub timeout: Option<std::time::Duration>,
+}
+
+impl SyncHooks {
+    #[allow(dead_code)]
+    pub fn load_from_config() -> Result<Self> {
+        // In a real implementation, this would load from configuration
+        // For now, return default hooks
+        Ok(Self {
+            pre_sync_hooks: vec![SyncHook {
+                name: "Check for uncommitted changes".to_string(),
+                command: "git".to_string(),
+                args: vec!["status".to_string(), "--porcelain".to_string()],
+                working_dir: None,
+                required: true,
+                timeout: Some(std::time::Duration::from_secs(5)),
+            }],
+            post_sync_hooks: vec![SyncHook {
+                name: "Run tests if available".to_string(),
+                command: "cargo".to_string(),
+                args: vec!["test".to_string(), "--quiet".to_string()],
+                working_dir: None,
+                required: false,
+                timeout: Some(std::time::Duration::from_secs(60)),
+            }],
+        })
+    }
+
+    #[allow(dead_code)]
+    pub async fn execute_pre_sync_hooks(&self, status: &mut SyncStatus) -> Result<()> {
+        println!("🔧 Running pre-sync hooks...");
+
+        for hook in &self.pre_sync_hooks {
+            let operation = SyncOperation {
+                operation_type: "pre-sync-hook".to_string(),
+                description: hook.name.clone(),
+                start_time: std::time::SystemTime::now(),
+                end_time: None,
+                success: false,
+                output: None,
+            };
+
+            println!("  Running: {}", hook.name);
+
+            let result = tokio::time::timeout(
+                hook.timeout.unwrap_or(std::time::Duration::from_secs(30)),
+                execute_hook_command(hook),
+            )
+            .await;
+
+            let mut completed_operation = operation;
+            completed_operation.end_time = Some(std::time::SystemTime::now());
+
+            match result {
+                Ok(Ok(output)) => {
+                    completed_operation.success = true;
+                    completed_operation.output = Some(output);
+                    status.operations_completed.push(completed_operation);
+                    println!("  ✓ {} completed successfully", hook.name);
+                }
+                Ok(Err(e)) => {
+                    completed_operation.output = Some(format!("Error: {}", e));
+                    status.operations_completed.push(completed_operation);
+
+                    if hook.required {
+                        status.success = false;
+                        status.error_message =
+                            Some(format!("Required pre-sync hook failed: {}", e));
+                        return Err(SpriteError::sync(format!(
+                            "Required pre-sync hook '{}' failed: {}",
+                            hook.name, e
+                        ))
+                        .into());
+                    } else {
+                        println!(
+                            "  ⚠️  Optional pre-sync hook failed, continuing: {}",
+                            hook.name
+                        );
+                    }
+                }
+                Err(_) => {
+                    completed_operation.output = Some("Hook timed out".to_string());
+                    status.operations_completed.push(completed_operation);
+
+                    if hook.required {
+                        status.success = false;
+                        status.error_message =
+                            Some(format!("Required pre-sync hook '{}' timed out", hook.name));
+                        return Err(SpriteError::sync(format!(
+                            "Required pre-sync hook '{}' timed out",
+                            hook.name
+                        ))
+                        .into());
+                    } else {
+                        println!(
+                            "  ⚠️  Optional pre-sync hook timed out, continuing: {}",
+                            hook.name
+                        );
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub async fn execute_post_sync_hooks(&self, status: &mut SyncStatus) -> Result<()> {
+        println!("🔧 Running post-sync hooks...");
+
+        for hook in &self.post_sync_hooks {
+            let operation = SyncOperation {
+                operation_type: "post-sync-hook".to_string(),
+                description: hook.name.clone(),
+                start_time: std::time::SystemTime::now(),
+                end_time: None,
+                success: false,
+                output: None,
+            };
+
+            println!("  Running: {}", hook.name);
+
+            let result = tokio::time::timeout(
+                hook.timeout.unwrap_or(std::time::Duration::from_secs(30)),
+                execute_hook_command(hook),
+            )
+            .await;
+
+            let mut completed_operation = operation;
+            completed_operation.end_time = Some(std::time::SystemTime::now());
+
+            match result {
+                Ok(Ok(output)) => {
+                    completed_operation.success = true;
+                    completed_operation.output = Some(output);
+                    status.operations_completed.push(completed_operation);
+                    println!("  ✓ {} completed successfully", hook.name);
+                }
+                Ok(Err(e)) => {
+                    completed_operation.output = Some(format!("Error: {}", e));
+                    status.operations_completed.push(completed_operation);
+
+                    if hook.required {
+                        println!("  ❌ Required post-sync hook failed: {}", hook.name);
+                        // Post-sync hook failures are warnings, not errors
+                    } else {
+                        println!("  ⚠️  Optional post-sync hook failed: {}", hook.name);
+                    }
+                }
+                Err(_) => {
+                    completed_operation.output = Some("Hook timed out".to_string());
+                    status.operations_completed.push(completed_operation);
+
+                    if hook.required {
+                        println!("  ❌ Required post-sync hook timed out: {}", hook.name);
+                    } else {
+                        println!("  ⚠️  Optional post-sync hook timed out: {}", hook.name);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[allow(dead_code)]
+async fn execute_hook_command(hook: &SyncHook) -> Result<String> {
+    let mut cmd = TokioCommand::new(&hook.command);
+    cmd.args(&hook.args);
+
+    if let Some(dir) = &hook.working_dir {
+        cmd.current_dir(dir);
+    }
+
+    let output = cmd.output().await.with_context(|| {
+        format!(
+            "Failed to execute hook command: {} {}",
+            hook.command,
+            hook.args.join(" ")
+        )
+    })?;
+
+    if !output.status.success() {
+        return Err(SpriteError::git_with_source(
+            format!(
+                "Hook command failed: {} {}",
+                hook.command,
+                hook.args.join(" ")
+            ),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .into());
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+impl SyncStatus {
+    #[allow(dead_code)]
+    pub fn new(context_type: String) -> Self {
+        Self {
+            start_time: std::time::SystemTime::now(),
+            end_time: None,
+            context_type,
+            operations_completed: Vec::new(),
+            conflicts_detected: Vec::new(),
+            success: true,
+            error_message: None,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn complete(&mut self) {
+        self.end_time = Some(std::time::SystemTime::now());
+    }
+
+    #[allow(dead_code)]
+    pub fn duration(&self) -> Option<std::time::Duration> {
+        self.end_time
+            .map(|end| end.duration_since(self.start_time).unwrap_or_default())
+    }
+
+    #[allow(dead_code)]
+    pub fn format_report(&self) -> String {
+        let mut report = String::new();
+
+        report.push_str("📊 Sync Status Report\n");
+        report.push_str("===================\n\n");
+        report.push_str(&format!("Context: {}\n", self.context_type));
+        report.push_str(&format!(
+            "Status: {}\n",
+            if self.success {
+                "✅ Success"
+            } else {
+                "❌ Failed"
+            }
+        ));
+
+        if let Some(duration) = self.duration() {
+            report.push_str(&format!("Duration: {:.2}s\n", duration.as_secs_f64()));
+        }
+
+        if !self.operations_completed.is_empty() {
+            report.push_str(&format!(
+                "\nOperations Completed ({}):\n",
+                self.operations_completed.len()
+            ));
+            for (i, op) in self.operations_completed.iter().enumerate() {
+                let status = if op.success { "✅" } else { "❌" };
+                report.push_str(&format!("  {}. {} {}\n", i + 1, status, op.description));
+            }
+        }
+
+        if !self.conflicts_detected.is_empty() {
+            report.push_str(&format!(
+                "\nConflicts Detected ({}):\n",
+                self.conflicts_detected.len()
+            ));
+            for (i, conflict) in self.conflicts_detected.iter().enumerate() {
+                report.push_str(&format!(
+                    "  {}. {} in {}\n",
+                    i + 1,
+                    conflict.conflict_type,
+                    conflict.file_path
+                ));
+            }
+        }
+
+        if let Some(error) = &self.error_message {
+            report.push_str(&format!("\nError: {}\n", error));
+        }
+
+        report
+    }
+
+    #[allow(dead_code)]
+    pub fn format_accessible_summary(&self) -> String {
+        let mut summary = String::new();
+
+        summary.push_str(&format!(
+            "Sync operation in {} context. ",
+            self.context_type
+        ));
+
+        if self.success {
+            summary.push_str("Completed successfully. ");
+        } else {
+            summary.push_str("Failed. ");
+        }
+
+        if let Some(duration) = self.duration() {
+            summary.push_str(&format!(
+                "Duration: {:.2} seconds. ",
+                duration.as_secs_f64()
+            ));
+        }
+
+        summary.push_str(&format!(
+            "{} operations completed. ",
+            self.operations_completed.len()
+        ));
+
+        if !self.conflicts_detected.is_empty() {
+            summary.push_str(&format!(
+                "{} conflicts detected. ",
+                self.conflicts_detected.len()
+            ));
+        }
+
+        if let Some(error) = &self.error_message {
+            summary.push_str(&format!("Error: {}. ", error));
+        }
+
+        summary
+    }
 }
 
 /// Check if we need to update tasks.md with completed tasks

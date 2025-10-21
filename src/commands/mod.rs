@@ -1,6 +1,7 @@
 pub mod agents;
 pub mod attach;
 pub mod config;
+pub mod help;
 pub mod hey;
 pub mod init;
 pub mod kill;

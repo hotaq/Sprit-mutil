@@ -4,7 +4,6 @@
 //! ensuring all components work together correctly.
 
 use assert_cmd::Command;
-use predicates::prelude::*;
 use predicates::str::contains;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;

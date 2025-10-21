@@ -111,6 +111,14 @@ fn kill_all_sessions(force: bool) -> Result<()> {
             failed_sessions.len(),
             failed_sessions.join(", ")
         );
+
+        // When force flag is used, only error if ALL sessions failed
+        // Otherwise, treat partial success as success with warnings
+        if force && killed_count > 0 {
+            return Ok(());
+        }
+
+        // If no sessions were killed or force is not used, return error
         return Err(SpriteError::tmux(format!(
             "Failed to kill some sessions: {}",
             failed_sessions.join(", ")
@@ -276,8 +284,6 @@ pub fn cleanup_old_resources() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_find_default_session_with_sprite_session() {
         // This test would need mocking to work properly in isolation

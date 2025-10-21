@@ -10,7 +10,9 @@
 
 pub mod accessibility;
 pub mod git;
+pub mod help;
 pub mod logging;
 pub mod security;
 pub mod session_recovery;
 pub mod tmux;
+pub mod workspace;

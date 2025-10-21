@@ -250,8 +250,6 @@ fn extract_agent_info(pane: &tmux::PaneInfo) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_zoom_execution() {
         // This test would need mocking to work properly in isolation

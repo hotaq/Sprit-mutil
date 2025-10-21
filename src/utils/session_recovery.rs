@@ -107,7 +107,14 @@ impl Default for RecoveryConfig {
 
 /// Analyze the health of all tmux sessions
 pub fn analyze_session_health(config: &RecoveryConfig) -> Result<Vec<SessionHealth>> {
-    let sessions = list_sessions().context("Failed to list sessions for health analysis")?;
+    let sessions = match list_sessions() {
+        Ok(sessions) => sessions,
+        Err(_) => {
+            // Handle case where tmux server is not running or no sessions exist
+            return Ok(Vec::new());
+        }
+    };
+
     let mut health_reports = Vec::new();
 
     for session in sessions {

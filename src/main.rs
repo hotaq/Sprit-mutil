@@ -102,7 +102,15 @@ fn main() -> Result<()> {
             commands::sync::execute(agent.as_deref(), force, &strategy, dry_run)?;
             Ok(())
         }
-        cli::Commands::Remove { .. } => commands::remove::execute(),
+        cli::Commands::Remove {
+            agent,
+            force,
+            keep_workspace,
+            merge_branch,
+        } => {
+            commands::remove::execute(&agent, force, keep_workspace, merge_branch)?;
+            Ok(())
+        }
         cli::Commands::Warp {
             workspace,
             list,
@@ -126,6 +134,27 @@ fn main() -> Result<()> {
             detailed,
         } => {
             commands::status::execute(session_name, cleanup, detailed)?;
+            Ok(())
+        }
+        cli::Commands::Help {
+            command,
+            search,
+            patterns,
+            troubleshooting,
+            quick,
+            accessible,
+            category,
+        } => {
+            let args = commands::help::HelpArgs {
+                command,
+                search,
+                patterns,
+                troubleshooting,
+                quick,
+                accessible,
+                category,
+            };
+            commands::help::execute(args)?;
             Ok(())
         }
     }
