@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::process::Command;
 
 /// Create a new tmux session.
+#[allow(dead_code)]
 pub fn create_session(name: &str) -> Result<()> {
     let output = Command::new("tmux")
         .args(["new-session", "-d", "-s", name])
