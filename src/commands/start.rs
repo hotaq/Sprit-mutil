@@ -111,10 +111,7 @@ fn create_tmux_session(
 ) -> Result<()> {
     println!("🔧 Creating tmux session '{}'...", session_name);
 
-    // Create the session
-    tmux::create_session(session_name).context("Failed to create tmux session")?;
-
-    // Execute the tmux profile script
+    // Execute the tmux profile script (which creates the session)
     let agents_dir = std::path::PathBuf::from("agents");
     let profile_script = agents_dir.join("profiles").join(format!("{}.sh", profile));
 
