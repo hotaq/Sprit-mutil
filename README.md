@@ -10,8 +10,22 @@ Sprite lets you run multiple AI agents at once, each working in isolation. Think
 
 ### 1. Install
 
+**Option A: GitHub Packages (Recommended)**
+```bash
+# Install from GitHub Packages
+cargo install --registry github --git https://github.com/hotaq/Sprit-mutil.git sprite
+```
+
+**Option B: Direct from Repository**
 ```bash
 cargo install --git https://github.com/hotaq/Sprit-mutil
+```
+
+**Option C: Pre-compiled Binary**
+```bash
+# Download latest release
+curl -L https://github.com/hotaq/Sprit-mutil/releases/latest/download/sprite-x86_64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv sprite /usr/local/bin/
 ```
 
 ### 2. Setup Your Project
@@ -189,10 +203,26 @@ sprite init --agents 3
 
 ---
 
+## GitHub Packages
+
+Sprite is available on GitHub Packages:
+
+```bash
+# Installation
+cargo install --registry github --git https://github.com/hotaq/Sprit-mutil.git sprite
+
+# Add to project
+[dependencies]
+sprite = { version = "0.2.3", registry = "github" }
+```
+
+📖 **[Full GitHub Packages Guide](docs/GITHUB_PACKAGES.md)**
+
 ## Getting Help
 
 - **Issues**: https://github.com/hotaq/Sprit-mutil/issues
 - **Documentation**: See `docs/` folder
+- **GitHub Packages**: [Installation Guide](docs/GITHUB_PACKAGES.md)
 - **Updates**: https://github.com/hotaq/Sprit-mutil/releases
 
 ---
