@@ -84,6 +84,9 @@ stdout.log
 .cache/
 cache/
 
+# Test scripts (local development)
+test_*.sh
+
 # Build artifacts
 dist/
 build/
