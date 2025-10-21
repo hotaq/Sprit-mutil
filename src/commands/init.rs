@@ -129,47 +129,46 @@ fn generate_config_content(agent_count: u32) -> Result<String> {
 
     config.push_str("agents:\n");
     for i in 1..=agent_count {
-        config.push_str(&format!(
-            "  - id: \"{}\"\n\
-            branch: \"agents/{}\"\n\
-            model: \"claude-sonnet-4\"\n\
-            description: \"Agent {} workspace\"\n\
-            worktree_path: \"agents/{}\"\n\
-            status: \"inactive\"\n\
-            config:\n\
-            env_vars: {{}}\n\
-            work_dir: null\n\
-            startup_commands: []\n\
-            resource_limits:\n\
-            max_memory_mb: 1024\n\
-            max_cpu_percent: 80\n\
-            operation_timeout_secs: 300\n\
-            max_concurrent_ops: 3\n\
-            max_disk_mb: 5120\n\
-            shell: null\n\
-            default_timeout_secs: 300\n\
-            auto_sync: false\n\
-            custom_settings: {{}}\n",
-            i, i, i, i
-        ));
+        config.push_str(&format!("- id: '{}'\n", i));
+        config.push_str(&format!("  branch: agents/{}\n", i));
+        config.push_str(&format!("  worktree_path: agents/{}\n", i));
+        config.push_str("  model: claude-sonnet-4\n");
+        config.push_str(&format!("  description: Agent {} workspace\n", i));
+        config.push_str("  status: inactive\n");
+        config.push_str("  config:\n");
+        config.push_str("    env_vars: {}\n");
+        config.push_str("    work_dir: null\n");
+        config.push_str("    startup_commands: []\n");
+        config.push_str("    resource_limits:\n");
+        config.push_str("      max_memory_mb: 1024\n");
+        config.push_str("      max_cpu_percent: 80\n");
+        config.push_str("      operation_timeout_secs: 300\n");
+        config.push_str("      max_concurrent_ops: 3\n");
+        config.push_str("      max_disk_mb: 5120\n");
+        config.push_str("    shell: null\n");
+        config.push_str("    default_timeout_secs: 300\n");
+        config.push_str("    auto_sync: false\n");
+        config.push_str("    custom_settings: {}\n");
     }
 
-    config.push_str("\nsession_name: \"sprite-session\"\n\n");
+    config.push_str("session_name: sprite-session\n");
 
     config.push_str("sync:\n");
     config.push_str("  auto_sync: false\n");
     config.push_str("  default_interval_secs: 300\n");
-    config.push_str("  conflict_resolution: \"manual\"\n");
-    config.push_str("  exclude_branches: [\"main\", \"master\"]\n");
+    config.push_str("  conflict_resolution: manual\n");
+    config.push_str("  exclude_branches:\n");
+    config.push_str("  - main\n");
+    config.push_str("  - master\n");
     config.push_str("  pre_sync_hooks: []\n");
-    config.push_str("  post_sync_hooks: []\n\n");
+    config.push_str("  post_sync_hooks: []\n");
 
     config.push_str("settings:\n");
-    config.push_str("  default_shell: \"bash\"\n");
+    config.push_str("  default_shell: bash\n");
     config.push_str("  global_env_vars: {}\n");
     config.push_str("  logging:\n");
-    config.push_str("    log_file: \"agents/logs/sprite.log\"\n");
-    config.push_str("    level: \"info\"\n");
+    config.push_str("    log_file: agents/logs/sprite.log\n");
+    config.push_str("    level: info\n");
     config.push_str("    log_to_stdout: true\n");
     config.push_str("    rotation:\n");
     config.push_str("      max_size_mb: 100\n");
@@ -181,8 +180,13 @@ fn generate_config_content(agent_count: u32) -> Result<String> {
     config.push_str("    memory_limit_mb: 1024\n");
     config.push_str("    cpu_limit_percent: 80\n");
     config.push_str("  security:\n");
-    config.push_str("    allowed_paths: [\"agents/\"]\n");
-    config.push_str("    blocked_commands: [\"rm -rf\", \"sudo\", \"su\", \"chmod 777\"]\n");
+    config.push_str("    allowed_paths:\n");
+    config.push_str("    - agents/\n");
+    config.push_str("    blocked_commands:\n");
+    config.push_str("    - rm -rf\n");
+    config.push_str("    - sudo\n");
+    config.push_str("    - su\n");
+    config.push_str("    - chmod 777\n");
     config.push_str("    strict_path_validation: true\n");
     config.push_str("    max_command_length: 1000\n");
     config.push_str("    allow_shell_execution: false\n");
@@ -401,8 +405,8 @@ mod tests {
         let config = result.unwrap();
 
         assert!(config.contains("agents:"));
-        assert!(config.contains("- id: \"1\""));
-        assert!(config.contains("- id: \"2\""));
+        assert!(config.contains("- id: '1'"));
+        assert!(config.contains("- id: '2'"));
         assert!(config.contains("session_name:"));
         assert!(config.contains("sync:"));
         assert!(config.contains("settings:"));
@@ -421,10 +425,10 @@ mod tests {
 
         // Should contain all agents from 1 to 10
         for i in 1..=10 {
-            assert!(config.contains(&format!("- id: \"{}\"", i)));
+            assert!(config.contains(&format!("- id: '{}'", i)));
         }
         // Should not contain agent 11
-        assert!(!config.contains("- id: \"11\""));
+        assert!(!config.contains("- id: '11'"));
     }
 
     #[test]
@@ -435,7 +439,7 @@ mod tests {
         let config = result.unwrap();
 
         assert!(config.contains("agents:"));
-        assert!(!config.contains("- id: \"1\""));
+        assert!(!config.contains("- id: '1'"));
         assert!(config.contains("version: \"1.0\""));
         assert!(config.contains("session_name:"));
     }
@@ -452,9 +456,9 @@ mod tests {
 
         let content = fs::read_to_string(&config_file).unwrap();
         assert!(content.contains("agents:"));
-        assert!(content.contains("- id: \"1\""));
-        assert!(content.contains("- id: \"2\""));
-        assert!(content.contains("- id: \"3\""));
+        assert!(content.contains("- id: '1'"));
+        assert!(content.contains("- id: '2'"));
+        assert!(content.contains("- id: '3'"));
     }
 
     #[test]
@@ -614,7 +618,7 @@ mod tests {
 
         // Test default values
         assert!(config.contains("claude-sonnet-4"));
-        assert!(config.contains("\"inactive\""));
+        assert!(config.contains("inactive"));
         assert!(config.contains("max_memory_mb: 1024"));
         assert!(config.contains("max_cpu_percent: 80"));
         assert!(config.contains("operation_timeout_secs: 300"));

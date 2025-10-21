@@ -23,7 +23,7 @@ fn test_complete_init_workflow_default() {
         .success();
 
     // Run sprite init with default settings
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .arg("init")
         .assert()
@@ -113,7 +113,7 @@ fn test_init_workflow_custom_agent_count() {
         .success();
 
     // Run sprite init with 5 agents
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "5"])
         .assert()
@@ -133,7 +133,7 @@ fn test_init_workflow_custom_agent_count() {
 
     for i in 1..=5 {
         assert!(
-            config_content.contains(&format!("- id: \"{}\"", i)),
+            config_content.contains(&format!("- id: '{}'", i)),
             "config should contain agent {}",
             i
         );
@@ -141,7 +141,7 @@ fn test_init_workflow_custom_agent_count() {
 
     // Should not contain agent 6
     assert!(
-        !config_content.contains("- id: \"6\""),
+        !config_content.contains("- id: '6'"),
         "config should not contain agent 6"
     );
 }
@@ -160,7 +160,7 @@ fn test_init_workflow_zero_agents() {
         .success();
 
     // Run sprite init with 0 agents
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "0"])
         .assert()
@@ -184,7 +184,7 @@ fn test_init_workflow_zero_agents() {
     let config_file = agents_dir.join("agents.yaml");
     let config_content = fs::read_to_string(&config_file).unwrap();
     assert!(config_content.contains("agents:"));
-    assert!(!config_content.contains("- id: \"1\""));
+    assert!(!config_content.contains("- id: '1'"));
 }
 
 /// Test init workflow with force flag when config already exists
@@ -201,7 +201,7 @@ fn test_init_workflow_with_force() {
         .success();
 
     // Run init once to create initial setup
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "2"])
         .assert()
@@ -212,7 +212,7 @@ fn test_init_workflow_with_force() {
     let original_content = fs::read_to_string(&config_file).unwrap();
 
     // Run init again without force (should fail)
-    let mut cmd_fail = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd_fail = Command::cargo_bin("sprite").unwrap();
     cmd_fail
         .current_dir(&temp_path)
         .args(["init", "--agents", "3"])
@@ -221,7 +221,7 @@ fn test_init_workflow_with_force() {
         .stderr(contains("already exists"));
 
     // Run init again with force (should succeed)
-    let mut cmd_force = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd_force = Command::cargo_bin("sprite").unwrap();
     cmd_force
         .current_dir(&temp_path)
         .args(["init", "--agents", "3", "--force"])
@@ -237,7 +237,7 @@ fn test_init_workflow_with_force() {
 
     // Should now have 3 agents
     assert!(
-        new_content.contains("- id: \"3\""),
+        new_content.contains("- id: '3'"),
         "config should contain agent 3"
     );
 }
@@ -251,7 +251,7 @@ fn test_init_workflow_not_git_repository() {
     // Don't initialize git repository
 
     // Run sprite init (should fail)
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .arg("init")
         .assert()
@@ -273,7 +273,7 @@ fn test_init_workflow_large_agent_count() {
         .success();
 
     // Run sprite init with large number of agents
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "50"])
         .assert()
@@ -292,15 +292,15 @@ fn test_init_workflow_large_agent_count() {
 
     // Check a few agents from the beginning, middle, and end
     assert!(
-        config_content.contains("- id: \"1\""),
+        config_content.contains("- id: '1'"),
         "config should contain agent 1"
     );
     assert!(
-        config_content.contains("- id: \"25\""),
+        config_content.contains("- id: '25'"),
         "config should contain agent 25"
     );
     assert!(
-        config_content.contains("- id: \"50\""),
+        config_content.contains("- id: '50'"),
         "config should contain agent 50"
     );
 }
@@ -321,7 +321,7 @@ fn test_init_workflow_performance_requirement() {
     // Measure time for init command
     let start = std::time::Instant::now();
 
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "5"])
         .assert()
@@ -362,7 +362,7 @@ fn test_init_workflow_nested_directory() {
         .success();
 
     // Run sprite init from nested directory
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&nested_path)
         .args(["init", "--agents", "2"])
         .assert()
@@ -401,7 +401,7 @@ fn test_init_workflow_valid_yaml() {
         .success();
 
     // Run sprite init
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "3"])
         .assert()
@@ -444,7 +444,7 @@ fn test_init_workflow_all_file_types() {
         .success();
 
     // Run sprite init
-    let mut cmd = Command::cargo_bin("sprit-mutil").unwrap();
+    let mut cmd = Command::cargo_bin("sprite").unwrap();
     cmd.current_dir(&temp_path)
         .args(["init", "--agents", "2"])
         .assert()

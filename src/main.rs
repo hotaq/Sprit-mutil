@@ -136,7 +136,7 @@ fn main() -> Result<()> {
             commands::status::execute(session_name, cleanup, detailed)?;
             Ok(())
         }
-        cli::Commands::Help {
+        cli::Commands::Guide {
             command,
             search,
             patterns,

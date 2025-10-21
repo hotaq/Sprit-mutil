@@ -358,9 +358,12 @@ mod tests {
     #[test]
     fn test_accessibility_config_default() {
         let config = AccessibilityConfig::default();
-        // Should not panic
-        assert!(!config.screen_reader || config.screen_reader); // Could be true or false
-        assert!(!config.no_color || config.no_color); // Could be true or false
+        // Verify default values - these depend on environment variables
+        // Just verify the struct is created successfully
+        let _ = config.screen_reader;
+        let _ = config.no_color;
+        assert!(!config.high_contrast);
+        assert!(!config.verbose);
     }
 
     #[test]

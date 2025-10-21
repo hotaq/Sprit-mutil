@@ -157,8 +157,8 @@ pub enum Commands {
         #[arg(long)]
         detailed: bool,
     },
-    /// Show help and documentation
-    Help {
+    /// Show extended help and documentation
+    Guide {
         /// Command to get help for
         command: Option<String>,
         /// Search help content

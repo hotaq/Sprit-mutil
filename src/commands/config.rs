@@ -397,17 +397,29 @@ impl SpriteConfig {
 
         let worktrees = git::list_worktrees().context("Failed to list existing worktrees")?;
 
-        let worktree_paths: std::collections::HashSet<_> =
-            worktrees.iter().map(|w| w.path.clone()).collect();
+        // Convert worktree paths to absolute paths for comparison
+        let worktree_paths: std::collections::HashSet<_> = worktrees
+            .iter()
+            .filter_map(|w| w.path.canonicalize().ok())
+            .collect();
 
         for agent in &self.agents {
             let worktree_path = PathBuf::from(&agent.worktree_path);
 
-            if !worktree_paths.contains(&worktree_path) {
+            // Convert to absolute path for comparison
+            let abs_worktree_path = if worktree_path.is_absolute() {
+                worktree_path.clone()
+            } else {
+                std::env::current_dir()
+                    .ok()
+                    .and_then(|cwd| cwd.join(&worktree_path).canonicalize().ok())
+                    .unwrap_or(worktree_path.clone())
+            };
+
+            if !worktree_paths.contains(&abs_worktree_path) {
                 return Err(SpriteError::config(format!(
                     "Agent {} worktree does not exist: {}",
-                    agent.id,
-                    worktree_path.display()
+                    agent.id, agent.worktree_path
                 ))
                 .into());
             }

@@ -92,7 +92,15 @@ fn find_default_session() -> Result<String> {
 
 /// List all available tmux sessions
 fn list_available_sessions() -> Result<()> {
-    let sessions = tmux::list_sessions().context("Failed to list tmux sessions")?;
+    let sessions = match tmux::list_sessions() {
+        Ok(s) => s,
+        Err(_) => {
+            // Handle case where tmux server is not running
+            println!("📭 No tmux sessions found.");
+            println!("   Use 'sprite start' to create a new multi-agent session.");
+            return Ok(());
+        }
+    };
 
     if sessions.is_empty() {
         println!("📭 No tmux sessions found.");
