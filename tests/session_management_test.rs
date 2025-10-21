@@ -373,8 +373,13 @@ fn test_status_command_functionality() -> Result<()> {
         stdout3 = std::str::from_utf8(&result3.get_output().stdout)?.to_string();
 
         // More flexible matching for CI environments
-        if (stdout3.contains("Session Health Report") || stdout3.contains("Health") || stdout3.contains("sessions")) &&
-           (stdout3.contains(&session_name) || stdout3.contains("1 session") || stdout3.contains("session")) {
+        if (stdout3.contains("Session Health Report")
+            || stdout3.contains("Health")
+            || stdout3.contains("sessions"))
+            && (stdout3.contains(&session_name)
+                || stdout3.contains("1 session")
+                || stdout3.contains("session"))
+        {
             status_success = true;
             break;
         }
@@ -625,10 +630,11 @@ fn test_concurrent_session_operations() -> Result<()> {
         status_stdout = std::str::from_utf8(&status_result.get_output().stdout)?.to_string();
 
         // More flexible matching for CI environments
-        if status_stdout.contains("Session Health Report") ||
-           status_stdout.contains("Health") ||
-           status_stdout.contains("sessions") ||
-           status_stdout.contains("Session") {
+        if status_stdout.contains("Session Health Report")
+            || status_stdout.contains("Health")
+            || status_stdout.contains("sessions")
+            || status_stdout.contains("Session")
+        {
             status_found = true;
             break;
         }
