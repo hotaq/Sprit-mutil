@@ -16,5 +16,5 @@ session:
 
 sync:
   auto_sync: false
-  conflict_resolution: manual
+  conflict_resolution: Manual
   exclude_branches: []

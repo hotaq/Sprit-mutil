@@ -388,7 +388,7 @@ fn generate_config_content(agent_count: u32) -> Result<String> {
         config.push_str(&format!("  worktree_path: agents/{}\n", i));
         config.push_str("  model: claude-sonnet-4\n");
         config.push_str(&format!("  description: Agent {} workspace\n", i));
-        config.push_str("  status: inactive\n");
+        config.push_str("  status: Inactive\n");
         config.push_str("  config:\n");
         config.push_str("    env_vars: {}\n");
         config.push_str("    work_dir: null\n");
@@ -410,7 +410,7 @@ fn generate_config_content(agent_count: u32) -> Result<String> {
     config.push_str("sync:\n");
     config.push_str("  auto_sync: false\n");
     config.push_str("  default_interval_secs: 300\n");
-    config.push_str("  conflict_resolution: manual\n");
+    config.push_str("  conflict_resolution: Manual\n");
     config.push_str("  exclude_branches:\n");
     config.push_str("  - main\n");
     config.push_str("  - master\n");
@@ -422,7 +422,7 @@ fn generate_config_content(agent_count: u32) -> Result<String> {
     config.push_str("  global_env_vars: {}\n");
     config.push_str("  logging:\n");
     config.push_str("    log_file: agents/logs/sprite.log\n");
-    config.push_str("    level: info\n");
+    config.push_str("    level: Info\n");
     config.push_str("    log_to_stdout: true\n");
     config.push_str("    rotation:\n");
     config.push_str("      max_size_mb: 100\n");
@@ -860,7 +860,7 @@ mod tests {
 
         // Test default values
         assert!(config.contains("claude-sonnet-4"));
-        assert!(config.contains("inactive"));
+        assert!(config.contains("Inactive"));
         assert!(config.contains("max_memory_mb: 1024"));
         assert!(config.contains("max_cpu_percent: 80"));
         assert!(config.contains("operation_timeout_secs: 300"));
