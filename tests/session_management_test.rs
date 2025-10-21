@@ -61,7 +61,11 @@ fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
 
 #[allow(dead_code)]
 /// Helper to wait for tmux session with expected number of panes
-fn wait_for_session_ready_with_panes(session_name: &str, max_attempts: u32, expected_panes: usize) -> bool {
+fn wait_for_session_ready_with_panes(
+    session_name: &str,
+    max_attempts: u32,
+    expected_panes: usize,
+) -> bool {
     for attempt in 0..max_attempts {
         // First check if session exists
         if let Ok(output) = Command::new("tmux")
@@ -95,7 +99,10 @@ fn wait_for_session_ready_with_panes(session_name: &str, max_attempts: u32, expe
             // Log progress every 10 attempts (1 second)
             eprintln!(
                 "Still waiting for session '{}' with {}+ panes (attempt {}/{})",
-                session_name, expected_panes, attempt + 1, max_attempts
+                session_name,
+                expected_panes,
+                attempt + 1,
+                max_attempts
             );
         }
 

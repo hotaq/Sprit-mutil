@@ -715,7 +715,7 @@ mod tests {
 
         let content = fs::read_to_string(&config_file).unwrap();
         // Should use empty template
-        assert!(content.len() > 0);
+        assert!(!content.is_empty());
     }
 
     #[test]
