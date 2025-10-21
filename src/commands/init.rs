@@ -121,6 +121,9 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
 
     if !has_commits {
         println!("   📌 No commits found. Creating initial commit...");
+
+        // Ensure git user is configured (needed for commits in CI)
+        ensure_git_user_configured()?;
     } else {
         println!("   📌 Adding agents configuration...");
     }
@@ -160,6 +163,41 @@ fn ensure_initial_commit(agents_dir: &Path) -> Result<()> {
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);
         anyhow::bail!("Failed to create commit: {}", stderr);
+    }
+
+    Ok(())
+}
+
+/// Ensure git user is configured (for CI environments)
+fn ensure_git_user_configured() -> Result<()> {
+    // Check if user.name is set
+    let name_check = Command::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .map(|o| o.status.success() && !o.stdout.is_empty())
+        .unwrap_or(false);
+
+    if !name_check {
+        // Set a default user name
+        Command::new("git")
+            .args(["config", "user.name", "Sprite"])
+            .output()
+            .context("Failed to set git user.name")?;
+    }
+
+    // Check if user.email is set
+    let email_check = Command::new("git")
+        .args(["config", "user.email"])
+        .output()
+        .map(|o| o.status.success() && !o.stdout.is_empty())
+        .unwrap_or(false);
+
+    if !email_check {
+        // Set a default user email
+        Command::new("git")
+            .args(["config", "user.email", "sprite@localhost"])
+            .output()
+            .context("Failed to set git user.email")?;
     }
 
     Ok(())
