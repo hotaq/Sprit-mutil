@@ -1,2 +1,2 @@
-[registry.github]
-index = "https://github.com/hotaq/Sprit-mutil.git/registry/index/"
+[registries.github]
+index = "https://github.com/hotaq/Sprit-mutil.git/_registry/index/"
