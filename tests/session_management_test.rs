@@ -617,7 +617,8 @@ fn test_concurrent_session_operations() -> Result<()> {
         // Wait for each session to be fully ready before creating the next
         // Use a much simpler check - just verify session exists, not specific pane count
         let mut session_ready = false;
-        for _attempt in 0..200 { // Increased to 20 seconds with 100ms intervals
+        for _attempt in 0..200 {
+            // Increased to 20 seconds with 100ms intervals
             if let Ok(output) = Command::new("tmux")
                 .args(&["has-session", "-t", session_name])
                 .output()
@@ -626,16 +627,14 @@ fn test_concurrent_session_operations() -> Result<()> {
                     // Give session extra time to initialize in CI environments
                     thread::sleep(Duration::from_millis(500));
                     // Double-check by trying to list sessions to ensure tmux server is responding
-                    if let Ok(_list_output) = Command::new("tmux")
-                        .args(&["list-sessions"])
-                        .output()
+                    if let Ok(_list_output) = Command::new("tmux").args(&["list-sessions"]).output()
                     {
                         session_ready = true;
                         break;
                     }
                 }
             }
-            
+
             // Use progressive backoff in high-load environments
             let delay = if _attempt < 50 {
                 100 // First 5 seconds: 100ms intervals
@@ -644,7 +643,7 @@ fn test_concurrent_session_operations() -> Result<()> {
             } else {
                 500 // Final 5 seconds: 500ms intervals
             };
-            
+
             thread::sleep(Duration::from_millis(delay));
         }
 
@@ -666,7 +665,7 @@ fn test_concurrent_session_operations() -> Result<()> {
         let output = Command::new("tmux")
             .args(&["has-session", "-t", session_name])
             .output()?;
-        
+
         assert!(
             output.status.success(),
             "Session {} not found via tmux check",
@@ -707,7 +706,9 @@ fn test_concurrent_session_operations() -> Result<()> {
     // Even if status command doesn't show expected output, the session creation
     // test is valid if tmux confirmed the sessions exist
     if !status_found {
-        println!("Status command didn't show expected output, but sessions were created successfully");
+        println!(
+            "Status command didn't show expected output, but sessions were created successfully"
+        );
         println!("Status output: {}", status_stdout);
     }
 
@@ -716,7 +717,7 @@ fn test_concurrent_session_operations() -> Result<()> {
         let _output = Command::new("tmux")
             .args(&["kill-session", "-t", session_name])
             .output()?;
-        
+
         // Don't assert on success - session might already be cleaned up
     }
 
@@ -728,7 +729,7 @@ fn test_concurrent_session_operations() -> Result<()> {
         let output = Command::new("tmux")
             .args(&["has-session", "-t", session_name])
             .output()?;
-        
+
         assert!(
             !output.status.success(),
             "Session {} was not properly cleaned up",
