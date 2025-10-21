@@ -70,7 +70,6 @@ pub fn execute(
 
     // Give the tmux session a moment to fully initialize before updating status
     std::thread::sleep(std::time::Duration::from_millis(300));
-
     // Update agent status to Active after successful session creation
     update_agent_status_to_active(&config)?;
 
