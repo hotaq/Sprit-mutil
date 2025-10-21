@@ -15,6 +15,10 @@ tmux kill-session -t "$SPRITE_SESSION" 2>/dev/null || true
 # Create new session
 tmux new-session -d -s "$SPRITE_SESSION"
 
+# Enable mouse support for better navigation
+tmux set-option -g mouse on
+tmux set-option -t "$SPRITE_SESSION" mouse on
+
 # Create agent row at top
 if [ "$AGENT_COUNT" -ge 1 ]; then
     tmux send-keys -t "$SPRITE_SESSION:0" "cd agents/1 && echo '🤖 Agent 1 Workspace'" C-m
@@ -34,5 +38,7 @@ tmux send-keys -t "$SPRITE_SESSION:supervisor" "echo '🎯 Supervisor Control Pa
 # Arrange windows with even layout
 tmux select-layout -t "$SPRITE_SESSION" even-horizontal
 
-echo "✅ Profile 2 applied successfully!"
+echo "✅ profile2 applied successfully!"
+echo "🖱️  Mouse support enabled - Click to switch between panels"
+echo "⌨️  Keyboard shortcuts: Ctrl+B then Arrow keys to navigate"
 echo "🎮 Use 'sprite attach' to connect to the session"
