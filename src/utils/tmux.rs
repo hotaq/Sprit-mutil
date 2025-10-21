@@ -56,6 +56,28 @@ pub fn kill_session(name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Kill a tmux session without confirmation (force mode).
+pub fn kill_session_force(name: &str) -> Result<()> {
+    let output = Command::new("tmux")
+        .args(["kill-session", "-t", name])
+        .output()
+        .with_context(|| format!("Failed to kill tmux session '{}'", name))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // Ignore "session not found" errors
+        if !stderr.contains("session not found") && !stderr.contains("can't find session") {
+            return Err(SpriteError::tmux_with_source(
+                format!("Failed to kill tmux session '{}'", name),
+                stderr,
+            )
+            .into());
+        }
+    }
+
+    Ok(())
+}
+
 /// Attach to a tmux session.
 #[allow(dead_code)]
 pub fn attach_session(name: &str) -> Result<()> {

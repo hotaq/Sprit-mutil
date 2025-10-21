@@ -27,6 +27,9 @@ pub enum Commands {
         /// Start and detach immediately
         #[arg(short, long)]
         detach: bool,
+        /// Kill existing session if it exists
+        #[arg(short, long)]
+        force: bool,
     },
     /// Manage agents
     Agents {
