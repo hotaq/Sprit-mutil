@@ -55,7 +55,15 @@ impl Drop for SessionGuard {
 
 /// Helper to wait for tmux session to be fully created and registered
 fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
+    // For most tests, we expect at least 1 pane (for 1 agent + supervisor)
+    wait_for_session_ready_with_panes(session_name, max_attempts, 1)
+}
+
+#[allow(dead_code)]
+/// Helper to wait for tmux session with expected number of panes
+fn wait_for_session_ready_with_panes(session_name: &str, max_attempts: u32, expected_panes: usize) -> bool {
     for attempt in 0..max_attempts {
+        // First check if session exists
         if let Ok(output) = Command::new("tmux")
             .args(&["list-sessions", "-F", "#{session_name}"])
             .output()
@@ -63,9 +71,22 @@ fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
             if let Ok(stdout) = String::from_utf8(output.stdout) {
                 // Check if the exact session name exists (not just contains)
                 if stdout.lines().any(|line| line.trim() == session_name) {
-                    // Give it more time to fully initialize panes, especially in CI
-                    thread::sleep(Duration::from_millis(500));
-                    return true;
+                    // Session exists, now check if it has the expected panes
+                    if let Ok(pane_output) = Command::new("tmux")
+                        .args(&["list-panes", "-t", session_name])
+                        .output()
+                    {
+                        if pane_output.status.success() {
+                            if let Ok(pane_stdout) = String::from_utf8(pane_output.stdout) {
+                                let pane_count = pane_stdout.lines().count();
+                                if pane_count >= expected_panes {
+                                    // Session exists and has enough panes - give it extra time to stabilize
+                                    thread::sleep(Duration::from_millis(500));
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -73,10 +94,8 @@ fn wait_for_session_ready(session_name: &str, max_attempts: u32) -> bool {
         if attempt % 10 == 9 {
             // Log progress every 10 attempts (1 second)
             eprintln!(
-                "Still waiting for session '{}' (attempt {}/{})",
-                session_name,
-                attempt + 1,
-                max_attempts
+                "Still waiting for session '{}' with {}+ panes (attempt {}/{})",
+                session_name, expected_panes, attempt + 1, max_attempts
             );
         }
 
@@ -362,7 +381,7 @@ fn test_status_command_functionality() -> Result<()> {
 
     // Wait for session to be fully ready
     assert!(
-        wait_for_session_ready(&session_name, 20),
+        wait_for_session_ready(&session_name, 40), // Increased timeout for CI (4 seconds)
         "Session {} did not become ready in time",
         session_name
     );
@@ -574,8 +593,10 @@ fn test_concurrent_session_operations() -> Result<()> {
         _guards.push(SessionGuard::new(session_name.clone()));
 
         // Wait for each session to be fully ready before creating the next
+        // For 3 agents with profile0, we expect at least 1 window (which may have multiple panes)
+        // Let's be more lenient and just check for session existence
         assert!(
-            wait_for_session_ready(session_name, 60), // Increased timeout for CI (6 seconds)
+            wait_for_session_ready(session_name, 80), // Increased timeout for CI (8 seconds)
             "Session {} did not become ready in time",
             session_name
         );

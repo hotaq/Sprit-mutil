@@ -37,6 +37,32 @@ pub fn session_exists(name: &str) -> Result<bool> {
     Ok(output.status.success())
 }
 
+/// Check if a tmux session is fully ready with panes created.
+#[allow(dead_code)]
+pub fn session_ready_with_panes(name: &str, expected_panes: usize) -> Result<bool> {
+    // First check if session exists
+    if !session_exists(name)? {
+        return Ok(false);
+    }
+
+    // Then check if it has the expected number of panes
+    match get_session_panes(name) {
+        Ok(panes) => {
+            if panes.len() >= expected_panes {
+                // Session exists and has enough panes
+                Ok(true)
+            } else {
+                // Session exists but not enough panes yet
+                Ok(false)
+            }
+        }
+        Err(_) => {
+            // Failed to get panes - session might not be fully ready
+            Ok(false)
+        }
+    }
+}
+
 /// Kill a tmux session.
 #[allow(dead_code)]
 pub fn kill_session(name: &str) -> Result<()> {
