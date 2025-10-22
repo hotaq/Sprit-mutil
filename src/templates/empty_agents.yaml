@@ -2,19 +2,46 @@
 # Generated automatically by 'sprite init'
 # Customize this file to match your project needs
 
-agents:
-  # Example agent configuration:
-  # 1:
-  #   branch: agents/1
-  #   worktree_path: agents/1
-  #   model: claude-sonnet-4
-  #   description: "Agent 1 workspace"
+version: "1.0"
 
-session:
-  name: sprite-session
-  profile: profile0
+agents: []
+
+session_name: sprite-session
 
 sync:
   auto_sync: false
+  default_interval_secs: 300
   conflict_resolution: Manual
-  exclude_branches: []
+  exclude_branches:
+  - main
+  - master
+  pre_sync_hooks: []
+  post_sync_hooks: []
+
+settings:
+  default_shell: bash
+  global_env_vars: {}
+  logging:
+    log_file: agents/logs/sprite.log
+    level: Info
+    log_to_stdout: true
+    rotation:
+      max_size_mb: 100
+      max_files: 5
+  performance:
+    max_concurrent_ops: 10
+    default_timeout_secs: 300
+    enable_monitoring: true
+    memory_limit_mb: 1024
+    cpu_limit_percent: 80
+  security:
+    allowed_paths:
+    - agents/
+    blocked_commands:
+    - rm -rf
+    - sudo
+    - su
+    - chmod 777
+    strict_path_validation: true
+    max_command_length: 1000
+    allow_shell_execution: false

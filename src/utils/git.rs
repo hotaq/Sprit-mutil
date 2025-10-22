@@ -152,26 +152,52 @@ pub fn create_worktree(path: &Path, branch: &str) -> Result<()> {
         create_branch(branch)?;
     }
 
+    // Try to create worktree with existing branch first
     let output = Command::new("git")
-        .args([
-            "worktree",
-            "add",
-            "-b",
-            branch,
-            path.to_string_lossy().as_ref(),
-        ])
+        .args(["worktree", "add", path.to_string_lossy().as_ref(), branch])
         .output()
         .with_context(|| format!("Failed to create worktree at '{}'", path.display()))?;
 
-    if !output.status.success() {
-        return Err(SpriteError::git_with_source(
-            format!("Failed to create worktree at '{}'", path.display()),
-            String::from_utf8_lossy(&output.stderr),
-        )
-        .into());
+    if output.status.success() {
+        return Ok(());
     }
 
-    Ok(())
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // If the worktree creation failed because the branch already exists and has stale references,
+    // try to clean up and use force
+    if stderr.contains("already exists") || stderr.contains("a branch named") {
+        // Clean up any stale references first
+        prune_worktrees()?;
+
+        // Try with force flag
+        let force_output = Command::new("git")
+            .args([
+                "worktree",
+                "add",
+                "--force",
+                path.to_string_lossy().as_ref(),
+                branch,
+            ])
+            .output()
+            .with_context(|| {
+                format!(
+                    "Failed to create worktree with force at '{}'",
+                    path.display()
+                )
+            })?;
+
+        if force_output.status.success() {
+            return Ok(());
+        }
+    }
+
+    // If all attempts failed, return the original error
+    Err(SpriteError::git_with_source(
+        format!("Failed to create worktree at '{}'", path.display()),
+        stderr,
+    )
+    .into())
 }
 
 /// Remove a git worktree.
@@ -713,6 +739,52 @@ pub fn has_merge_conflicts() -> Result<bool> {
 
     let conflicts_str = String::from_utf8_lossy(&output.stdout);
     Ok(!conflicts_str.trim().is_empty())
+}
+
+/// Prune stale worktree references.
+pub fn prune_worktrees() -> Result<()> {
+    let output = Command::new("git")
+        .args(["worktree", "prune"])
+        .output()
+        .with_context(|| "Failed to prune worktrees")?;
+
+    if !output.status.success() {
+        // Don't fail on prune errors, just log them
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!("⚠️  Warning: Failed to prune worktrees: {}", stderr);
+    }
+
+    Ok(())
+}
+
+/// Remove a worktree reference without removing the directory.
+pub fn remove_worktree_reference(path: &Path) -> Result<()> {
+    let output = Command::new("git")
+        .args([
+            "worktree",
+            "remove",
+            "--force",
+            path.to_string_lossy().as_ref(),
+        ])
+        .output()
+        .with_context(|| {
+            format!(
+                "Failed to remove worktree reference at '{}'",
+                path.display()
+            )
+        })?;
+
+    if !output.status.success() {
+        // If remove fails, try prune instead
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!(
+            "⚠️  Warning: Failed to remove worktree reference: {}. Trying prune...",
+            stderr
+        );
+        prune_worktrees()?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

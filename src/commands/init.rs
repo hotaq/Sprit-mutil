@@ -75,12 +75,20 @@ pub fn execute(options: InitOptions) -> Result<()> {
         for i in 1..=options.agents {
             println!("   Agent {}: agents/{}", i, i);
         }
-        println!();
+    } else {
+        println!("🤖 No agents configured (empty setup)");
     }
+    println!();
 
     println!("🎯 Next steps:");
-    println!("   1. Review agents/agents.yaml and customize agent configurations");
-    println!("   2. Run 'sprite start' to begin supervision session");
+    if options.agents > 0 {
+        println!("   1. Review agents/agents.yaml and customize agent configurations");
+        println!("   2. Run 'sprite start' to begin supervision session");
+    } else {
+        println!("   1. Add agents using 'sprite agents create <id>'");
+        println!("   2. Or edit agents/agents.yaml manually");
+        println!("   3. Run 'sprite start' when ready");
+    }
     println!();
     println!("💡 Pro tip: Everything is ready! You can start coding immediately.");
 
@@ -359,8 +367,15 @@ fn create_base_directory_structure(agents_dir: &Path) -> Result<()> {
 fn generate_agents_config(config_file: &Path, agent_count: u32) -> Result<()> {
     println!("📝 Generating configuration file...");
 
+    if agent_count == 0 {
+        // Warn user about zero agents
+        println!("   ⚠️  Warning: Initializing with 0 agents");
+        println!("   💡 You can add agents later using 'sprite agents create <id>'");
+        println!();
+    }
+
     let config = if agent_count == 0 {
-        // Empty configuration template
+        // Empty configuration template with updated schema
         include_str!("../templates/empty_agents.yaml").to_string()
     } else {
         // Generate configuration with agents

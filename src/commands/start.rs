@@ -55,11 +55,19 @@ pub fn execute(
         }
     }
 
-    // Validate all agent workspaces
-    println!("🔍 Validating agent workspaces...");
-    config
-        .validate_workspaces()
-        .context("Workspace validation failed")?;
+    // Check and provision agent workspaces if needed
+    println!("🔍 Checking agent workspaces...");
+    if let Err(e) = config.validate_workspaces() {
+        println!("⚠️  Workspace validation failed: {}", e);
+        println!("🔧 Attempting to provision missing workspaces...");
+        config
+            .provision_worktrees()
+            .context("Failed to provision workspaces")?;
+        // Validate again after provisioning
+        config
+            .validate_workspaces()
+            .context("Workspace validation failed after provisioning")?;
+    }
 
     // Determine tmux profile to use
     let profile = determine_tmux_profile(&config.agents.len(), &layout)?;
@@ -261,9 +269,9 @@ fn update_agent_status_to_active(_config: &crate::commands::config::SpriteConfig
 
     let mut updated_count = 0;
 
-    // Update each agent's status to Active if it's currently Inactive
+    // Update each agent's status to Active if it's currently Inactive (case-insensitive)
     for agent in &mut current_config.agents {
-        if agent.status == "Inactive" {
+        if agent.status.to_lowercase() == "inactive" {
             agent.status = "Active".to_string();
             updated_count += 1;
             println!("  ✅ Agent {} is now Active", agent.id);
