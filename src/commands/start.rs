@@ -1,11 +1,25 @@
 use crate::commands::config::SpriteConfig;
 use crate::error::SpriteError;
 use crate::utils::git;
+use crate::utils::project;
 use crate::utils::tmux;
 use anyhow::{Context, Result};
 
 /// Execute start command with provided arguments
 pub fn execute(
+    session_name: Option<String>,
+    layout: String,
+    detach: bool,
+    force: bool,
+) -> Result<()> {
+    // Execute from project root directory
+    project::execute_from_project_root(|| {
+        execute_from_project_root(session_name, layout, detach, force)
+    })
+}
+
+/// Execute start command from project root directory
+fn execute_from_project_root(
     session_name: Option<String>,
     layout: String,
     detach: bool,

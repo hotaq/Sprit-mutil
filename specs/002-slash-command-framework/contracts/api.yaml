@@ -1,0 +1,1968 @@
+openapi: 3.0.3
+info:
+  title: Multi-Agent System Slash Command Framework API
+  description: REST API for managing multi-agent slash commands, agent configurations, and communication
+  version: 1.0.0
+  contact:
+    name: Sprite Development Team
+    email: dev@sprite.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+  - url: https://api.sprite.dev/v1
+    description: Production server
+
+paths:
+  # Agent Management
+  /agents:
+    get:
+      summary: List all agents
+      description: Retrieve a list of all configured agents
+      tags:
+        - Agents
+      parameters:
+        - name: type
+          in: query
+          description: Filter by agent type
+          schema:
+            type: string
+            enum: [orchestrator, developer, documenter, reviewer, custom]
+        - name: status
+          in: query
+          description: Filter by agent status
+          schema:
+            type: string
+            enum: [idle, busy, away, error, shutting_down]
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of agents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgentConfig'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new agent
+      description: Create a new agent with the specified configuration
+      tags:
+        - Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: Agent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Agent with this name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /agents/{agentId}:
+    get:
+      summary: Get agent by ID
+      description: Retrieve detailed information about a specific agent
+      tags:
+        - Agents
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agent retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update agent configuration
+      description: Update the configuration of an existing agent
+      tags:
+        - Agents
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: Agent updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete agent
+      description: Delete an agent and all its associated data
+      tags:
+        - Agents
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Agent deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Agent Communication
+  /agents/{agentId}/messages:
+    post:
+      summary: Send message to agent
+      description: Send a message to a specific agent
+      tags:
+        - Communication
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          description: UUID of the target agent
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get agent messages
+      description: Retrieve messages for a specific agent
+      tags:
+        - Communication
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Maximum number of messages to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: before
+          in: query
+          description: Get messages before this timestamp
+          schema:
+            type: string
+            format: date-time
+        - name: after
+          in: query
+          description: Get messages after this timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Broadcast Communication
+  /messages/broadcast:
+    post:
+      summary: Broadcast message to all agents
+      description: Send a broadcast message to all agents or a subset based on filters
+      tags:
+        - Communication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+      responses:
+        '200':
+          description: Message broadcasted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                    format: uuid
+                  recipients:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Slash Commands
+  /commands:
+    get:
+      summary: List available slash commands
+      description: Retrieve a list of all available slash commands
+      tags:
+        - Commands
+      parameters:
+        - name: category
+          in: query
+          description: Filter by command category
+          schema:
+            type: string
+            enum: [agent_management, communication, configuration, project_management, template, utility, custom]
+        - name: framework
+          in: query
+          description: Filter by framework compatibility
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search in command names and descriptions
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Commands retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commands:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SlashCommand'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create new slash command
+      description: Create a new custom slash command
+      tags:
+        - Commands
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommandRequest'
+      responses:
+        '201':
+          description: Command created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlashCommand'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Command with this name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /commands/{commandId}:
+    get:
+      summary: Get command by ID
+      description: Retrieve detailed information about a specific slash command
+      tags:
+        - Commands
+      parameters:
+        - name: commandId
+          in: path
+          required: true
+          description: UUID of the command
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Command retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlashCommand'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete slash command
+      description: Delete a custom slash command
+      tags:
+        - Commands
+      parameters:
+        - name: commandId
+          in: path
+          required: true
+          description: UUID of the command
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Command deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /commands/{commandId}/execute:
+    post:
+      summary: Execute slash command
+      description: Execute a slash command with the provided parameters
+      tags:
+        - Commands
+      parameters:
+        - name: commandId
+          in: path
+          required: true
+          description: UUID of the command to execute
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteCommandRequest'
+      responses:
+        '200':
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandExecution'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '408':
+          description: Command execution timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Shortcuts
+  /shortcuts:
+    get:
+      summary: List shortcut keywords
+      description: Retrieve a list of all defined shortcut keywords
+      tags:
+        - Shortcuts
+      responses:
+        '200':
+          description: Shortcuts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shortcuts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShortcutKeyword'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create shortcut keyword
+      description: Create a new shortcut keyword
+      tags:
+        - Shortcuts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShortcutRequest'
+      responses:
+        '201':
+          description: Shortcut created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortcutKeyword'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Shortcut with this keyword already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /shortcuts/{shortcutId}:
+    delete:
+      summary: Delete shortcut keyword
+      description: Delete a shortcut keyword
+      tags:
+        - Shortcuts
+      parameters:
+        - name: shortcutId
+          in: path
+          required: true
+          description: UUID of the shortcut
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Shortcut deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Templates
+  /templates:
+    get:
+      summary: List templates
+      description: Retrieve a list of available templates
+      tags:
+        - Templates
+      parameters:
+        - name: category
+          in: query
+          description: Filter by template category
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search in template names and descriptions
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TemplateConfig'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create template
+      description: Create a new template
+      tags:
+        - Templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/{templateId}/init:
+    post:
+      summary: Initialize project with template
+      description: Initialize a new project using the specified template
+      tags:
+        - Templates
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          description: UUID of the template
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitTemplateRequest'
+      responses:
+        '200':
+          description: Project initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project_id:
+                    type: string
+                    format: uuid
+                  files_created:
+                    type: array
+                    items:
+                      type: string
+                  directories_created:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # System Status
+  /status:
+    get:
+      summary: Get system status
+      description: Retrieve overall system status and health information
+      tags:
+        - System
+      responses:
+        '200':
+          description: System status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    # Core Schemas
+    AgentConfig:
+      type: object
+      required:
+        - id
+        - name
+        - agent_type
+        - framework
+        - communication
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the agent
+        name:
+          type: string
+          description: Human-readable name for the agent
+        agent_type:
+          $ref: '#/components/schemas/AgentType'
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: List of agent capabilities
+        framework:
+          $ref: '#/components/schemas/FrameworkConfig'
+        communication:
+          $ref: '#/components/schemas/CommunicationConfig'
+        resources:
+          $ref: '#/components/schemas/ResourceLimits'
+        work_structure:
+          $ref: '#/components/schemas/WorkStructureConfig'
+        overrides:
+          type: object
+          additionalProperties: true
+          description: Agent-specific configuration overrides
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AgentType:
+      type: string
+      enum:
+        - orchestrator
+        - developer
+        - documenter
+        - reviewer
+        - custom
+      description: Type of agent
+
+    FrameworkConfig:
+      type: object
+      required:
+        - framework
+        - api_config
+      properties:
+        framework:
+          type: string
+          description: Target AI framework name
+        settings:
+          type: object
+          additionalProperties: true
+          description: Framework-specific settings
+        api_config:
+          $ref: '#/components/schemas/ApiConfig'
+        model_config:
+          $ref: '#/components/schemas/ModelConfig'
+
+    ApiConfig:
+      type: object
+      required:
+        - base_url
+        - auth_method
+      properties:
+        base_url:
+          type: string
+          format: uri
+          description: Base URL for the API
+        auth_method:
+          $ref: '#/components/schemas/AuthMethod'
+        api_key:
+          type: string
+          description: API key for authentication
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional HTTP headers
+        timeout:
+          type: integer
+          minimum: 1
+          description: Request timeout in seconds
+
+    AuthMethod:
+      type: string
+      enum:
+        - none
+        - api_key
+        - bearer
+        - custom
+      description: Authentication method
+
+    ModelConfig:
+      type: object
+      required:
+        - model
+      properties:
+        model:
+          type: string
+          description: Model name/identifier
+        max_tokens:
+          type: integer
+          minimum: 1
+          description: Maximum tokens for response
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Temperature for randomness
+        top_p:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Top-p sampling
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Custom model parameters
+
+    CommunicationConfig:
+      type: object
+      required:
+        - method
+        - timeout
+      properties:
+        method:
+          $ref: '#/components/schemas/CommunicationMethod'
+        message_format:
+          $ref: '#/components/schemas/MessageFormat'
+        timeout:
+          type: integer
+          minimum: 1
+          description: Response timeout in seconds
+        retry_config:
+          $ref: '#/components/schemas/RetryConfig'
+        preferences:
+          $ref: '#/components/schemas/CommunicationPreferences'
+
+    CommunicationMethod:
+      type: string
+      enum:
+        - message_queue
+        - tmux
+        - file
+        - http
+      description: Preferred communication method
+
+    MessageFormat:
+      type: string
+      enum:
+        - plain_text
+        - json
+        - yaml
+        - custom
+      description: Message format preference
+
+    RetryConfig:
+      type: object
+      required:
+        - max_attempts
+        - initial_delay
+      properties:
+        max_attempts:
+          type: integer
+          minimum: 0
+          description: Maximum number of retry attempts
+        initial_delay:
+          type: integer
+          minimum: 0
+          description: Initial delay between retries in milliseconds
+        backoff_multiplier:
+          type: number
+          minimum: 1
+          description: Backoff multiplier
+        max_delay:
+          type: integer
+          minimum: 0
+          description: Maximum delay between retries in milliseconds
+
+    CommunicationPreferences:
+      type: object
+      properties:
+        prefers_synchronous:
+          type: boolean
+          description: Whether this agent prefers synchronous communication
+        max_concurrent_messages:
+          type: integer
+          minimum: 1
+          description: Maximum concurrent messages this agent can handle
+        default_priority:
+          $ref: '#/components/schemas/MessagePriority'
+        accepts_broadcasts:
+          type: boolean
+          description: Whether this agent accepts broadcast messages
+
+    MessagePriority:
+      type: string
+      enum:
+        - low
+        - normal
+        - high
+        - critical
+      description: Message priority level
+
+    ResourceLimits:
+      type: object
+      properties:
+        max_cpu_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Maximum CPU usage percentage
+        max_memory_mb:
+          type: integer
+          minimum: 1
+          description: Maximum memory usage in MB
+        max_execution_time:
+          type: integer
+          minimum: 1
+          description: Maximum execution time in seconds
+        max_concurrent_tasks:
+          type: integer
+          minimum: 1
+          description: Maximum concurrent tasks
+
+    WorkStructureConfig:
+      type: object
+      properties:
+        organization_rules:
+          type: array
+          items:
+            type: string
+          description: Work organization rules
+        file_conventions:
+          $ref: '#/components/schemas/FileConventions'
+        directory_structure:
+          $ref: '#/components/schemas/DirectoryStructure'
+        formatting:
+          $ref: '#/components/schemas/FormattingConfig'
+        validation_rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationRule'
+
+    FileConventions:
+      type: object
+      properties:
+        naming_pattern:
+          type: string
+          description: File naming pattern
+        preferred_extensions:
+          type: array
+          items:
+            type: string
+          description: Preferred file extensions
+        header_template:
+          type: string
+          description: Header template for files
+
+    DirectoryStructure:
+      type: object
+      properties:
+        root_dir:
+          type: string
+          description: Root directory name
+        subdirectories:
+          type: array
+          items:
+            type: string
+          description: Subdirectories to create
+        file_placement_rules:
+          type: object
+          additionalProperties:
+            type: string
+          description: File placement rules
+
+    FormattingConfig:
+      type: object
+      properties:
+        formatter:
+          type: string
+          description: Code formatter to use
+        line_endings:
+          type: string
+          enum: [lf, crlf, cr, native]
+          description: Line ending style
+        indentation:
+          $ref: '#/components/schemas/IndentationStyle'
+        max_line_length:
+          type: integer
+          minimum: 1
+          description: Maximum line length
+
+    IndentationStyle:
+      type: object
+      oneOf:
+        - type: object
+          required: [spaces]
+          properties:
+            spaces:
+              type: integer
+              minimum: 1
+              description: Number of spaces for indentation
+        - type: object
+          required: [tabs]
+          properties:
+            tabs:
+              type: boolean
+              enum: [true]
+
+    ValidationRule:
+      type: object
+      required:
+        - id
+        - description
+        - pattern
+        - severity
+      properties:
+        id:
+          type: string
+          description: Rule identifier
+        description:
+          type: string
+          description: Rule description
+        pattern:
+          type: string
+          description: Validation pattern or rule
+        severity:
+          $ref: '#/components/schemas/RuleSeverity'
+
+    RuleSeverity:
+      type: string
+      enum:
+        - required
+        - recommended
+        - optional
+      description: Rule severity level
+
+    Message:
+      type: object
+      required:
+        - id
+        - sender
+        - message_type
+        - payload
+        - timestamp
+        - priority
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique message identifier
+        sender:
+          type: string
+          format: uuid
+          description: Sender agent identifier
+        recipient:
+          type: string
+          format: uuid
+          description: Recipient agent identifier (null for broadcast)
+        message_type:
+          $ref: '#/components/schemas/MessageType'
+        payload:
+          $ref: '#/components/schemas/MessagePayload'
+        timestamp:
+          type: string
+          format: date-time
+          description: Message timestamp
+        priority:
+          $ref: '#/components/schemas/MessagePriority'
+        retry_info:
+          $ref: '#/components/schemas/RetryInfo'
+        context:
+          $ref: '#/components/schemas/MessageContext'
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Message metadata
+
+    MessageType:
+      type: string
+      enum:
+        - command
+        - response
+        - status_update
+        - error
+        - heartbeat
+        - context_request
+        - context_response
+        - custom
+      description: Type of message
+
+    MessagePayload:
+      type: object
+      description: Message payload (structure depends on message_type)
+
+    RetryInfo:
+      type: object
+      properties:
+        attempt:
+          type: integer
+          minimum: 0
+          description: Current retry attempt
+        max_attempts:
+          type: integer
+          minimum: 0
+          description: Maximum retry attempts
+        next_retry_at:
+          type: string
+          format: date-time
+          description: Next retry time
+        reason:
+          type: string
+          description: Retry reason
+
+    MessageContext:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Session identifier
+        chain:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Request chain for correlated messages
+        user_context:
+          $ref: '#/components/schemas/UserContext'
+        project_context:
+          $ref: '#/components/schemas/ProjectContext'
+
+    UserContext:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: User identifier
+        preferences:
+          type: object
+          additionalProperties: true
+          description: User preferences
+        permissions:
+          type: array
+          items:
+            type: string
+          description: User permissions
+
+    ProjectContext:
+      type: object
+      properties:
+        project_id:
+          type: string
+          format: uuid
+          description: Project identifier
+        project_name:
+          type: string
+          description: Project name
+        working_dir:
+          type: string
+          description: Current working directory
+        git_branch:
+          type: string
+          description: Git branch
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Project metadata
+
+    SlashCommand:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - handler
+        - category
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Command identifier
+        name:
+          type: string
+          description: Command name (without slash)
+        description:
+          type: string
+          description: Command description
+        usage:
+          type: string
+          description: Command usage syntax
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommandParameter'
+          description: Command parameters
+        handler:
+          $ref: '#/components/schemas/CommandHandler'
+        category:
+          $ref: '#/components/schemas/CommandCategory'
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Required permissions
+        framework_compatibility:
+          type: array
+          items:
+            type: string
+          description: Framework compatibility
+        metadata:
+          $ref: '#/components/schemas/CommandMetadata'
+
+    CommandParameter:
+      type: object
+      required:
+        - name
+        - description
+        - param_type
+        - required
+      properties:
+        name:
+          type: string
+          description: Parameter name
+        description:
+          type: string
+          description: Parameter description
+        param_type:
+          $ref: '#/components/schemas/ParameterType'
+        required:
+          type: boolean
+          description: Whether this parameter is required
+        default_value:
+          description: Default value if not provided
+        validation:
+          $ref: '#/components/schemas/ValidationRule'
+        position:
+          type: integer
+          minimum: 0
+          description: Parameter position for positional arguments
+
+    ParameterType:
+      type: string
+      enum:
+        - string
+        - integer
+        - float
+        - boolean
+        - list
+        - object
+        - enum
+        - file_path
+        - url
+      description: Parameter type
+
+    CommandHandler:
+      type: object
+      description: Command handler configuration (structure depends on handler type)
+
+    CommandCategory:
+      type: string
+      enum:
+        - agent_management
+        - communication
+        - configuration
+        - project_management
+        - template
+        - utility
+        - custom
+      description: Command category
+
+    CommandMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Command version
+        author:
+          type: string
+          description: Author information
+        created_at:
+          type: string
+          format: date-time
+          description: Creation date
+        modified_at:
+          type: string
+          format: date-time
+          description: Last modified date
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags
+        examples:
+          type: array
+          items:
+            type: string
+          description: Usage examples
+        related_commands:
+          type: array
+          items:
+            type: string
+          description: Related commands
+
+    CommandExecution:
+      type: object
+      required:
+        - id
+        - command
+        - context
+        - result
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Execution identifier
+        command:
+          type: string
+          format: uuid
+          description: Command that was executed
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Parameters used
+        context:
+          $ref: '#/components/schemas/ExecutionContext'
+        result:
+          $ref: '#/components/schemas/ExecutionResult'
+        metrics:
+          $ref: '#/components/schemas/ExecutionMetrics'
+        timestamp:
+          type: string
+          format: date-time
+          description: Execution timestamp
+
+    ExecutionContext:
+      type: object
+      required:
+        - user_id
+        - framework
+        - session_id
+      properties:
+        user_id:
+          type: string
+          description: User who executed the command
+        working_dir:
+          type: string
+          description: Working directory
+        environment:
+          type: object
+          additionalProperties:
+            type: string
+          description: Environment variables
+        framework:
+          type: string
+          description: Framework being used
+        session_id:
+          type: string
+          format: uuid
+          description: Session identifier
+
+    ExecutionResult:
+      type: object
+      description: Execution result (structure depends on outcome)
+
+    ExecutionMetrics:
+      type: object
+      properties:
+        start_time:
+          type: string
+          format: date-time
+          description: Start time
+        end_time:
+          type: string
+          format: date-time
+          description: End time
+        duration_ms:
+          type: integer
+          minimum: 0
+          description: Total duration in milliseconds
+        cpu_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: CPU usage percentage
+        memory_usage:
+          type: number
+          minimum: 0
+          description: Memory usage in MB
+        resource_usage:
+          $ref: '#/components/schemas/ResourceUsage'
+
+    ResourceUsage:
+      type: object
+      required:
+        - cpu_percent
+        - memory_mb
+      properties:
+        cpu_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: CPU usage percentage
+        memory_mb:
+          type: number
+          minimum: 0
+          description: Memory usage in MB
+        disk_mb:
+          type: number
+          minimum: 0
+          description: Disk usage in MB
+        network_bytes:
+          type: integer
+          minimum: 0
+          description: Network usage in bytes
+
+    ShortcutKeyword:
+      type: object
+      required:
+        - id
+        - keyword
+        - expansion
+        - description
+        - active
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Shortcut identifier
+        keyword:
+          type: string
+          description: Keyword/alias
+        expansion:
+          type: string
+          description: Expansion pattern
+        parameters:
+          type: array
+          items:
+            type: string
+          description: Parameters for the expansion
+        description:
+          type: string
+          description: Description
+        active:
+          type: boolean
+          description: Whether this shortcut is active
+        usage_stats:
+          $ref: '#/components/schemas/UsageStats'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UsageStats:
+      type: object
+      properties:
+        usage_count:
+          type: integer
+          minimum: 0
+          description: Number of times used
+        last_used:
+          type: string
+          format: date-time
+          description: Last used timestamp
+        avg_execution_time_ms:
+          type: integer
+          minimum: 0
+          description: Average execution time
+
+    TemplateConfig:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - version
+        - files
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Template identifier
+        name:
+          type: string
+          description: Template name
+        description:
+          type: string
+          description: Template description
+        version:
+          type: string
+          description: Template version
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateFile'
+          description: Template files
+        variables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateVariable'
+          description: Template variables
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateDependency'
+          description: Template dependencies
+        metadata:
+          $ref: '#/components/schemas/TemplateMetadata'
+
+    TemplateFile:
+      type: object
+      required:
+        - source_path
+        - destination_path
+        - content
+        - is_template
+      properties:
+        source_path:
+          type: string
+          description: Source path in template
+        destination_path:
+          type: string
+          description: Destination path in project
+        content:
+          $ref: '#/components/schemas/FileContent'
+        permissions:
+          type: integer
+          description: File permissions
+        is_template:
+          type: boolean
+          description: Whether this file should be processed as a template
+
+    FileContent:
+      type: object
+      description: File content (structure depends on content type)
+
+    TemplateVariable:
+      type: object
+      required:
+        - name
+        - description
+        - var_type
+        - required
+      properties:
+        name:
+          type: string
+          description: Variable name
+        description:
+          type: string
+          description: Variable description
+        var_type:
+          $ref: '#/components/schemas/VariableType'
+        default_value:
+          description: Default value
+        required:
+          type: boolean
+          description: Whether this variable is required
+        validation:
+          $ref: '#/components/schemas/ValidationRule'
+
+    VariableType:
+      type: string
+      enum:
+        - string
+        - integer
+        - float
+        - boolean
+        - list
+        - object
+        - enum
+      description: Variable type
+
+    TemplateDependency:
+      type: object
+      required:
+        - name
+        - version_requirement
+      properties:
+        name:
+          type: string
+          description: Dependency name
+        version_requirement:
+          type: string
+          description: Version requirement
+        optional:
+          type: boolean
+          description: Whether this dependency is optional
+        install_command:
+          type: string
+          description: Installation command
+
+    TemplateMetadata:
+      type: object
+      properties:
+        author:
+          type: string
+          description: Template author
+        license:
+          type: string
+          description: Template license
+        tags:
+          type: array
+          items:
+            type: string
+          description: Template tags
+        category:
+          type: string
+          description: Template category
+        requirements:
+          $ref: '#/components/schemas/Requirements'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Requirements:
+      type: object
+      properties:
+        rust_version:
+          type: string
+          description: Minimum Rust version
+        system_dependencies:
+          type: array
+          items:
+            type: string
+          description: Required system dependencies
+        cargo_dependencies:
+          type: array
+          items:
+            type: string
+          description: Required cargo dependencies
+        platforms:
+          type: array
+          items:
+            type: string
+          description: Platform requirements
+
+    SystemStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Overall system status
+        uptime_seconds:
+          type: integer
+          minimum: 0
+          description: System uptime in seconds
+        version:
+          type: string
+          description: System version
+        agents:
+          type: object
+          properties:
+            total:
+              type: integer
+              minimum: 0
+              description: Total number of agents
+            active:
+              type: integer
+              minimum: 0
+              description: Number of active agents
+            unhealthy:
+              type: integer
+              minimum: 0
+              description: Number of unhealthy agents
+        performance:
+          type: object
+          properties:
+            avg_response_time_ms:
+              type: number
+              minimum: 0
+              description: Average response time in milliseconds
+            messages_per_second:
+              type: number
+              minimum: 0
+              description: Messages processed per second
+            error_rate:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Error rate (0.0-1.0)
+
+    Pagination:
+      type: object
+      required:
+        - total
+        - limit
+        - offset
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items
+        limit:
+          type: integer
+          minimum: 1
+          description: Number of items per page
+        offset:
+          type: integer
+          minimum: 0
+          description: Number of items skipped
+        has_next:
+          type: boolean
+          description: Whether there are more items
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+    # Request Schemas
+    CreateAgentRequest:
+      type: object
+      required:
+        - name
+        - agent_type
+        - framework
+      properties:
+        name:
+          type: string
+          description: Agent name
+        agent_type:
+          $ref: '#/components/schemas/AgentType'
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Agent capabilities
+        framework:
+          $ref: '#/components/schemas/FrameworkConfig'
+        communication:
+          $ref: '#/components/schemas/CommunicationConfig'
+        resources:
+          $ref: '#/components/schemas/ResourceLimits'
+        work_structure:
+          $ref: '#/components/schemas/WorkStructureConfig'
+        overrides:
+          type: object
+          additionalProperties: true
+          description: Configuration overrides
+
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Agent name
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Agent capabilities
+        framework:
+          $ref: '#/components/schemas/FrameworkConfig'
+        communication:
+          $ref: '#/components/schemas/CommunicationConfig'
+        resources:
+          $ref: '#/components/schemas/ResourceLimits'
+        work_structure:
+          $ref: '#/components/schemas/WorkStructureConfig'
+        overrides:
+          type: object
+          additionalProperties: true
+          description: Configuration overrides
+
+    SendMessageRequest:
+      type: object
+      required:
+        - message_type
+        - payload
+      properties:
+        message_type:
+          $ref: '#/components/schemas/MessageType'
+        payload:
+          $ref: '#/components/schemas/MessagePayload'
+        priority:
+          $ref: '#/components/schemas/MessagePriority'
+        context:
+          $ref: '#/components/schemas/MessageContext'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    BroadcastMessageRequest:
+      type: object
+      required:
+        - message_type
+        - payload
+      properties:
+        message_type:
+          $ref: '#/components/schemas/MessageType'
+        payload:
+          $ref: '#/components/schemas/MessagePayload'
+        priority:
+          $ref: '#/components/schemas/MessagePriority'
+        filters:
+          type: object
+          description: Filters for which agents should receive the broadcast
+        context:
+          $ref: '#/components/schemas/MessageContext'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CreateCommandRequest:
+      type: object
+      required:
+        - name
+        - description
+        - handler
+        - category
+      properties:
+        name:
+          type: string
+          description: Command name
+        description:
+          type: string
+          description: Command description
+        usage:
+          type: string
+          description: Command usage syntax
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommandParameter'
+          description: Command parameters
+        handler:
+          $ref: '#/components/schemas/CommandHandler'
+        category:
+          $ref: '#/components/schemas/CommandCategory'
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Required permissions
+        framework_compatibility:
+          type: array
+          items:
+            type: string
+          description: Framework compatibility
+
+    ExecuteCommandRequest:
+      type: object
+      properties:
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Command parameters
+        context:
+          $ref: '#/components/schemas/ExecutionContext'
+        timeout:
+          type: integer
+          minimum: 1
+          description: Execution timeout in seconds
+
+    CreateShortcutRequest:
+      type: object
+      required:
+        - keyword
+        - expansion
+        - description
+      properties:
+        keyword:
+          type: string
+          description: Shortcut keyword
+        expansion:
+          type: string
+          description: Expansion pattern
+        parameters:
+          type: array
+          items:
+            type: string
+          description: Parameters
+        description:
+          type: string
+          description: Description
+
+    CreateTemplateRequest:
+      type: object
+      required:
+        - name
+        - description
+        - version
+        - files
+      properties:
+        name:
+          type: string
+          description: Template name
+        description:
+          type: string
+          description: Template description
+        version:
+          type: string
+          description: Template version
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateFile'
+          description: Template files
+        variables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateVariable'
+          description: Template variables
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateDependency'
+          description: Template dependencies
+        metadata:
+          $ref: '#/components/schemas/TemplateMetadata'
+
+    InitTemplateRequest:
+      type: object
+      required:
+        - project_name
+        - destination_path
+      properties:
+        project_name:
+          type: string
+          description: Project name
+        destination_path:
+          type: string
+          description: Destination path for the project
+        variables:
+          type: object
+          additionalProperties: true
+          description: Template variable values
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Agents
+    description: Agent management operations
+  - name: Communication
+    description: Agent communication operations
+  - name: Commands
+    description: Slash command operations
+  - name: Shortcuts
+    description: Shortcut keyword operations
+  - name: Templates
+    description: Template operations
+  - name: System
+    description: System status and monitoring

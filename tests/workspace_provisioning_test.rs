@@ -13,7 +13,7 @@ use assert_cmd::Command as AssertCommand;
 fn test_cli_basic_functionality() -> Result<()> {
     // Test that the CLI responds to help
     AssertCommand::cargo_bin("sprite")?
-        .args(&["--help"])
+        .args(["--help"])
         .assert()
         .success()
         .stdout(predicates::str::contains("sprite"))
@@ -22,7 +22,7 @@ fn test_cli_basic_functionality() -> Result<()> {
 
     // Test version
     AssertCommand::cargo_bin("sprite")?
-        .args(&["--version"])
+        .args(["--version"])
         .assert()
         .success()
         .stdout(predicates::str::contains("0.2.3"));
@@ -38,7 +38,7 @@ fn test_init_auto_initializes_git() -> Result<()> {
     // Initialize sprite - should auto-initialize git
     AssertCommand::cargo_bin("sprite")?
         .current_dir(temp_dir.path())
-        .args(&["init", "--agents", "2"])
+        .args(["init", "--agents", "2"])
         .assert()
         .success()
         .stdout(predicates::str::contains("Git repository initialized"));
@@ -61,7 +61,7 @@ fn test_init_creates_required_files() -> Result<()> {
     // Initialize sprite configuration
     let result = AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path) // Explicitly set the working directory
-        .args(&["init", "--force"])
+        .args(["init", "--force"])
         .assert();
 
     // Check output contains expected messages
@@ -88,14 +88,14 @@ fn test_init_error_handling() -> Result<()> {
     // Initialize sprite configuration
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["init", "--force"])
+        .args(["init", "--force"])
         .assert()
         .success();
 
     // Try to initialize again without force - should fail
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["init"])
+        .args(["init"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("already exists"));
@@ -103,7 +103,7 @@ fn test_init_error_handling() -> Result<()> {
     // Initialize again with force - should succeed
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["init", "--force"])
+        .args(["init", "--force"])
         .assert()
         .success();
 
@@ -119,9 +119,12 @@ fn test_agents_commands_require_config() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Try agents commands without initialization - should fail
+    // Set env vars to prevent finding project root outside temp dir
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["agents", "list"])
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
+        .args(["agents", "list"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -130,7 +133,9 @@ fn test_agents_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["agents", "validate"])
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
+        .args(["agents", "validate"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -139,7 +144,9 @@ fn test_agents_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["agents", "provision"])
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
+        .args(["agents", "provision"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -155,9 +162,12 @@ fn test_config_commands_require_config() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Try config commands without initialization - should fail
+    // Set env vars to prevent finding project root outside temp dir
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["config", "show"])
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
+        .args(["config", "show"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -166,7 +176,9 @@ fn test_config_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["config", "validate"])
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
+        .args(["config", "validate"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -175,7 +187,9 @@ fn test_config_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["config", "status"])
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
+        .args(["config", "status"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -196,7 +210,7 @@ fn test_workspace_provisioning_integration() -> Result<()> {
     // Test that the provision command is recognized
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
-        .args(&["agents", "provision", "--help"])
+        .args(["agents", "provision", "--help"])
         .assert()
         .success()
         .stdout(predicates::str::contains("provision"))
@@ -212,18 +226,18 @@ fn create_test_git_repo() -> Result<(TempDir, PathBuf)> {
 
     // Initialize git repository
     Command::new("git")
-        .args(&["init"])
+        .args(["init"])
         .current_dir(&repo_path)
         .output()?;
 
     // Configure git user
     Command::new("git")
-        .args(&["config", "user.name", "Test User"])
+        .args(["config", "user.name", "Test User"])
         .current_dir(&repo_path)
         .output()?;
 
     Command::new("git")
-        .args(&["config", "user.email", "test@example.com"])
+        .args(["config", "user.email", "test@example.com"])
         .current_dir(&repo_path)
         .output()?;
 
@@ -232,12 +246,12 @@ fn create_test_git_repo() -> Result<(TempDir, PathBuf)> {
     fs::write(&readme_path, "# Test Repository\n")?;
 
     Command::new("git")
-        .args(&["add", "README.md"])
+        .args(["add", "README.md"])
         .current_dir(&repo_path)
         .output()?;
 
     Command::new("git")
-        .args(&["commit", "-m", "Initial commit"])
+        .args(["commit", "-m", "Initial commit"])
         .current_dir(&repo_path)
         .output()?;
 

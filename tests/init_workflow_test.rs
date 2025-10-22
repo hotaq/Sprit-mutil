@@ -18,13 +18,13 @@ fn test_complete_init_workflow_default() {
     // Initialize a git repository first (required by init)
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run sprite init with default settings
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .arg("init")
         .assert()
         .success()
@@ -108,13 +108,13 @@ fn test_init_workflow_custom_agent_count() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run sprite init with 5 agents
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "5"])
         .assert()
         .success()
@@ -155,13 +155,13 @@ fn test_init_workflow_zero_agents() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run sprite init with 0 agents
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "0"])
         .assert()
         .success();
@@ -196,13 +196,13 @@ fn test_init_workflow_with_force() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run init once to create initial setup
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "2"])
         .assert()
         .success();
@@ -214,7 +214,7 @@ fn test_init_workflow_with_force() {
     // Run init again without force (should fail)
     let mut cmd_fail = Command::cargo_bin("sprite").unwrap();
     cmd_fail
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .args(["init", "--agents", "3"])
         .assert()
         .failure()
@@ -223,7 +223,7 @@ fn test_init_workflow_with_force() {
     // Run init again with force (should succeed)
     let mut cmd_force = Command::cargo_bin("sprite").unwrap();
     cmd_force
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .args(["init", "--agents", "3", "--force"])
         .assert()
         .success();
@@ -252,7 +252,7 @@ fn test_init_workflow_not_git_repository() {
 
     // Run sprite init (should succeed and auto-init git)
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "2"])
         .assert()
         .success()
@@ -281,13 +281,13 @@ fn test_init_workflow_large_agent_count() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run sprite init with large number of agents
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "50"])
         .assert()
         .success();
@@ -327,7 +327,7 @@ fn test_init_workflow_performance_requirement() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
@@ -335,7 +335,7 @@ fn test_init_workflow_performance_requirement() {
     let start = std::time::Instant::now();
 
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "5"])
         .assert()
         .success();
@@ -409,13 +409,13 @@ fn test_init_workflow_valid_yaml() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run sprite init
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "3"])
         .assert()
         .success();
@@ -452,13 +452,13 @@ fn test_init_workflow_all_file_types() {
     // Initialize git repository
     Command::new("git")
         .arg("init")
-        .current_dir(&temp_path)
+        .current_dir(temp_path)
         .assert()
         .success();
 
     // Run sprite init
     let mut cmd = Command::cargo_bin("sprite").unwrap();
-    cmd.current_dir(&temp_path)
+    cmd.current_dir(temp_path)
         .args(["init", "--agents", "2"])
         .assert()
         .success();

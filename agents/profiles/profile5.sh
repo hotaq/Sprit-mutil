@@ -14,6 +14,10 @@ tmux kill-session -t "$SPRITE_SESSION" 2>/dev/null || true
 
 # Create new session with first agent
 tmux new-session -d -s "$SPRITE_SESSION"
+
+# Enable mouse support for better navigation
+tmux set-option -g mouse on
+tmux set-option -t "$SPRITE_SESSION" mouse on
 tmux send-keys -t "$SPRITE_SESSION:0" "cd agents/1 && echo '🤖 Agent 1 Dashboard'" C-m
 tmux rename-window -t "$SPRITE_SESSION:0" "dashboard"
 
@@ -56,7 +60,9 @@ for i in $(seq 7 $AGENT_COUNT); do
     tmux send-keys -t "$SPRITE_SESSION:agent-$i" "cd agents/$i && echo '🤖 Agent $i'" C-m
 done
 
-echo "✅ Profile 5 applied successfully!"
+echo "✅ profile5 applied successfully!"
+echo "🖱️  Mouse support enabled - Click to switch between panels"
+echo "⌨️  Keyboard shortcuts: Ctrl+B then Arrow keys to navigate"
 echo "📊 Dashboard configured for $AGENT_COUNT agents"
 echo "🎮 Use 'sprite attach' to connect to the session"
 echo "💡 Dashboard window shows agents 1-6 in 2x3 grid"

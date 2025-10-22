@@ -1,18 +1,40 @@
 use crate::error::SpriteError;
+use crate::utils::project;
 use crate::utils::tmux;
 use anyhow::{Context, Result};
 
 /// Execute attach command with session name and list options
 pub fn execute(session_name: Option<String>, list: bool) -> Result<()> {
+    // Execute from project root directory for listing, but not for attach (we'll handle that separately)
+    if list {
+        return project::execute_from_project_root(list_sessions_from_project_root);
+    }
+
+    // For attach, we need special handling since tmux attach takes over the terminal
+    attach_with_project_root_detection(session_name)
+}
+
+/// List sessions from project root directory
+fn list_sessions_from_project_root() -> Result<()> {
     // Check if tmux is available
     tmux::is_tmux_available()
         .context("tmux is not available. Please install tmux to use sprite attach.")?;
 
-    // Handle list sessions option
-    if list {
-        list_available_sessions()?;
-        return Ok(());
-    }
+    list_available_sessions()
+}
+
+/// Attach to tmux session with project root detection
+fn attach_with_project_root_detection(session_name: Option<String>) -> Result<()> {
+    // Check if tmux is available
+    tmux::is_tmux_available()
+        .context("tmux is not available. Please install tmux to use sprite attach.")?;
+
+    // Find project root to get session information, but remember current directory for later
+    let original_dir = std::env::current_dir().context("Failed to get current directory")?;
+    let _project_root = project::find_project_root()?;
+
+    // Change to project root temporarily to find session
+    project::change_to_project_root()?;
 
     // Determine session name
     let session_name = match session_name {
@@ -54,16 +76,20 @@ pub fn execute(session_name: Option<String>, list: bool) -> Result<()> {
         println!("ℹ️  Session is already attached by another client");
     }
 
-    // Get current working directory to restore after detach
-    let current_dir = std::env::current_dir().context("Failed to get current directory")?;
-
     println!("💡 Use 'Ctrl+B D' to detach from the session");
-    println!("💡 You'll return to directory: {}", current_dir.display());
+    println!("💡 You'll return to directory: {}", original_dir.display());
     println!();
+
+    // The tmux attach command will take over the terminal, so we need to handle directory restoration
+    // differently. We'll create a wrapper script that handles the restoration.
+
+    // Try to restore original directory before attaching
+    let _ = project::restore_original_directory(&original_dir);
 
     tmux::attach_session(&session_name)
         .with_context(|| format!("Failed to attach to session '{}'", session_name))?;
 
+    // This line will only be reached after detaching from tmux
     println!("👋 Detached from session '{}'", session_name);
 
     Ok(())

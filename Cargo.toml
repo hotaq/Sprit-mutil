@@ -50,6 +50,39 @@ tempfile = "3.0"
 libc = "0.2"
 
 [dev-dependencies]
+# Core testing utilities
 tempfile = "3.0"
 assert_cmd = "2.0"
+assert_fs = "1.0"
 predicates = "3.0"
+
+# Mocking and test doubles
+mockall = "0.12"
+wiremock = "0.6"
+tokio-test = "0.4"
+
+# Property-based testing
+proptest = "1.4"
+quickcheck = "1.0"
+
+# Test utilities and fixtures
+fake = { version = "2.9", features = ["derive"] }
+rand = "0.8"
+pretty_assertions = "1.4"
+
+# HTTP API testing
+reqwest = { version = "0.11", features = ["json"] }
+serde_json = "1.0"
+
+# Async testing
+futures = "0.3"
+
+# Performance testing
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# Test utilities
+walkdir = "2.4"
+
+[[bench]]
+name = "performance_benchmarks"
+harness = false

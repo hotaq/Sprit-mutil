@@ -1,0 +1,23 @@
+[coverage]
+run_coveralls = false
+coveralls = false
+ci = false
+ignore_files = [
+    "target/*",
+    "tests/*",
+    "benches/*"
+]
+exclude = [
+    "src/main.rs",  # Entry point typically doesn't need coverage
+    "src/error.rs", # Error variants are often covered indirectly
+]
+
+[coverage.report]
+kind = "Html"
+output_dir = "target/coverage"
+
+[coverage.limits]
+# Set minimum coverage thresholds
+functions = 80
+lines = 80
+branches = 75
