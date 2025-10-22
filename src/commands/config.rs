@@ -1491,7 +1491,7 @@ mod tests {
         // Note: With our improved error handling, this may succeed in some environments
         // The important thing is that it doesn't panic and handles errors gracefully
         let result = config.provision_worktrees();
-        
+
         // Result can be either Ok (if git repo exists) or Err (if no git repo)
         // Both are acceptable - we're testing that the function works without panicking
         match result {

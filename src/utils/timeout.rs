@@ -83,11 +83,7 @@ fn wait_with_timeout(mut child: Child, timeout: Duration) -> TimeoutResult {
 #[allow(dead_code)]
 fn kill_child_process(child: &mut Child) -> Result<()> {
     // Check if process is still running first
-    if child
-        .try_wait()
-        .ok()
-        .is_some_and(|status| status.is_none())
-    {
+    if child.try_wait().ok().is_some_and(|status| status.is_none()) {
         let pid = child.id();
         // Send SIGTERM first
         unsafe {
@@ -124,11 +120,7 @@ fn kill_child_process(child: &mut Child) -> Result<()> {
 fn kill_child_process(child: &mut Child) -> Result<()> {
     // On Windows, we can use a simpler approach
     // Check if process is still running first
-    if child
-        .try_wait()
-        .ok()
-        .is_some_and(|status| status.is_none())
-    {
+    if child.try_wait().ok().is_some_and(|status| status.is_none()) {
         let pid = child.id();
         // Use taskkill to terminate the process
         let mut kill_cmd = Command::new("taskkill");
@@ -191,5 +183,3 @@ where
         }
     }
 }
-
-
