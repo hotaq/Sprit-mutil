@@ -10,6 +10,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 /// Cross-platform timeout for executing commands
+#[allow(dead_code)]
 pub fn run_with_timeout(mut cmd: Command, timeout_secs: u64) -> Result<String> {
     let timeout_duration = Duration::from_secs(timeout_secs);
 
@@ -46,6 +47,7 @@ pub fn run_with_timeout(mut cmd: Command, timeout_secs: u64) -> Result<String> {
 }
 
 /// Result of a timed wait operation
+#[allow(dead_code)]
 enum TimeoutResult {
     Completed(std::process::Output),
     Timeout,
@@ -53,6 +55,7 @@ enum TimeoutResult {
 }
 
 /// Wait for a child process with timeout
+#[allow(dead_code)]
 fn wait_with_timeout(mut child: Child, timeout: Duration) -> TimeoutResult {
     let start_time = Instant::now();
 
@@ -136,6 +139,7 @@ fn kill_child_process(child: &mut Child) -> Result<()> {
 }
 
 /// Execute a command string with timeout (for shell commands)
+#[allow(dead_code)]
 pub fn execute_with_timeout(shell_cmd: &str, timeout_secs: u64) -> Result<String> {
     let (shell, shell_arg) = if cfg!(target_os = "windows") {
         ("cmd", "/C")
@@ -151,6 +155,7 @@ pub fn execute_with_timeout(shell_cmd: &str, timeout_secs: u64) -> Result<String
 }
 
 /// Simple timeout function for blocking operations
+#[allow(dead_code)]
 pub fn with_timeout<F, T>(timeout_secs: u64, operation: F) -> Result<T>
 where
     F: FnOnce() -> Result<T> + std::marker::Send + 'static,
