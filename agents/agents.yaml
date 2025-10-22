@@ -1,50 +1,15 @@
-version: '1.0'
+# Sprite Multi-Agent Configuration
+# Generated automatically by 'sprite init'
+# Customize this file to match your project needs
+
+version: "1.0"
+
 agents:
 - id: '1'
   branch: agents/1
   worktree_path: agents/1
   model: claude-sonnet-4
   description: Agent 1 workspace
-  status: Inactive
-  config:
-    env_vars: {}
-    work_dir: null
-    startup_commands: []
-    resource_limits:
-      max_memory_mb: 1024
-      max_cpu_percent: 80
-      operation_timeout_secs: 300
-      max_concurrent_ops: 3
-      max_disk_mb: 5120
-    shell: null
-    default_timeout_secs: 300
-    auto_sync: false
-    custom_settings: {}
-- id: '2'
-  branch: agents/2
-  worktree_path: agents/2
-  model: claude-sonnet-4
-  description: Agent 2 workspace
-  status: Inactive
-  config:
-    env_vars: {}
-    work_dir: null
-    startup_commands: []
-    resource_limits:
-      max_memory_mb: 1024
-      max_cpu_percent: 80
-      operation_timeout_secs: 300
-      max_concurrent_ops: 3
-      max_disk_mb: 5120
-    shell: null
-    default_timeout_secs: 300
-    auto_sync: false
-    custom_settings: {}
-- id: '3'
-  branch: agents/3
-  worktree_path: agents/3
-  model: claude-sonnet-4
-  description: Agent 3 workspace
   status: Inactive
   config:
     env_vars: {}

@@ -21,6 +21,10 @@ tmux kill-session -t "$SPRITE_SESSION" 2>/dev/null || true
 
 # Create new session with focus agent
 tmux new-session -d -s "$SPRITE_SESSION" -n "agent-$FOCUS_AGENT"
+
+# Enable mouse support for better navigation
+tmux set-option -g mouse on
+tmux set-option -t "$SPRITE_SESSION" mouse on
 tmux send-keys -t "$SPRITE_SESSION:agent-$FOCUS_AGENT" "cd agents/$FOCUS_AGENT && echo '🎯 Focus Mode: Agent $FOCUS_AGENT'" C-m
 
 # Create small supervisor window
@@ -38,7 +42,9 @@ done
 # Switch to focus agent
 tmux select-window -t "$SPRITE_SESSION:agent-$FOCUS_AGENT"
 
-echo "✅ Profile 3 applied successfully!"
+echo "✅ profile3 applied successfully!"
+echo "🖱️  Mouse support enabled - Click to switch between panels"
+echo "⌨️  Keyboard shortcuts: Ctrl+B then Arrow keys to navigate"
 echo "🎯 Focus mode activated on Agent $FOCUS_AGENT"
 echo "🎮 Use 'sprite attach' to connect to the session"
 echo "💡 Use Ctrl+B then W to quickly switch between agents"

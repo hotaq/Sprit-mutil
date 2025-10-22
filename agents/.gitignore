@@ -1,0 +1,6 @@
+# Prevent git worktrees from copying this directory recursively
+# This file prevents the agents/ directory from being copied into agent worktrees
+
+# Ignore everything except this file
+/*
+!/.gitignore
