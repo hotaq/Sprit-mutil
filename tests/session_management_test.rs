@@ -355,6 +355,7 @@ fn test_kill_command_session_selection() -> Result<()> {
 }
 
 #[test]
+#[ignore = "Integration test requires tmux server - run manually"]
 fn test_status_command_functionality() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
@@ -582,6 +583,7 @@ fn test_session_help_commands() -> Result<()> {
 }
 
 #[test]
+#[ignore = "Integration test requires tmux server - run manually"]
 fn test_concurrent_session_operations() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 

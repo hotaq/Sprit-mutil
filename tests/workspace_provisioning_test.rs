@@ -119,8 +119,11 @@ fn test_agents_commands_require_config() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Try agents commands without initialization - should fail
+    // Set env vars to prevent finding project root outside temp dir
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
         .args(["agents", "list"])
         .assert()
         .failure()
@@ -130,6 +133,8 @@ fn test_agents_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
         .args(["agents", "validate"])
         .assert()
         .failure()
@@ -139,6 +144,8 @@ fn test_agents_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
         .args(["agents", "provision"])
         .assert()
         .failure()
@@ -155,8 +162,11 @@ fn test_config_commands_require_config() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Try config commands without initialization - should fail
+    // Set env vars to prevent finding project root outside temp dir
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
         .args(["config", "show"])
         .assert()
         .failure()
@@ -166,6 +176,8 @@ fn test_config_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
         .args(["config", "validate"])
         .assert()
         .failure()
@@ -175,6 +187,8 @@ fn test_config_commands_require_config() -> Result<()> {
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
+        .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
+        .env_remove("SPRITE_PROJECT_ROOT")
         .args(["config", "status"])
         .assert()
         .failure()
