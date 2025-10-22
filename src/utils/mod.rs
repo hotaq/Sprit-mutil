@@ -14,5 +14,6 @@ pub mod help;
 pub mod logging;
 pub mod security;
 pub mod session_recovery;
+pub mod timeout;
 pub mod tmux;
 pub mod workspace;

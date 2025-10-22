@@ -5,7 +5,7 @@ agents:
   worktree_path: agents/1
   model: claude-sonnet-4
   description: Agent 1 workspace
-  status: inactive
+  status: Inactive
   config:
     env_vars: {}
     work_dir: null
@@ -25,7 +25,7 @@ agents:
   worktree_path: agents/2
   model: claude-sonnet-4
   description: Agent 2 workspace
-  status: inactive
+  status: Inactive
   config:
     env_vars: {}
     work_dir: null
@@ -45,7 +45,7 @@ agents:
   worktree_path: agents/3
   model: claude-sonnet-4
   description: Agent 3 workspace
-  status: inactive
+  status: Inactive
   config:
     env_vars: {}
     work_dir: null
@@ -64,7 +64,7 @@ session_name: sprite-session
 sync:
   auto_sync: false
   default_interval_secs: 300
-  conflict_resolution: manual
+  conflict_resolution: Manual
   exclude_branches:
   - main
   - master
@@ -75,7 +75,7 @@ settings:
   global_env_vars: {}
   logging:
     log_file: agents/logs/sprite.log
-    level: info
+    level: Info
     log_to_stdout: true
     rotation:
       max_size_mb: 100

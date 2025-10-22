@@ -1,17 +1,15 @@
 //! Zoom command - Focus on specific agent panes in tmux sessions
 
+use crate::commands::config::SpriteConfig;
 use crate::error::SpriteError;
-use crate::models::ProjectConfig;
 use crate::utils::tmux;
 use anyhow::{Context, Result};
 
 /// Execute the zoom command with the given parameters.
 pub fn execute(agent: Option<String>, unzoom: bool, list: bool) -> Result<()> {
     // Load current configuration
-    let config_path = ProjectConfig::config_path();
-    if config_path.exists() {
-        let _config = ProjectConfig::load_from_file(&config_path)
-            .map_err(|e| anyhow::anyhow!("Failed to load configuration: {}", e))?;
+    if SpriteConfig::load().is_ok() {
+        // Configuration loaded successfully
     }
 
     // Handle list option
