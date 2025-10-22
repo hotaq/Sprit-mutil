@@ -38,15 +38,13 @@ sprite.log
 ehthumbs.db
 Thumbs.db
 
-# Claude & Specify
-.claude/commands
-.claude/
+# Claude & Specify (exclude memory but keep commands)
+.claude/memory/
 .specify/
 .memory/
 
-# Project files
+# Project files (exclude sensitive configs but keep docs)
 CLAUDE.md
-specs/
 .env
 .env.local
 .env.*.local
@@ -84,7 +82,7 @@ stdout.log
 .cache/
 cache/
 
-# Test scripts (local development only in root)
+# Test scripts (keep our organized test suite)
 /test_*.sh
 
 # Build artifacts
