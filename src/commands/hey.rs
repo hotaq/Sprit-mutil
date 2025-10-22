@@ -1,7 +1,7 @@
 //! Hey command - Send command to specific agent
 
+use crate::commands::config::SpriteConfig;
 use crate::error::SpriteError;
-use crate::models::ProjectConfig;
 use crate::utils::{accessibility::AccessibilityConfig, tmux};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
@@ -16,14 +16,9 @@ pub fn execute(
     env_vars: &[String],
     interactive: bool,
 ) -> Result<()> {
-    // Load current configuration
-    let config_path = ProjectConfig::config_path();
-    if !config_path.exists() {
-        return Err(SpriteError::config_not_found(config_path.display().to_string()).into());
-    }
-
-    let config = ProjectConfig::load_from_file(&config_path)
-        .map_err(|e| anyhow::anyhow!("Failed to load configuration: {}", e))?;
+    // Load current configuration using project root detection
+    let config =
+        SpriteConfig::load().map_err(|e| anyhow::anyhow!("Failed to load configuration: {}", e))?;
 
     // Validate agent exists
     let agent_config = config
@@ -31,7 +26,7 @@ pub fn execute(
         .ok_or_else(|| SpriteError::agent_not_found(agent.to_string()))?;
 
     // Check if agent is active
-    if !agent_config.is_active() {
+    if agent_config.status.to_lowercase() != "active" {
         return Err(SpriteError::agent_not_active(agent.to_string()).into());
     }
 
@@ -64,7 +59,7 @@ pub fn execute(
     // Change to working directory if specified
     if let Some(work_dir) = work_dir {
         let work_command = format!("cd {}", work_dir);
-        tmux::send_keys(&active_session.name, &agent_pane.to_string(), &work_command)
+        tmux::send_keys(&active_session.name, &agent_pane, &work_command)
             .with_context(|| format!("Failed to change to working directory '{}'", work_dir))?;
 
         // Small delay to allow directory change
@@ -74,14 +69,14 @@ pub fn execute(
     // Set environment variables
     for (key, value) in &env_map {
         let env_command = format!("export {}='{}'", key, value.replace('\'', "'\"'\"'"));
-        tmux::send_keys(&active_session.name, &agent_pane.to_string(), &env_command)
+        tmux::send_keys(&active_session.name, &agent_pane, &env_command)
             .with_context(|| format!("Failed to set environment variable '{}'", key))?;
 
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
 
     // Send the command to the agent pane
-    tmux::send_keys(&active_session.name, &agent_pane.to_string(), &full_command)
+    tmux::send_keys(&active_session.name, &agent_pane, &full_command)
         .with_context(|| format!("Failed to send command to agent '{}'", agent))?;
 
     let accessibility_config = AccessibilityConfig::default();
@@ -105,18 +100,16 @@ pub fn execute(
 /// Find the pane that corresponds to the given agent.
 fn find_agent_pane(
     panes: &[tmux::PaneInfo],
-    agent_config: &crate::models::Agent,
+    agent_config: &crate::commands::config::AgentConfig,
     session_name: &str,
-) -> Result<usize> {
+) -> Result<String> {
     // Try to find the pane by matching the workspace path
-    if let Some(workspace) = &agent_config.worktree_path {
-        for pane in panes {
-            if let Some(current_path) = &pane.current_path {
-                if current_path.contains(&*workspace.to_string_lossy())
-                    || current_path.ends_with(&agent_config.id)
-                {
-                    return Ok(pane.index);
-                }
+    for pane in panes {
+        if let Some(current_path) = &pane.current_path {
+            if current_path.contains(&agent_config.worktree_path)
+                || current_path.ends_with(&agent_config.id)
+            {
+                return Ok(pane.pane_id.clone());
             }
         }
     }
@@ -125,16 +118,16 @@ fn find_agent_pane(
     for pane in panes {
         if let Some(current_cmd) = &pane.current_command {
             if current_cmd.contains(&agent_config.id) {
-                return Ok(pane.index);
+                return Ok(pane.pane_id.clone());
             }
         }
     }
 
     // Another fallback: assume agent 1 is pane 0, agent 2 is pane 1, etc.
     if let Ok(agent_num) = agent_config.id.parse::<usize>() {
-        let expected_pane = agent_num - 1; // 0-indexed
-        if expected_pane < panes.len() {
-            return Ok(expected_pane);
+        let expected_index = agent_num.saturating_sub(1);
+        if let Some(pane) = panes.iter().find(|p| p.index == expected_index) {
+            return Ok(pane.pane_id.clone());
         }
     }
 

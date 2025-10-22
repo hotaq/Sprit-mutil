@@ -293,10 +293,23 @@ pub fn split_window_horizontal(session: &str, target: &str) -> Result<()> {
 }
 
 /// Send a command to a specific pane.
+fn build_target_spec(session: &str, target: &str) -> String {
+    if target.starts_with('%') || target.contains(':') {
+        target.to_string()
+    } else if target.chars().all(|c| c.is_ascii_digit()) {
+        format!("{}:.{}", session, target)
+    } else if target.contains('.') {
+        format!("{}:{}", session, target)
+    } else {
+        format!("{}:{}", session, target)
+    }
+}
+
 #[allow(dead_code)]
 pub fn send_keys(session: &str, target: &str, command: &str) -> Result<()> {
+    let target_spec = build_target_spec(session, target);
     let output = Command::new("tmux")
-        .args(["send-keys", "-t", session, target, command, "C-m"])
+        .args(["send-keys", "-t", &target_spec, command, "C-m"])
         .output()
         .with_context(|| {
             format!(
@@ -322,8 +335,9 @@ pub fn send_keys(session: &str, target: &str, command: &str) -> Result<()> {
 /// Capture output from a pane.
 #[allow(dead_code)]
 pub fn capture_pane(session: &str, target: &str) -> Result<String> {
+    let target_spec = build_target_spec(session, target);
     let output = Command::new("tmux")
-        .args(["capture-pane", "-p", "-t", session, target])
+        .args(["capture-pane", "-p", "-t", &target_spec])
         .output()
         .with_context(|| {
             format!(
@@ -531,9 +545,12 @@ pub fn get_session_panes(session: &str) -> Result<Vec<PaneInfo>> {
 
 /// Get information about panes in a session with retry logic for CI environments.
 pub fn get_session_panes_with_retry(session: &str, max_retries: u32) -> Result<Vec<PaneInfo>> {
+    const PANE_FORMAT: &str =
+        "#{pane_index}|#{pane_id}|#{pane_current_path}|#{pane_current_command}";
+
     for attempt in 0..max_retries {
         let output = Command::new("tmux")
-            .args(["list-panes", "-t", session])
+            .args(["list-panes", "-F", PANE_FORMAT, "-t", session])
             .output()
             .with_context(|| format!("Failed to list panes for session '{}'", session))?;
 
@@ -571,20 +588,14 @@ pub fn get_session_panes_with_retry(session: &str, max_retries: u32) -> Result<V
 /// Information about a tmux pane.
 #[derive(Debug, Clone)]
 pub struct PaneInfo {
-    /// Pane index
+    /// Pane index within the window
     pub index: usize,
+    /// Tmux pane identifier (e.g. %1)
+    pub pane_id: String,
     /// Current working directory
-    #[allow(dead_code)]
     pub current_path: Option<String>,
     /// Running command
-    #[allow(dead_code)]
     pub current_command: Option<String>,
-    /// Pane size (lines x columns)
-    #[allow(dead_code)]
-    pub size: Option<(usize, usize)>,
-    /// Pane layout
-    #[allow(dead_code)]
-    pub layout: Option<String>,
 }
 
 /// Parse the output of `tmux list-panes`.
@@ -596,38 +607,31 @@ fn parse_panes_list(output: &str) -> Result<Vec<PaneInfo>> {
             continue;
         }
 
-        // Parse tmux list-panes format
-        // Format: <index>: [<size>] [<command>] [<path>] [<layout>]
-        let parts: Vec<&str> = line.split(':').collect();
-        if parts.is_empty() {
+        let parts: Vec<&str> = line.splitn(4, '|').collect();
+        if parts.len() < 2 {
             continue;
         }
 
         let index = parts[0].trim().parse::<usize>().unwrap_or(0);
-        let info_part = if parts.len() > 1 { parts[1] } else { "" };
+        let pane_id = parts[1].trim().to_string();
 
-        // Extract current command (in brackets)
-        let current_command = info_part
-            .find('[')
-            .and_then(|start| {
-                info_part[start + 1..]
-                    .find(']')
-                    .map(|end| info_part[start + 1..start + end].to_string())
-            })
-            .filter(|cmd| !cmd.trim().is_empty());
+        let current_path = parts
+            .get(2)
+            .map(|p| p.trim())
+            .filter(|p| !p.is_empty())
+            .map(|p| p.to_string());
 
-        // Extract current path (usually at the end)
-        let current_path = info_part
-            .rfind(' ')
-            .map(|start| info_part[start + 1..].trim().to_string())
-            .filter(|path| !path.is_empty() && path.starts_with('/'));
+        let current_command = parts
+            .get(3)
+            .map(|c| c.trim())
+            .filter(|c| !c.is_empty())
+            .map(|c| c.to_string());
 
         panes.push(PaneInfo {
             index,
+            pane_id,
             current_path,
             current_command,
-            size: None,   // Would need additional tmux commands to get this
-            layout: None, // Would need additional tmux commands to get this
         });
     }
 
@@ -637,8 +641,9 @@ fn parse_panes_list(output: &str) -> Result<Vec<PaneInfo>> {
 /// Switch to a specific pane.
 #[allow(dead_code)]
 pub fn select_pane(session: &str, pane_index: usize) -> Result<()> {
+    let target_spec = build_target_spec(session, &pane_index.to_string());
     let output = Command::new("tmux")
-        .args(["select-pane", "-t", &format!("{}.{}", session, pane_index)])
+        .args(["select-pane", "-t", &target_spec])
         .output()
         .with_context(|| {
             format!(
@@ -664,12 +669,13 @@ pub fn select_pane(session: &str, pane_index: usize) -> Result<()> {
 /// Get the current working directory of a pane.
 #[allow(dead_code)]
 pub fn get_pane_cwd(session: &str, pane_index: usize) -> Result<String> {
+    let target_spec = build_target_spec(session, &pane_index.to_string());
     let output = Command::new("tmux")
         .args([
             "display-message",
             "-p",
             "-t",
-            &format!("{}.{}", session, pane_index),
+            &target_spec,
             "#{pane_current_path}",
         ])
         .output()
@@ -696,12 +702,13 @@ pub fn get_pane_cwd(session: &str, pane_index: usize) -> Result<String> {
 
 /// Get the current working directory of a pane by pane ID.
 pub fn get_pane_current_path(session: &str, pane_id: &str) -> Result<String> {
+    let target_spec = build_target_spec(session, pane_id);
     let output = Command::new("tmux")
         .args([
             "display-message",
             "-p",
             "-t",
-            &format!("{}.{}", session, pane_id),
+            &target_spec,
             "#{pane_current_path}",
         ])
         .output()
@@ -733,8 +740,9 @@ pub fn send_keys_with_delay(
     command: &str,
     delay_ms: u64,
 ) -> Result<()> {
+    let target_spec = build_target_spec(session, target);
     let output = Command::new("tmux")
-        .args(["send-keys", "-t", session, target, command, "C-m"])
+        .args(["send-keys", "-t", &target_spec, command, "C-m"])
         .output()
         .with_context(|| {
             format!(
@@ -864,8 +872,9 @@ pub fn focus_pane(session: &str, pane: &str) -> Result<()> {
 /// Zoom a pane to full size (or unzoom if already zoomed).
 #[allow(dead_code)]
 pub fn zoom_pane(session: &str, pane: &str) -> Result<()> {
+    let target_spec = build_target_spec(session, pane);
     let output = Command::new("tmux")
-        .args(["resize-pane", "-Z", "-t", &format!("{}.{}", session, pane)])
+        .args(["resize-pane", "-Z", "-t", &target_spec])
         .output()
         .with_context(|| format!("Failed to zoom pane '{}' in session '{}'", pane, session))?;
 
