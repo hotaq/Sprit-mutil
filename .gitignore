@@ -134,3 +134,13 @@ Icon
 *.msm
 *.msp
 *.lnk
+
+# Claude commands (local development only - do not commit)
+.claude/commands/**/*.md
+.claude/commands/
+
+# Additional exclusions
+README.old.md
+benches/
+test/
+test_edge_cases/
