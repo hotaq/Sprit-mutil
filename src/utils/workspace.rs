@@ -4,9 +4,9 @@
 //! path resolution, directory traversal, agent workspace discovery, and navigation
 //! helpers for efficient movement between workspaces.
 
-use crate::config::{load_default_config, DEFAULT_CONFIG_PATH};
+use crate::config::load_default_config;
 use crate::error::SpriteError;
-use crate::utils::git;
+use crate::utils::project;
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::env;
@@ -15,8 +15,8 @@ use std::path::{Path, PathBuf};
 /// Workspace navigation utilities for managing and navigating between agent workspaces.
 #[derive(Debug, Clone)]
 pub struct WorkspaceNavigator {
-    /// Git repository root
-    pub git_root: PathBuf,
+    /// Sprite project root (directory containing agents/agents.yaml)
+    pub project_root: PathBuf,
     /// Current working directory
     pub current_dir: PathBuf,
     /// Available agent workspaces
@@ -30,14 +30,15 @@ pub struct WorkspaceNavigator {
 impl WorkspaceNavigator {
     /// Create a new workspace navigator.
     pub fn new() -> Result<Self> {
-        let git_root = git::get_git_root()
-            .context("Failed to get git repository root. Are you in a git repository?")?;
+        let project_root = project::find_project_root().context(
+            "Failed to locate Sprite project root. Run 'sprite init' in this repository first.",
+        )?;
 
         let current_dir = env::current_dir().context("Failed to get current working directory")?;
 
         let mut navigator = Self {
-            main_workspace: git_root.clone(),
-            git_root,
+            main_workspace: project_root.clone(),
+            project_root,
             current_dir,
             agent_workspaces: HashMap::new(),
             discovered_workspaces: HashMap::new(),
@@ -51,22 +52,23 @@ impl WorkspaceNavigator {
 
     /// Load agent workspaces from configuration.
     fn load_agent_workspaces(&mut self) -> Result<()> {
-        let config_path = PathBuf::from(DEFAULT_CONFIG_PATH);
+        match load_default_config() {
+            Ok(config) => {
+                for agent in &config.agents {
+                    if let Some(workspace) = &agent.worktree_path {
+                        let resolved_path = if workspace.is_absolute() {
+                            workspace.clone()
+                        } else {
+                            self.project_root.join(workspace)
+                        };
 
-        if config_path.exists() {
-            match load_default_config() {
-                Ok(config) => {
-                    for agent in &config.agents {
-                        if let Some(workspace) = &agent.worktree_path {
-                            self.agent_workspaces
-                                .insert(agent.id.clone(), workspace.clone());
-                        }
+                        self.agent_workspaces
+                            .insert(agent.id.clone(), resolved_path);
                     }
                 }
-                Err(_) => {
-                    // Configuration exists but can't be loaded - continue without agent workspaces
-                    eprintln!("⚠️  Warning: Failed to load configuration, agent workspaces may not be available");
-                }
+            }
+            Err(err) => {
+                eprintln!("⚠️  Warning: Failed to load Sprite configuration: {}", err);
             }
         }
 
@@ -75,7 +77,7 @@ impl WorkspaceNavigator {
 
     /// Discover additional workspaces in the repository.
     fn discover_workspaces(&mut self) -> Result<()> {
-        let agents_dir = self.git_root.join("agents");
+        let agents_dir = self.project_root.join("agents");
 
         if agents_dir.exists() && agents_dir.is_dir() {
             let entries = std::fs::read_dir(&agents_dir).with_context(|| {
@@ -183,7 +185,7 @@ impl WorkspaceNavigator {
         }
 
         // Try as a path relative to git root
-        let relative_path = self.git_root.join(name);
+        let relative_path = self.project_root.join(name);
         if relative_path.exists() {
             return Some(WorkspaceInfo {
                 name: name.to_string(),

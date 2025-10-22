@@ -1,5 +1,6 @@
 //! Integration tests for the `/hey` command functionality
 
+use assert_cmd::prelude::*;
 use assert_fs::prelude::*;
 use std::process::Command;
 use std::thread;
@@ -7,7 +8,7 @@ use std::time::Duration;
 
 /// Common test utilities
 mod common;
-use common::{cleanup_tmux_sessions, wait_for_condition, TestFixture};
+use common::{cleanup_tmux_sessions, TestFixture};
 
 /// Test the `/hey` command functionality with multiple agents
 #[test]

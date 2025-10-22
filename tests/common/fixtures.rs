@@ -1,9 +1,9 @@
 //! Test fixtures and test data setup
 
-use assert_fs::prelude::*;
+use assert_cmd::prelude::*;
+use assert_fs::TempDir;
 use std::fs;
 use std::path::Path;
-use tempfile::TempDir;
 
 pub struct TestFixture {
     pub temp_dir: TempDir,
@@ -68,6 +68,7 @@ impl TestFixture {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn setup_sprite_config(&self, agent_count: u32) -> Result<(), Box<dyn std::error::Error>> {
         // Initialize sprite environment
         std::process::Command::cargo_bin("sprite")?
@@ -79,6 +80,7 @@ impl TestFixture {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn create_mock_files(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Create mock spec, plan, and tasks files
         fs::write(
@@ -99,6 +101,7 @@ impl TestFixture {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn path(&self) -> &Path {
         self.temp_dir.path()
     }

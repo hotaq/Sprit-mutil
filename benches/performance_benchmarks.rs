@@ -1,5 +1,6 @@
 //! Performance benchmarks for Sprite CLI commands
 
+use assert_cmd::prelude::*;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::fs;
 use std::process::Command;

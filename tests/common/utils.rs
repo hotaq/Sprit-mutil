@@ -4,6 +4,7 @@ use std::process::Command;
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 pub fn wait_for_condition<F>(condition: F, timeout: Duration, check_interval: Duration) -> bool
 where
     F: Fn() -> bool,
@@ -20,6 +21,7 @@ where
     false
 }
 
+#[allow(dead_code)]
 pub fn run_command_with_timeout(
     command: &mut Command,
     timeout: Duration,
@@ -29,7 +31,7 @@ pub fn run_command_with_timeout(
     let start = Instant::now();
     loop {
         match child.try_wait()? {
-            Some(status) => {
+            Some(_) => {
                 return Ok(child.wait_with_output()?);
             }
             None => {

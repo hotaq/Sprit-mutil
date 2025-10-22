@@ -5,6 +5,7 @@
 
 #![allow(dead_code)]
 
+use crate::utils::project;
 use crate::utils::tmux::{kill_session, list_sessions, SessionInfo};
 use anyhow::{Context, Result};
 use std::fs;
@@ -217,25 +218,33 @@ fn parse_session_age(_created_str: &str) -> Result<u64> {
 
 /// Check workspace integrity for a session
 fn check_workspace_integrity(session_name: &str) -> Result<Option<SessionIssue>> {
-    // Check if we're in a valid sprite workspace (current directory should have agents.yaml)
-    let agents_config = Path::new("agents/agents.yaml");
+    // Attempt to locate the Sprite project root regardless of current working directory
+    match project::find_project_root() {
+        Ok(project_root) => {
+            let config_path = project_root.join("agents").join("agents.yaml");
 
-    if agents_config.exists() {
-        // Check if it's a valid git repository
-        if Path::new(".git").exists() {
-            return Ok(None);
-        } else {
-            return Ok(Some(SessionIssue::GitIssues(
-                "Current directory is not a git repository".to_string(),
-            )));
+            if !config_path.exists() {
+                return Ok(Some(SessionIssue::WorkspaceMissing(format!(
+                    "Sprite configuration not found at {}",
+                    config_path.display()
+                ))));
+            }
+
+            let git_metadata = project_root.join(".git");
+            if !git_metadata.exists() {
+                return Ok(Some(SessionIssue::GitIssues(format!(
+                    "Project root {} is not a git repository",
+                    project_root.display()
+                ))));
+            }
+
+            Ok(None)
         }
+        Err(_) => Ok(Some(SessionIssue::WorkspaceMissing(format!(
+            "No Sprite project detected for session {}",
+            session_name
+        )))),
     }
-
-    // If we can't find the agents configuration, consider it orphaned
-    Ok(Some(SessionIssue::WorkspaceMissing(format!(
-        "No workspace found for session {}",
-        session_name
-    ))))
 }
 
 /// Count zombie processes associated with a session

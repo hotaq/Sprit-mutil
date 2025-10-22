@@ -107,41 +107,11 @@ impl Default for ConfigMetadata {
     }
 }
 
-/// Find the sprite project configuration file by searching up the directory tree
+/// Find the sprite project configuration file by using the detected project root
 fn find_project_config_path() -> Option<PathBuf> {
-    let current_dir = std::env::current_dir().ok()?;
-
-    let mut current_path = current_dir.as_path();
-
-    // Search up from current directory until we find .git or reach filesystem root
-    loop {
-        let config_path = current_path.join("agents").join("agents.yaml");
-
-        if config_path.exists() {
-            return Some(config_path);
-        }
-
-        // Check if we've reached the git repository root
-        let git_path = current_path.join(".git");
-        if git_path.exists() {
-            // We're at git root but no config found, stop searching
-            break;
-        }
-
-        // Move up one directory
-        match current_path.parent() {
-            Some(parent) => {
-                if parent == current_path {
-                    // We're at the filesystem root
-                    break;
-                }
-                current_path = parent;
-            }
-            None => break,
-        }
-    }
-
-    None
+    crate::utils::project::find_project_root()
+        .ok()
+        .map(|root| root.join("agents").join("agents.yaml"))
 }
 
 /// Get the project root directory from the config path

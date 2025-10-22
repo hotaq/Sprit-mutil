@@ -35,25 +35,28 @@ pub fn execute(options: InitOptions) -> Result<()> {
     // Step 2: Create directory structure (only scripts and profiles, not agent dirs)
     create_base_directory_structure(&agents_dir)?;
 
-    // Step 3: Generate configuration file
-    generate_agents_config(&config_file, options.agents)?;
+    // Step 3: Ensure we have an initial commit before creating branches/worktrees
+    ensure_initial_commit_for_worktrees()?;
 
-    // Step 4: Create shell script templates
-    create_shell_script_templates(&agents_dir)?;
-
-    // Step 5: Create tmux profile templates
-    create_tmux_profile_templates(&agents_dir)?;
-
-    // Step 6: Create .envrc for direnv if direnv is available
-    create_direnv_config(&agents_dir)?;
-
-    // Step 7: Commit configuration to git
-    ensure_initial_commit(&agents_dir)?;
-
-    // Step 8: Create agent branches and worktrees
+    // Step 4: Create agent branches and worktrees (BEFORE config to avoid copying)
     if options.agents > 0 {
         setup_agent_worktrees(options.agents)?;
     }
+
+    // Step 5: Generate configuration file (AFTER worktrees to avoid nested copies)
+    generate_agents_config(&config_file, options.agents)?;
+
+    // Step 5: Create shell script templates
+    create_shell_script_templates(&agents_dir)?;
+
+    // Step 6: Create tmux profile templates
+    create_tmux_profile_templates(&agents_dir)?;
+
+    // Step 7: Create .envrc for direnv if direnv is available
+    create_direnv_config(&agents_dir)?;
+
+    // Step 8: Commit configuration to git
+    ensure_initial_commit(&agents_dir)?;
 
     let duration = start_time.elapsed();
     println!(
@@ -111,6 +114,43 @@ fn ensure_git_repository() -> Result<()> {
         println!("   ✅ Git repository initialized");
     } else {
         println!("   ✅ Git repository detected");
+    }
+
+    Ok(())
+}
+
+/// Ensure initial commit exists for worktree creation
+fn ensure_initial_commit_for_worktrees() -> Result<()> {
+    // Check if there are any commits
+    let has_commits = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    if !has_commits {
+        println!("   📌 No commits found. Creating initial commit...");
+
+        // Ensure git user is configured
+        ensure_git_user_configured()?;
+
+        // Create a simple initial commit
+        let output = Command::new("git")
+            .args([
+                "commit",
+                "--allow-empty",
+                "-m",
+                "Initial commit for sprite worktrees",
+            ])
+            .output()
+            .context("Failed to create initial commit")?;
+
+        if output.status.success() {
+            println!("   ✅ Initial commit created");
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            anyhow::bail!("Failed to create initial commit: {}", stderr);
+        }
     }
 
     Ok(())
@@ -350,6 +390,17 @@ fn create_base_directory_structure(agents_dir: &Path) -> Result<()> {
 
     // Create main agents directory
     fs::create_dir_all(agents_dir).context("Failed to create agents directory")?;
+
+    // Create .gitignore to prevent recursive copying
+    let gitignore_content = r"# Prevent git worktrees from copying this directory recursively
+# This file prevents the agents/ directory from being copied into agent worktrees
+
+# Ignore everything except this file
+/*
+!/.gitignore
+";
+    fs::write(agents_dir.join(".gitignore"), gitignore_content)
+        .context("Failed to create .gitignore in agents directory")?;
 
     // Create scripts directory
     let scripts_dir = agents_dir.join("scripts");

@@ -5,6 +5,7 @@
 
 use crate::error::SpriteError;
 use crate::models::{Agent, ProjectConfig};
+use crate::utils::project;
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -13,6 +14,18 @@ use std::path::{Path, PathBuf};
 #[allow(dead_code)]
 pub const DEFAULT_CONFIG_PATH: &str = "agents/agents.yaml";
 
+fn resolve_config_path(path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        return path.to_path_buf();
+    }
+
+    if let Ok(project_root) = project::find_project_root() {
+        return project_root.join(path);
+    }
+
+    path.to_path_buf()
+}
+
 /// Load configuration from a file.
 ///
 /// This function loads a YAML configuration file, validates it, and returns
@@ -20,20 +33,25 @@ pub const DEFAULT_CONFIG_PATH: &str = "agents/agents.yaml";
 /// configuration issues.
 #[allow(dead_code)]
 pub fn load_config<P: AsRef<Path>>(path: P) -> Result<ProjectConfig> {
-    let path = path.as_ref();
+    let original_path = path.as_ref();
+    let resolved_path = resolve_config_path(original_path);
 
     // Check if file exists
-    if !path.exists() {
+    if !resolved_path.exists() {
         return Err(SpriteError::config_with_source(
-            format!("Configuration file not found: {}", path.display()),
+            format!("Configuration file not found: {}", resolved_path.display()),
             std::io::Error::new(std::io::ErrorKind::NotFound, "File not found"),
         )
         .into());
     }
 
     // Read file content
-    let content = std::fs::read_to_string(path)
-        .with_context(|| format!("Failed to read configuration file: {}", path.display()))?;
+    let content = std::fs::read_to_string(&resolved_path).with_context(|| {
+        format!(
+            "Failed to read configuration file: {}",
+            resolved_path.display()
+        )
+    })?;
 
     // Parse YAML
     let config: ProjectConfig = serde_yaml::from_str(&content).map_err(|e| {
@@ -58,7 +76,8 @@ pub fn load_config<P: AsRef<Path>>(path: P) -> Result<ProjectConfig> {
 /// the parent directory if necessary.
 #[allow(dead_code)]
 pub fn save_config<P: AsRef<Path>>(config: &ProjectConfig, path: P) -> Result<()> {
-    let path = path.as_ref();
+    let original_path = path.as_ref();
+    let resolved_path = resolve_config_path(original_path);
 
     // Validate configuration before saving
     config
@@ -66,7 +85,7 @@ pub fn save_config<P: AsRef<Path>>(config: &ProjectConfig, path: P) -> Result<()
         .map_err(|e| SpriteError::config(format!("Cannot save invalid configuration: {}", e)))?;
 
     // Create parent directory if it doesn't exist
-    if let Some(parent) = path.parent() {
+    if let Some(parent) = resolved_path.parent() {
         std::fs::create_dir_all(parent).with_context(|| {
             format!(
                 "Failed to create configuration directory: {}",
@@ -80,8 +99,12 @@ pub fn save_config<P: AsRef<Path>>(config: &ProjectConfig, path: P) -> Result<()
         .map_err(|e| SpriteError::config(format!("Failed to serialize configuration: {}", e)))?;
 
     // Write to file
-    std::fs::write(path, content)
-        .with_context(|| format!("Failed to write configuration file: {}", path.display()))?;
+    std::fs::write(&resolved_path, content).with_context(|| {
+        format!(
+            "Failed to write configuration file: {}",
+            resolved_path.display()
+        )
+    })?;
 
     Ok(())
 }
@@ -156,19 +179,20 @@ pub fn create_default_config() -> ProjectConfig {
 /// specified path. It will fail if the file already exists unless force is true.
 #[allow(dead_code)]
 pub fn init_config<P: AsRef<Path>>(path: P, force: bool) -> Result<ProjectConfig> {
-    let path = path.as_ref();
+    let original_path = path.as_ref();
+    let resolved_path = resolve_config_path(original_path);
 
     // Check if file already exists
-    if path.exists() && !force {
+    if resolved_path.exists() && !force {
         return Err(SpriteError::config(format!(
             "Configuration file already exists: {}. Use --force to overwrite.",
-            path.display()
+            resolved_path.display()
         ))
         .into());
     }
 
     let config = create_default_config();
-    save_config(&config, path)?;
+    save_config(&config, &resolved_path)?;
 
     Ok(config)
 }

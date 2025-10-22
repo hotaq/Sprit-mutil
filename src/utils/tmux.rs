@@ -298,8 +298,6 @@ fn build_target_spec(session: &str, target: &str) -> String {
         target.to_string()
     } else if target.chars().all(|c| c.is_ascii_digit()) {
         format!("{}:.{}", session, target)
-    } else if target.contains('.') {
-        format!("{}:{}", session, target)
     } else {
         format!("{}:{}", session, target)
     }
