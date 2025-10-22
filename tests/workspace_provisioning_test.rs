@@ -124,21 +124,27 @@ fn test_agents_commands_require_config() -> Result<()> {
         .args(&["agents", "list"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Could not find sprite configuration file"));
+        .stderr(predicates::str::contains(
+            "Could not find sprite configuration file",
+        ));
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
         .args(&["agents", "validate"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Could not find sprite configuration file"));
+        .stderr(predicates::str::contains(
+            "Could not find sprite configuration file",
+        ));
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
         .args(&["agents", "provision"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Could not find sprite configuration file"));
+        .stderr(predicates::str::contains(
+            "Could not find sprite configuration file",
+        ));
 
     Ok(())
 }
@@ -154,21 +160,27 @@ fn test_config_commands_require_config() -> Result<()> {
         .args(&["config", "show"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Could not find sprite configuration file"));
+        .stderr(predicates::str::contains(
+            "Could not find sprite configuration file",
+        ));
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
         .args(&["config", "validate"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Could not find sprite configuration file"));
+        .stderr(predicates::str::contains(
+            "Could not find sprite configuration file",
+        ));
 
     AssertCommand::cargo_bin("sprite")?
         .current_dir(&repo_path)
         .args(&["config", "status"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Could not find sprite configuration file"));
+        .stderr(predicates::str::contains(
+            "Could not find sprite configuration file",
+        ));
 
     Ok(())
 }
