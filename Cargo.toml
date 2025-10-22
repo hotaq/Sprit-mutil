@@ -83,6 +83,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # Test utilities
 walkdir = "2.4"
 
-[[bench]]
-name = "performance_benchmarks"
-harness = false
+# Benchmarks are kept locally for development
+# [[bench]]
+# name = "performance_benchmarks"
+# harness = false
