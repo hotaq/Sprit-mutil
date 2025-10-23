@@ -100,9 +100,10 @@ impl Session {
 }
 
 /// Current status of a session.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum SessionStatus {
     /// Session is being created
+    #[default]
     Creating,
     /// Session is active and running
     Active,
@@ -112,12 +113,6 @@ pub enum SessionStatus {
     Terminating,
     /// Session encountered an error
     Error(String),
-}
-
-impl Default for SessionStatus {
-    fn default() -> Self {
-        Self::Creating
-    }
 }
 
 /// Session-specific settings.

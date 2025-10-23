@@ -138,9 +138,10 @@ impl Agent {
 }
 
 /// Current status of an agent.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum AgentStatus {
     /// Agent is configured but not running
+    #[default]
     Inactive,
     /// Agent is running and active
     Active,
@@ -150,12 +151,6 @@ pub enum AgentStatus {
     Error(String),
     /// Agent is being setup/initialized
     Initializing,
-}
-
-impl Default for AgentStatus {
-    fn default() -> Self {
-        Self::Inactive
-    }
 }
 
 /// Agent-specific configuration settings.
