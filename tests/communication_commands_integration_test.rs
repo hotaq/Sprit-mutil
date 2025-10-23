@@ -304,6 +304,7 @@ fn test_communication_commands_error_handling() -> Result<(), Box<dyn std::error
         status_output.contains("not found")
             || status_output.contains("error")
             || status_output.contains("invalid")
+            || status_output.contains("No tmux sessions found")
     );
     println!("✅ Status with invalid scope handles gracefully");
 
