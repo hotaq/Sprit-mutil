@@ -237,6 +237,7 @@ fn test_t059_error_scenarios() -> Result<(), Box<dyn std::error::Error>> {
 
 /// T059 Performance benchmark
 #[test]
+#[ignore] // Requires tmux environment
 fn test_t059_performance_benchmark() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
 
