@@ -11,7 +11,7 @@ documentation = "https://docs.rs/sprite"
 readme = "README.md"
 keywords = ["cli", "multi-agent", "ai", "tmux", "workspace"]
 categories = ["command-line-utilities", "development-tools", "command-line-interface"]
-publish = ["github"]
+# publish = ["github"]  # Commented out to allow crates.io publishing
 rust-version = "1.75"
 include = [
     "src/**/*.rs",
