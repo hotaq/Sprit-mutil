@@ -5,6 +5,7 @@
 
 pub mod cli;
 pub mod commands;
+pub mod communication;
 pub mod config;
 pub mod error;
 pub mod models;

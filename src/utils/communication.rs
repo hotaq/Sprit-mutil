@@ -1,10 +1,13 @@
 use crate::config::SpriteConfig;
 use crate::error::SpriteError;
 use crate::utils::tmux;
+use crate::communication::{DeliveryConfirmation, DeliveryConfig, DeliveryTracking};
+use crate::models::MessagePriority;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::process::Command as TokioCommand;
 use tokio::time::timeout;
@@ -57,14 +60,7 @@ pub struct ExecutionResult {
     pub responsiveness: ResponsivenessInfo,
 }
 
-/// Message priority levels
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-pub enum MessagePriority {
-    Low = 1,
-    Normal = 2,
-    High = 3,
-    Critical = 4,
-}
+// Message priority is now defined in models/mod.rs
 
 /// Execution status
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -256,11 +252,137 @@ impl AgentResolver {
 }
 
 /// Command execution engine
-pub struct CommandExecutor;
+pub struct CommandExecutor {
+    /// Delivery confirmation system
+    delivery_confirmation: Arc<DeliveryConfirmation>,
+}
 
 impl CommandExecutor {
-    /// Send command to specific agent
+    /// Create new command executor with delivery confirmation
+    pub fn new() -> Self {
+        let delivery_config = DeliveryConfig::default();
+        let delivery_confirmation = Arc::new(DeliveryConfirmation::new(delivery_config));
+        
+        Self {
+            delivery_confirmation,
+        }
+    }
+
+    /// Create command executor with custom delivery configuration
+    pub fn with_delivery_config(config: DeliveryConfig) -> Self {
+        let delivery_confirmation = Arc::new(DeliveryConfirmation::new(config));
+        
+        Self {
+            delivery_confirmation,
+        }
+    }
+
+    /// Get reference to delivery confirmation system
+    pub fn delivery_confirmation(&self) -> &Arc<DeliveryConfirmation> {
+        &self.delivery_confirmation
+    }
+}
+
+impl Default for CommandExecutor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+    /// Send command to specific agent with delivery confirmation
+    pub async fn send_to_agent_with_confirmation(
+        &self,
+        target: &AgentTarget,
+        command: &str,
+        args: &[String],
+        env_vars: &HashMap<String, String>,
+        timeout_secs: u64,
+    ) -> Result<(ExecutionResult, DeliveryTracking)> {
+        let start_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .context("Failed to get system time")?
+            .as_secs();
+
+        let command_id = uuid::Uuid::new_v4().to_string();
+
+        // Prepare full command
+        let full_command = if args.is_empty() {
+            command.to_string()
+        } else {
+            format!("{} {}", command, args.join(" "))
+        };
+
+        // Send with delivery confirmation
+        let delivery_tracking = self.delivery_confirmation
+            .send_with_confirmation(
+                command_id.clone(),
+                &target.id,
+                &target.tmux_pane,
+                &full_command,
+                MessagePriority::Normal, // Default to normal priority
+            ).await?;
+
+        // Create execution result based on delivery tracking
+        let (status, output, error_output, exit_code) = match delivery_tracking.status {
+            crate::communication::DeliveryStatus::Delivered => {
+                (ExecutionStatus::Success, 
+                 "Command delivered successfully".to_string(),
+                 String::new(), 0)
+            }
+            crate::communication::DeliveryStatus::Failed => {
+                (ExecutionStatus::Failed,
+                 String::new(),
+                 "Delivery failed".to_string(), 1)
+            }
+            crate::communication::DeliveryStatus::Timeout => {
+                (ExecutionStatus::Timeout,
+                 String::new(),
+                 "Delivery timeout".to_string(), 124)
+            }
+            crate::communication::DeliveryStatus::Retrying => {
+                (ExecutionStatus::Failed,
+                 String::new(),
+                 "Delivery is being retried".to_string(), 1)
+            }
+            _ => {
+                (ExecutionStatus::Failed,
+                 String::new(),
+                 "Unknown delivery status".to_string(), 1)
+            }
+        };
+
+        let end_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .context("Failed to get system time")?
+            .as_secs();
+
+        let execution_result = ExecutionResult {
+            command_id,
+            agent_name: target.name.clone(),
+            status,
+            output,
+            error_output,
+            exit_code,
+            start_time,
+            end_time,
+            resource_usage: ResourceUsage {
+                cpu_percent: 0.0,
+                memory_mb: 0,
+                disk_mb: 0,
+            },
+            responsiveness: ResponsivenessInfo {
+                response_time_ms: delivery_tracking.last_response_time().unwrap_or(0),
+                was_responsive: matches!(delivery_tracking.status, crate::communication::DeliveryStatus::Delivered),
+                ping_attempts: delivery_tracking.total_attempts(),
+            },
+        };
+
+        Ok((execution_result, delivery_tracking))
+    }
+
+    /// Send command to specific agent (legacy method without delivery confirmation)
     pub async fn send_to_agent(
+        &self,
         target: &AgentTarget,
         command: &str,
         args: &[String],
@@ -275,7 +397,7 @@ impl CommandExecutor {
         let command_id = uuid::Uuid::new_v4().to_string();
 
         // Check agent responsiveness
-        let responsiveness = Self::check_agent_responsiveness(target, timeout_secs).await?;
+        let responsiveness = self.check_agent_responsiveness(target, timeout_secs).await?;
 
         if !responsiveness.was_responsive {
             return Ok(ExecutionResult {
@@ -330,7 +452,7 @@ impl CommandExecutor {
         // Send the actual command
         let execution_result = timeout(
             Duration::from_secs(timeout_secs),
-            Self::execute_command_in_pane(&target.tmux_pane, &full_command)
+            self.execute_command_in_pane(&target.tmux_pane, &full_command)
         ).await;
 
         let end_time = SystemTime::now()
@@ -361,6 +483,7 @@ impl CommandExecutor {
 
     /// Broadcast command to multiple agents
     pub async fn broadcast_command(
+        &self,
         targets: &[AgentTarget],
         command: &str,
         args: &[String],
@@ -385,7 +508,9 @@ impl CommandExecutor {
 
                 let task = tokio::spawn(async move {
                     let _permit = permit;
-                    Self::send_to_agent(
+                    // Create a temporary executor for this task
+                    let executor = CommandExecutor::new();
+                    executor.send_to_agent(
                         &target,
                         &command,
                         &args,
@@ -445,6 +570,7 @@ impl CommandExecutor {
 
     /// Check if agent is responsive
     async fn check_agent_responsiveness(
+        &self,
         target: &AgentTarget,
         timeout_secs: u64,
     ) -> Result<ResponsivenessInfo> {
@@ -460,7 +586,7 @@ impl CommandExecutor {
 
             match timeout(
                 Duration::from_secs(1),
-                Self::ping_agent(&target.tmux_pane, test_command)
+                self.ping_agent(&target.tmux_pane, test_command)
             ).await {
                 Ok(Ok(_)) => {
                     return Ok(ResponsivenessInfo {
@@ -489,7 +615,7 @@ impl CommandExecutor {
     }
 
     /// Simple ping to check if agent pane is responsive
-    async fn ping_agent(pane: &str, command: &str) -> Result<()> {
+    async fn ping_agent(&self, pane: &str, command: &str) -> Result<()> {
         // This is a simplified implementation
         // In a real scenario, we'd capture output from the tmux pane
         tmux::send_command_to_pane("", pane, command)?;
@@ -498,6 +624,7 @@ impl CommandExecutor {
 
     /// Execute command and capture output from tmux pane
     async fn execute_command_in_pane(
+        &self,
         pane: &str,
         command: &str,
     ) -> Result<ExecutionResult> {

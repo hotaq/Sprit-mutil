@@ -1,17 +1,14 @@
 pub mod agents;
 pub mod attach;
-pub mod broadcast;
 pub mod config;
 pub mod help;
 pub mod hey;
 pub mod init;
 pub mod kill;
 pub mod remove;
-pub mod send;
 pub mod slash_status;
 pub mod start;
 pub mod status;
 pub mod sync;
 pub mod update;
-pub mod warp;
 pub mod zoom;

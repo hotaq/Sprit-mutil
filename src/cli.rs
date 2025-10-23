@@ -55,25 +55,7 @@ pub enum Commands {
         #[arg(long)]
         all: bool,
     },
-    /// Send command to all agents
-    Send {
-        /// Command to execute
-        command: String,
-        /// Command arguments
-        args: Vec<String>,
-        /// Command timeout in seconds
-        #[arg(short, long, default_value = "30")]
-        timeout: u64,
-        /// Working directory for command
-        #[arg(short, long)]
-        work_dir: Option<String>,
-        /// Environment variable (KEY=VALUE)
-        #[arg(short, long = "env")]
-        env_vars: Vec<String>,
-        /// Execute sequentially
-        #[arg(long)]
-        sequential: bool,
-    },
+    
     /// Send command to specific agent
     Hey {
         /// Agent number (1, 2, 3, etc.)
@@ -124,20 +106,7 @@ pub enum Commands {
         #[arg(long)]
         merge_branch: bool,
     },
-    /// Navigate to agent workspace
-    Warp {
-        /// Agent number or workspace name
-        workspace: Option<String>,
-        /// List available workspaces
-        #[arg(short, long)]
-        list: bool,
-        /// Print workspace path without changing
-        #[arg(long)]
-        print: bool,
-        /// Show relative path
-        #[arg(long)]
-        relative: bool,
-    },
+    
     /// Focus on agent pane
     Zoom {
         /// Agent number to zoom on
