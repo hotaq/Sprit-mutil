@@ -28,10 +28,16 @@ fn test_cli_basic_functionality() -> Result<()> {
         .get_output()
         .stdout
         .clone();
-    
+
     let version_str = String::from_utf8_lossy(&version_output);
-    assert!(version_str.contains("sprite"), "Version output should contain 'sprite'");
-    assert!(version_str.contains('.'), "Version output should contain version number");
+    assert!(
+        version_str.contains("sprite"),
+        "Version output should contain 'sprite'"
+    );
+    assert!(
+        version_str.contains('.'),
+        "Version output should contain version number"
+    );
 
     Ok(())
 }
