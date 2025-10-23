@@ -82,6 +82,9 @@ stdout.log
 .cache/
 cache/
 
+# Debug files (moved to debug/ directory)
+/debug/
+
 # Test scripts (keep our organized test suite)
 /test_*.sh
 
