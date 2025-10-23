@@ -314,6 +314,7 @@ fn test_communication_commands_error_handling() -> Result<(), Box<dyn std::error
 
 /// Test performance requirements for communication commands
 #[test]
+#[ignore] // Requires tmux environment
 fn test_communication_commands_performance() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
 
