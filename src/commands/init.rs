@@ -427,7 +427,7 @@ fn generate_agents_config(config_file: &Path, agent_count: u32) -> Result<()> {
 
     let config = if agent_count == 0 {
         // Empty configuration template with updated schema
-        include_str!("../templates/empty_agents.yaml").to_string()
+        include_str!("../../templates/empty_agents.yaml").to_string()
     } else {
         // Generate configuration with agents
         generate_config_content(agent_count)?
@@ -520,7 +520,7 @@ fn create_shell_script_templates(agents_dir: &Path) -> Result<()> {
     let scripts_dir = agents_dir.join("scripts");
 
     // Create setup.sh script
-    let setup_script = include_str!("../templates/setup.sh");
+    let setup_script = include_str!("../../templates/setup.sh");
     fs::write(scripts_dir.join("setup.sh"), setup_script)?;
 
     // Make scripts executable
@@ -533,7 +533,7 @@ fn create_shell_script_templates(agents_dir: &Path) -> Result<()> {
     }
 
     // Create start-agents.sh script
-    let start_script = include_str!("../templates/start-agents.sh");
+    let start_script = include_str!("../../templates/start-agents.sh");
     fs::write(scripts_dir.join("start-agents.sh"), start_script)?;
 
     #[cfg(unix)]
@@ -544,7 +544,7 @@ fn create_shell_script_templates(agents_dir: &Path) -> Result<()> {
     }
 
     // Create attach-session.sh script
-    let attach_script = include_str!("../templates/attach-session.sh");
+    let attach_script = include_str!("../../templates/attach-session.sh");
     fs::write(scripts_dir.join("attach-session.sh"), attach_script)?;
 
     #[cfg(unix)]
@@ -563,27 +563,27 @@ fn create_tmux_profile_templates(agents_dir: &Path) -> Result<()> {
     let profiles_dir = agents_dir.join("profiles");
 
     // Profile 0: Top + split bottom (2-3 agents)
-    let profile0 = include_str!("../templates/profile0.sh");
+    let profile0 = include_str!("../../templates/profile0.sh");
     fs::write(profiles_dir.join("profile0.sh"), profile0)?;
 
     // Profile 1: Left column + stacked right
-    let profile1 = include_str!("../templates/profile1.sh");
+    let profile1 = include_str!("../../templates/profile1.sh");
     fs::write(profiles_dir.join("profile1.sh"), profile1)?;
 
     // Profile 2: Top row + full-width bottom
-    let profile2 = include_str!("../templates/profile2.sh");
+    let profile2 = include_str!("../../templates/profile2.sh");
     fs::write(profiles_dir.join("profile2.sh"), profile2)?;
 
     // Profile 3: Single full-width top (focus mode)
-    let profile3 = include_str!("../templates/profile3.sh");
+    let profile3 = include_str!("../../templates/profile3.sh");
     fs::write(profiles_dir.join("profile3.sh"), profile3)?;
 
     // Profile 4: Three-pane layout
-    let profile4 = include_str!("../templates/profile4.sh");
+    let profile4 = include_str!("../../templates/profile4.sh");
     fs::write(profiles_dir.join("profile4.sh"), profile4)?;
 
     // Profile 5: Six-pane dashboard
-    let profile5 = include_str!("../templates/profile5.sh");
+    let profile5 = include_str!("../../templates/profile5.sh");
     fs::write(profiles_dir.join("profile5.sh"), profile5)?;
 
     // Make all profile scripts executable

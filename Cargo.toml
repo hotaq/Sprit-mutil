@@ -15,6 +15,7 @@ categories = ["command-line-utilities", "development-tools", "command-line-inter
 rust-version = "1.75"
 include = [
     "src/**/*.rs",
+    "src/templates/**",
     "Cargo.toml",
     "README.md",
     "LICENSE",

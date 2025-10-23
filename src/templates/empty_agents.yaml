@@ -1,47 +1,20 @@
 # Sprite Multi-Agent Configuration
-# Generated automatically by 'sprite init'
-# Customize this file to match your project needs
+# Empty agents configuration for sprite v0.3.2
 
-version: "1.0"
+version: "0.3.2"
+project_name: "sprite-project"
 
+# No agents configured
 agents: []
 
-session_name: sprite-session
+# Default session settings
+session:
+  default_layout: "tiled"
+  auto_cleanup: true
+  session_timeout: 3600
 
-sync:
-  auto_sync: false
-  default_interval_secs: 300
-  conflict_resolution: Manual
-  exclude_branches:
-  - main
-  - master
-  pre_sync_hooks: []
-  post_sync_hooks: []
-
+# Global settings
 settings:
-  default_shell: bash
-  global_env_vars: {}
-  logging:
-    log_file: agents/logs/sprite.log
-    level: Info
-    log_to_stdout: true
-    rotation:
-      max_size_mb: 100
-      max_files: 5
-  performance:
-    max_concurrent_ops: 10
-    default_timeout_secs: 300
-    enable_monitoring: true
-    memory_limit_mb: 1024
-    cpu_limit_percent: 80
-  security:
-    allowed_paths:
-    - agents/
-    blocked_commands:
-    - rm -rf
-    - sudo
-    - su
-    - chmod 777
-    strict_path_validation: true
-    max_command_length: 1000
-    allow_shell_execution: false
+  log_level: "info"
+  max_concurrent_agents: 10
+  health_check_interval: 30
