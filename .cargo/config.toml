@@ -1,2 +1,3 @@
 [registries.github]
 index = "https://github.com/hotaq/Sprit-mutil.git/_registry/index/"
+# publish = ["github"]

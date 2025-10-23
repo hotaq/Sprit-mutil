@@ -393,11 +393,17 @@ fn create_base_directory_structure(agents_dir: &Path) -> Result<()> {
 
     // Create .gitignore to prevent recursive copying
     let gitignore_content = r"# Prevent git worktrees from copying this directory recursively
-# This file prevents the agents/ directory from being copied into agent worktrees
+# This file prevents the agent worktree directories from being copied into each other
 
-# Ignore everything except this file
-/*
-!/.gitignore
+# Ignore agent worktree directories (numbered directories)
+/[0-9]*/
+
+# Keep everything else (configs, scripts, profiles, logs)
+!agents.yaml
+!scripts/
+!profiles/
+!logs/
+!.gitignore
 ";
     fs::write(agents_dir.join(".gitignore"), gitignore_content)
         .context("Failed to create .gitignore in agents directory")?;

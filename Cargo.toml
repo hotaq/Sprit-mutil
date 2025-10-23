@@ -1,6 +1,6 @@
 [package]
-name = "sprite"
-version = "0.2.4"
+name = "sprit-mutilagent"
+version = "0.3.2"
 edition = "2021"
 description = "A robust command-line toolkit for managing multiple AI coding agents in isolated tmux sessions with comprehensive workspace management and health monitoring"
 authors = ["hotaq hootoo2016@gmail.com"]
@@ -11,10 +11,11 @@ documentation = "https://docs.rs/sprite"
 readme = "README.md"
 keywords = ["cli", "multi-agent", "ai", "tmux", "workspace"]
 categories = ["command-line-utilities", "development-tools", "command-line-interface"]
-publish = ["github"]
+# publish = ["github"]  # Commented out to allow crates.io publishing
 rust-version = "1.75"
 include = [
     "src/**/*.rs",
+    "src/templates/**",
     "Cargo.toml",
     "README.md",
     "LICENSE",

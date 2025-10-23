@@ -130,38 +130,29 @@ jobs:
           VERSION=$(grep '^version = ' Cargo.toml | head -1 | cut -d '"' -f 2)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Comment on release
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 📦 Release Build Available
-
-            Version ${{ steps.version.outputs.VERSION }} has been built successfully!
-
-            ### Installation Options
-            \`\`\`bash
-            # Method 1: Build from source
-            git clone https://github.com/hotaq/Sprit-mutil.git
-            cd Sprit-mutil
-            cargo build --release
-            sudo cp target/release/sprite /usr/local/bin/
-
-            # Method 2: Download release binary
-            # Download the uploaded artifact from this release
-
-            # Method 3: Install from crates.io (when available)
-            cargo install sprite
-            \`\`\`
-
-            ### What's Included
-            - ✅ Pre-built binary (\`sprite\`)
-            - ✅ All tests passing
-            - ✅ Code quality verified (clippy, fmt)
-            - ✅ Ready for distribution
-
-            Note: GitHub Packages does not natively support Cargo registries. Consider publishing to crates.io for package distribution.`
-            })
+      - name: Release information
+        run: |
+          echo "## 📦 Release Build Available"
+          echo ""
+          echo "Version ${{ steps.version.outputs.VERSION }} has been built successfully!"
+          echo ""
+          echo "### Installation Options"
+          echo "# Method 1: Build from source"
+          echo "git clone https://github.com/hotaq/Sprit-mutil.git"
+          echo "cd Sprit-mutil"
+          echo "cargo build --release"
+          echo "sudo cp target/release/sprite /usr/local/bin/"
+          echo ""
+          echo "# Method 2: Download release binary"
+          echo "# Download the uploaded artifact from this release"
+          echo ""
+          echo "# Method 3: Install from crates.io (when available)"
+          echo "cargo install sprite"
+          echo ""
+          echo "### What's Included"
+          echo "- ✅ Pre-built binary (sprite)"
+          echo "- ✅ All tests passing"
+          echo "- ✅ Code quality verified (clippy, fmt)"
+          echo "- ✅ Ready for distribution"
+          echo ""
+          echo "Release available at: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}"

@@ -145,6 +145,7 @@ fn wait_for_session_ready_with_panes(
 }
 
 #[test]
+#[ignore] // Requires tmux environment
 fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     // Create a temporary git repository for testing
     let (_temp_dir, repo_path) = create_test_git_repo()?;
@@ -220,6 +221,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
 }
 
 #[test]
+#[ignore] // Requires tmux environment
 fn test_attach_command_list_functionality() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
@@ -278,6 +280,7 @@ fn test_attach_command_list_functionality() -> Result<()> {
 }
 
 #[test]
+#[ignore] // Requires tmux environment
 fn test_kill_command_session_selection() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
