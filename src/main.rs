@@ -56,7 +56,7 @@ fn main() -> Result<()> {
             commands::kill::execute(session_name, force, all)?;
             Ok(())
         }
-        
+
         cli::Commands::Hey {
             agent,
             command,
@@ -95,7 +95,7 @@ fn main() -> Result<()> {
             commands::remove::execute(&agent, force, keep_workspace, merge_branch)?;
             Ok(())
         }
-        
+
         cli::Commands::Zoom {
             agent,
             unzoom,

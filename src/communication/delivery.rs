@@ -5,7 +5,6 @@
 
 use crate::error::SpriteError;
 use crate::models::MessagePriority;
-use crate::utils::tmux;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -341,7 +340,7 @@ impl DeliveryConfirmation {
 
         // Small delay then send Enter to execute
         tokio::time::sleep(Duration::from_millis(100)).await;
-        
+
         std::process::Command::new("tmux")
             .args(["send-keys", "-t", agent_pane, "C-m"])
             .output()

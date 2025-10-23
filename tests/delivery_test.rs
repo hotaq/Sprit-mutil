@@ -135,8 +135,7 @@ async fn test_delivery_statistics() -> Result<()> {
 
     let stats = delivery.get_delivery_stats().await;
     assert!(stats.total_attempts >= 5);
-    assert!(stats.pending >= 0);
-    assert!(stats.delivered >= 0);
+    // For u64 fields, just verify they exist (already implied by total_attempts check)
 
     // Test stats formatting
     let formatted = stats.format_for_display();
@@ -154,10 +153,10 @@ async fn test_retry_failed_deliveries() -> Result<()> {
         ..Default::default()
     };
 
-    let mut delivery = DeliveryConfirmation::new(config.clone());
+    let delivery = DeliveryConfirmation::new(config.clone());
 
     // Mock a failed delivery by creating tracking directly
-    let message_id = "retry-test-123";
+    let _message_id = "retry-test-123";
 
     // Note: In a real scenario, this would be triggered by actual failed deliveries
     // For this test, we'll focus on the retry mechanism structure
@@ -181,7 +180,7 @@ async fn test_cleanup_old_deliveries() -> Result<()> {
         ..Default::default()
     };
 
-    let mut delivery = DeliveryConfirmation::new(config);
+    let delivery = DeliveryConfirmation::new(config);
 
     // Send a test message
     delivery
@@ -200,8 +199,8 @@ async fn test_cleanup_old_deliveries() -> Result<()> {
     // Test cleanup
     let cleaned_count = delivery.cleanup_old_deliveries().await?;
 
-    // Cleaned count should be at least 0 (may be more depending on timing)
-    assert!(cleaned_count >= 0);
+    // Cleaned count may be 0 or more (already checked by returning successfully)
+    let _ = cleaned_count;
 
     Ok(())
 }
@@ -224,9 +223,10 @@ async fn test_pending_deliveries() -> Result<()> {
             .await?;
     }
 
-    // Get pending deliveries
+    // Get pending deliveries - just check that the method works
     let pending = delivery.get_pending_deliveries().await;
-    assert!(pending.len() >= 0); // May be 0 if all completed quickly
+    // May be 0 if all completed quickly - we just verify the method returns without error
+    drop(pending);
 
     Ok(())
 }

@@ -486,10 +486,12 @@ pub struct NavigationResult {
     /// Absolute navigation command
     pub command: String,
     /// Relative navigation command
+    #[allow(dead_code)]
     pub relative_command: String,
 }
 
 /// Get workspace navigator with current context.
+#[allow(dead_code)]
 pub fn get_workspace_navigator() -> Result<WorkspaceNavigator> {
     WorkspaceNavigator::new()
 }

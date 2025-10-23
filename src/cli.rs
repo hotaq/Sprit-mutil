@@ -55,7 +55,7 @@ pub enum Commands {
         #[arg(long)]
         all: bool,
     },
-    
+
     /// Send command to specific agent
     Hey {
         /// Agent number (1, 2, 3, etc.)
@@ -106,7 +106,7 @@ pub enum Commands {
         #[arg(long)]
         merge_branch: bool,
     },
-    
+
     /// Focus on agent pane
     Zoom {
         /// Agent number to zoom on
