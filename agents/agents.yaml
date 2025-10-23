@@ -10,7 +10,7 @@ agents:
   worktree_path: agents/1
   model: claude-sonnet-4
   description: Agent 1 workspace
-  status: Inactive
+  status: Active
   config:
     env_vars: {}
     work_dir: null

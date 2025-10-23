@@ -56,24 +56,7 @@ fn main() -> Result<()> {
             commands::kill::execute(session_name, force, all)?;
             Ok(())
         }
-        cli::Commands::Send {
-            command,
-            args,
-            timeout,
-            work_dir,
-            env_vars,
-            sequential,
-        } => {
-            commands::send::execute(
-                &command,
-                &args,
-                timeout,
-                work_dir.as_deref(),
-                &env_vars,
-                sequential,
-            )?;
-            Ok(())
-        }
+
         cli::Commands::Hey {
             agent,
             command,
@@ -112,15 +95,7 @@ fn main() -> Result<()> {
             commands::remove::execute(&agent, force, keep_workspace, merge_branch)?;
             Ok(())
         }
-        cli::Commands::Warp {
-            workspace,
-            list,
-            print,
-            relative,
-        } => {
-            commands::warp::execute(workspace, list, print, relative)?;
-            Ok(())
-        }
+
         cli::Commands::Zoom {
             agent,
             unzoom,

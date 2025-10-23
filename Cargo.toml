@@ -25,6 +25,18 @@ include = [
 name = "sprite"
 path = "src/main.rs"
 
+[[bin]]
+name = "test_delivery_manual"
+path = "test_delivery_manual.rs"
+
+[[bin]]
+name = "debug_tmux_test"
+path = "debug_tmux_test.rs"
+
+[[bin]]
+name = "test_claude_commands"
+path = "test_claude_commands.rs"
+
 [lib]
 name = "sprite"
 path = "src/lib.rs"

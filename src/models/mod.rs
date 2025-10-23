@@ -19,33 +19,23 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Log levels for configuration.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum LogLevel {
     Error,
     Warn,
+    #[default]
     Info,
     Debug,
     Trace,
 }
 
-impl Default for LogLevel {
-    fn default() -> Self {
-        Self::Info
-    }
-}
-
 /// Conflict resolution strategies.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum ConflictResolution {
+    #[default]
     Manual,
     AutoTheirs,
     AutoOurs,
-}
-
-impl Default for ConflictResolution {
-    fn default() -> Self {
-        Self::Manual
-    }
 }
 
 /// Command message for agent communication.
@@ -80,18 +70,13 @@ pub struct CommandMessage {
 }
 
 /// Message priority levels.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum MessagePriority {
     Low,
+    #[default]
     Normal,
     High,
     Critical,
-}
-
-impl Default for MessagePriority {
-    fn default() -> Self {
-        Self::Normal
-    }
 }
 
 /// Execution result for commands.
