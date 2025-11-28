@@ -71,7 +71,7 @@ impl TestFixture {
     #[allow(dead_code)]
     pub fn setup_sprite_config(&self, agent_count: u32) -> Result<(), Box<dyn std::error::Error>> {
         // Initialize sprite environment
-        std::process::Command::cargo_bin("sprite")?
+        std::process::Command::new(env!("CARGO_BIN_EXE_sprite"))
             .args(["init", "--agents", &agent_count.to_string()])
             .current_dir(self.temp_dir.path())
             .assert()

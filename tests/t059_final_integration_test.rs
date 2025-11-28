@@ -24,7 +24,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
     println!("✅ Test environment setup complete");
 
     // Test 1: Initialize sprite environment
-    let mut sprite_init = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut sprite_init = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     sprite_init
         .args(["init", "--force", "--agents", "2"])
         .current_dir(fixture.temp_dir.path())
@@ -35,7 +35,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
     println!("✅ Sprite init successful");
 
     // Test 2: Start sprite session
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["start", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -48,7 +48,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 3: Status command basic functionality
     let start_time = std::time::Instant::now();
-    let mut status_check = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_check = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     status_check
         .args(["status"])
         .current_dir(fixture.temp_dir.path())
@@ -66,7 +66,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 4: Agents command basic functionality
     let start_time = std::time::Instant::now();
-    let mut agents_check = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_check = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let agents_result = agents_check
         .args(["agents", "list"])
         .current_dir(fixture.temp_dir.path())
@@ -91,7 +91,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 5: Hey command basic functionality
     let start_time = std::time::Instant::now();
-    let mut hey_single = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_single = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_single
         .args(["hey", "1", "echo", "\"Hello from agent 1\""])
         .current_dir(fixture.temp_dir.path())
@@ -111,7 +111,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 6: Hey command with multiple agents
     let start_time = std::time::Instant::now();
-    let mut hey_multiple = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_multiple = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_multiple
         .args(["hey", "1,2", "echo", "\"Hello from multiple agents\""])
         .current_dir(fixture.temp_dir.path())
@@ -134,7 +134,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 7: Hey command broadcast
     let start_time = std::time::Instant::now();
-    let mut hey_broadcast = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_broadcast = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_broadcast
         .args(["hey", "all", "echo", "\"Broadcast to all agents\""])
         .current_dir(fixture.temp_dir.path())
@@ -152,7 +152,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 8: Status with detailed flag
     let start_time = std::time::Instant::now();
-    let mut status_detailed = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_detailed = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     status_detailed
         .args(["status", "--detailed"])
         .current_dir(fixture.temp_dir.path())
@@ -170,7 +170,7 @@ fn test_t059_final_validation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 9: Agents validate command
     let start_time = std::time::Instant::now();
-    let mut agents_validate = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_validate = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     agents_validate
         .args(["agents", "validate"])
         .current_dir(fixture.temp_dir.path())
@@ -206,7 +206,7 @@ fn test_t059_error_scenarios() -> Result<(), Box<dyn std::error::Error>> {
     println!("🧪 T059: Error scenarios validation...");
 
     // Test 1: Hey command without sprite session
-    let mut hey_no_session = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_no_session = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_no_session
         .args(["hey", "1", "echo", "test"])
         .current_dir(fixture.temp_dir.path())
@@ -217,7 +217,7 @@ fn test_t059_error_scenarios() -> Result<(), Box<dyn std::error::Error>> {
     println!("✅ Hey without session correctly fails");
 
     // Test 2: Status command without sprite session (graceful)
-    let mut status_no_session = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_no_session = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let status_result = status_no_session
         .args(["status"])
         .current_dir(fixture.temp_dir.path())
@@ -250,7 +250,7 @@ fn test_t059_performance_benchmark() -> Result<(), Box<dyn std::error::Error>> {
     fixture.setup_git_repo()?;
 
     // Initialize sprite with 2 agents
-    let mut sprite_init = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut sprite_init = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     sprite_init
         .args(["init", "--force", "--agents", "2"])
         .current_dir(fixture.temp_dir.path())
@@ -260,7 +260,7 @@ fn test_t059_performance_benchmark() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Start session
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["start", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -274,7 +274,7 @@ fn test_t059_performance_benchmark() -> Result<(), Box<dyn std::error::Error>> {
     let mut times = Vec::new();
     for i in 1..=10 {
         let start_time = std::time::Instant::now();
-        assert_cmd::Command::cargo_bin("sprite")?
+        assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
             .args(["hey", "1", "echo", &format!("\"Rapid test {}\"", i)])
             .current_dir(fixture.temp_dir.path())
             .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
