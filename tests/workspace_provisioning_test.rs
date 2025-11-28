@@ -12,7 +12,7 @@ use assert_cmd::Command as AssertCommand;
 #[test]
 fn test_cli_basic_functionality() -> Result<()> {
     // Test that the CLI responds to help
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["--help"])
         .assert()
         .success()
@@ -21,7 +21,7 @@ fn test_cli_basic_functionality() -> Result<()> {
         .stdout(predicates::str::contains("agents"));
 
     // Test version
-    let version_output = AssertCommand::cargo_bin("sprite")?
+    let version_output = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["--version"])
         .assert()
         .success()
@@ -48,7 +48,7 @@ fn test_init_auto_initializes_git() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
     // Initialize sprite - should auto-initialize git
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(temp_dir.path())
         .args(["init", "--agents", "2"])
         .assert()
@@ -71,7 +71,7 @@ fn test_init_creates_required_files() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Initialize sprite configuration
-    let result = AssertCommand::cargo_bin("sprite")?
+    let result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path) // Explicitly set the working directory
         .args(["init", "--force"])
         .assert();
@@ -98,14 +98,14 @@ fn test_init_error_handling() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Initialize sprite configuration
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
         .success();
 
     // Try to initialize again without force - should fail
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init"])
         .assert()
@@ -113,7 +113,7 @@ fn test_init_error_handling() -> Result<()> {
         .stderr(predicates::str::contains("already exists"));
 
     // Initialize again with force - should succeed
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
@@ -132,7 +132,7 @@ fn test_agents_commands_require_config() -> Result<()> {
 
     // Try agents commands without initialization - should fail
     // Set env vars to prevent finding project root outside temp dir
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
         .env_remove("SPRITE_PROJECT_ROOT")
@@ -143,7 +143,7 @@ fn test_agents_commands_require_config() -> Result<()> {
             "Could not find sprite configuration file",
         ));
 
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
         .env_remove("SPRITE_PROJECT_ROOT")
@@ -154,7 +154,7 @@ fn test_agents_commands_require_config() -> Result<()> {
             "Could not find sprite configuration file",
         ));
 
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
         .env_remove("SPRITE_PROJECT_ROOT")
@@ -175,7 +175,7 @@ fn test_config_commands_require_config() -> Result<()> {
 
     // Try config commands without initialization - should fail
     // Set env vars to prevent finding project root outside temp dir
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
         .env_remove("SPRITE_PROJECT_ROOT")
@@ -186,7 +186,7 @@ fn test_config_commands_require_config() -> Result<()> {
             "Could not find sprite configuration file",
         ));
 
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
         .env_remove("SPRITE_PROJECT_ROOT")
@@ -197,7 +197,7 @@ fn test_config_commands_require_config() -> Result<()> {
             "Could not find sprite configuration file",
         ));
 
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
         .env_remove("SPRITE_PROJECT_ROOT")
@@ -220,7 +220,7 @@ fn test_workspace_provisioning_integration() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Test that the provision command is recognized
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["agents", "provision", "--help"])
         .assert()

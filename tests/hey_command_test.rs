@@ -19,7 +19,7 @@ fn test_hey_command_agent_communication() -> Result<(), Box<dyn std::error::Erro
     fixture.setup_git_repo()?;
 
     // Initialize sprite environment with test agents
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["init", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -55,7 +55,7 @@ agents:
     fixture.temp_dir.child("backend").create_dir_all()?;
 
     // Start the sprite session (using std::process::Command for spawn support)
-    let sprite_bin = assert_cmd::cargo::cargo_bin("sprite");
+    let sprite_bin = env!("CARGO_BIN_EXE_sprite");
     let mut _sprite_start = Command::new(sprite_bin)
         .args(["start", "--agents", "2"])
         .current_dir(fixture.temp_dir.path())
@@ -67,7 +67,7 @@ agents:
     thread::sleep(Duration::from_secs(5));
 
     // Test 1: Basic command to frontend agent
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["hey", "frontend", "echo", "\"Hello frontend\""])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -79,7 +79,7 @@ agents:
     thread::sleep(Duration::from_secs(2));
 
     // Test 2: Command to backend agent
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["hey", "backend", "echo", "\"Hello backend\""])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -104,7 +104,7 @@ fn test_hey_command_error_scenarios() -> Result<(), Box<dyn std::error::Error>> 
     fixture.setup_git_repo()?;
 
     // Test 1: Command without sprite session
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["hey", "nonexistent", "echo", "test"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -124,7 +124,7 @@ fn test_hey_command_performance() -> Result<(), Box<dyn std::error::Error>> {
     fixture.setup_git_repo()?;
 
     // Initialize sprite for performance test
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["init", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -153,7 +153,7 @@ agents:
     // Performance test: Simple command should complete in < 3 seconds
     let start_time = std::time::Instant::now();
 
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["hey", "frontend", "echo", "\"performance test\""])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -184,7 +184,7 @@ fn test_hey_command_complex_workflows() -> Result<(), Box<dyn std::error::Error>
     fixture.setup_git_repo()?;
 
     // Initialize sprite with test project
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["init", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -219,7 +219,7 @@ agents:
     fixture.temp_dir.child("backend").create_dir_all()?;
 
     // Test complex workflow with different flags
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args([
             "hey",
             "frontend",

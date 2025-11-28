@@ -155,7 +155,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     let _guard = SessionGuard::new(session_name.clone());
 
     // Initialize sprite configuration
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
@@ -165,7 +165,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     create_test_worktrees(&repo_path, 3)?;
 
     // 1. Test start command
-    let start_result = AssertCommand::cargo_bin("sprite")?
+    let start_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["start", "--session-name", &session_name, "--detach"])
         .assert()
@@ -175,7 +175,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     assert!(start_stdout.contains("tmux session") || start_stdout.contains("Created"));
 
     // 2. Test attach --list to see the session
-    let list_result = AssertCommand::cargo_bin("sprite")?
+    let list_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", "--list"])
         .assert()
@@ -185,7 +185,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     assert!(list_stdout.contains(&session_name));
 
     // 3. Test status command to check session health
-    let status_result = AssertCommand::cargo_bin("sprite")?
+    let status_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["status"])
         .assert()
@@ -195,7 +195,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     assert!(status_stdout.contains("Session Health Report"));
 
     // 4. Test kill command to clean up the session
-    let kill_result = AssertCommand::cargo_bin("sprite")?
+    let kill_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["kill", "--force", &session_name])
         .assert()
@@ -205,7 +205,7 @@ fn test_session_start_list_attach_kill_workflow() -> Result<()> {
     assert!(kill_stdout.contains("killed successfully") || kill_stdout.contains("killed session"));
 
     // 5. Verify session is gone
-    let final_result = AssertCommand::cargo_bin("sprite")?
+    let final_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", "--list"])
         .assert()
@@ -230,7 +230,7 @@ fn test_attach_command_list_functionality() -> Result<()> {
     let _guard = SessionGuard::new(session_name.clone());
 
     // Initialize sprite
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
@@ -240,7 +240,7 @@ fn test_attach_command_list_functionality() -> Result<()> {
     create_test_worktrees(&repo_path, 3)?;
 
     // Test attach --list with no sessions
-    let result1 = AssertCommand::cargo_bin("sprite")?
+    let result1 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", "--list"])
         .assert()
@@ -250,14 +250,14 @@ fn test_attach_command_list_functionality() -> Result<()> {
     assert!(stdout1.contains("No tmux sessions") || stdout1.contains("Available tmux sessions"));
 
     // Create a test session
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["start", "--session-name", &session_name, "--detach"])
         .assert()
         .success();
 
     // Test attach --list with one session
-    let result2 = AssertCommand::cargo_bin("sprite")?
+    let result2 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", "--list"])
         .assert()
@@ -268,7 +268,7 @@ fn test_attach_command_list_functionality() -> Result<()> {
     assert!(stdout2.contains("windows"));
 
     // Cleanup
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["kill", "--force", &session_name])
         .assert()
@@ -291,7 +291,7 @@ fn test_kill_command_session_selection() -> Result<()> {
     let _guard_beta = SessionGuard::new(session_beta.clone());
 
     // Initialize sprite
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
@@ -301,20 +301,20 @@ fn test_kill_command_session_selection() -> Result<()> {
     create_test_worktrees(&repo_path, 3)?;
 
     // Create two test sessions
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["start", "--session-name", &session_alpha, "--detach"])
         .assert()
         .success();
 
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["start", "--session-name", &session_beta, "--detach"])
         .assert()
         .success();
 
     // Test killing specific session
-    let kill_result = AssertCommand::cargo_bin("sprite")?
+    let kill_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["kill", "--force", &session_alpha])
         .assert()
@@ -324,7 +324,7 @@ fn test_kill_command_session_selection() -> Result<()> {
     assert!(kill_stdout.contains(&session_alpha));
 
     // Verify only alpha is killed
-    let list_result = AssertCommand::cargo_bin("sprite")?
+    let list_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", "--list"])
         .assert()
@@ -335,14 +335,14 @@ fn test_kill_command_session_selection() -> Result<()> {
     assert!(list_stdout.contains(&session_beta));
 
     // Test kill --all
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["kill", "--all", "--force"])
         .assert()
         .success();
 
     // Verify all sessions are killed
-    let final_result = AssertCommand::cargo_bin("sprite")?
+    let final_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", "--list"])
         .assert()
@@ -367,7 +367,7 @@ fn test_status_command_functionality() -> Result<()> {
     let _guard = SessionGuard::new(session_name.clone());
 
     // Initialize sprite
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
@@ -377,7 +377,7 @@ fn test_status_command_functionality() -> Result<()> {
     create_test_worktrees(&repo_path, 3)?;
 
     // Test status with no sessions
-    let result1 = AssertCommand::cargo_bin("sprite")?
+    let result1 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["status"])
         .assert()
@@ -387,7 +387,7 @@ fn test_status_command_functionality() -> Result<()> {
     assert!(stdout1.contains("No tmux sessions") || stdout1.contains("Session Health Report"));
 
     // Test status --detailed with no sessions
-    let result2 = AssertCommand::cargo_bin("sprite")?
+    let result2 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["status", "--detailed"])
         .assert()
@@ -397,7 +397,7 @@ fn test_status_command_functionality() -> Result<()> {
     assert!(stdout2.contains("No tmux sessions") || stdout2.contains("Session Health Report"));
 
     // Create a test session
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["start", "--session-name", &session_name, "--detach"])
         .assert()
@@ -419,7 +419,7 @@ fn test_status_command_functionality() -> Result<()> {
     let mut status_success = false;
 
     while retries > 0 && !status_success {
-        let result3 = AssertCommand::cargo_bin("sprite")?
+        let result3 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
             .current_dir(&repo_path)
             .args(["status"])
             .assert()
@@ -452,7 +452,7 @@ fn test_status_command_functionality() -> Result<()> {
     );
 
     // Test status --detailed
-    let result4 = AssertCommand::cargo_bin("sprite")?
+    let result4 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["status", "--detailed"])
         .assert()
@@ -463,7 +463,7 @@ fn test_status_command_functionality() -> Result<()> {
     assert!(stdout4.contains(&session_name));
 
     // Test status for specific session
-    let result5 = AssertCommand::cargo_bin("sprite")?
+    let result5 = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["status", &session_name])
         .assert()
@@ -473,7 +473,7 @@ fn test_status_command_functionality() -> Result<()> {
     assert!(stdout5.contains(&session_name));
 
     // Cleanup
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["kill", "--force", &session_name])
         .assert()
@@ -492,14 +492,14 @@ fn test_session_error_handling() -> Result<()> {
     let non_existent_session = generate_unique_session_name("non-existent");
 
     // Initialize sprite
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
         .success();
 
     // Test attaching to non-existent session
-    let attach_result = AssertCommand::cargo_bin("sprite")?
+    let attach_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["attach", &non_existent_session])
         .assert()
@@ -509,7 +509,7 @@ fn test_session_error_handling() -> Result<()> {
     assert!(attach_stderr.contains("does not exist") || attach_stderr.contains("Session"));
 
     // Test killing non-existent session
-    let kill_result = AssertCommand::cargo_bin("sprite")?
+    let kill_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["kill", "--force", &non_existent_session])
         .assert();
@@ -532,7 +532,7 @@ fn test_session_error_handling() -> Result<()> {
     );
 
     // Test status for non-existent session
-    let status_result = AssertCommand::cargo_bin("sprite")?
+    let status_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["status", &non_existent_session])
         .assert()
@@ -549,7 +549,7 @@ fn test_session_error_handling() -> Result<()> {
 #[test]
 fn test_session_help_commands() -> Result<()> {
     // Test start help
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["start", "--help"])
         .assert()
         .success()
@@ -557,7 +557,7 @@ fn test_session_help_commands() -> Result<()> {
         .stdout(predicates::str::contains("session-name"));
 
     // Test attach help
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["attach", "--help"])
         .assert()
         .success()
@@ -565,7 +565,7 @@ fn test_session_help_commands() -> Result<()> {
         .stdout(predicates::str::contains("list"));
 
     // Test kill help
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["kill", "--help"])
         .assert()
         .success()
@@ -574,7 +574,7 @@ fn test_session_help_commands() -> Result<()> {
         .stdout(predicates::str::contains("all"));
 
     // Test status help
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["status", "--help"])
         .assert()
         .success()
@@ -591,7 +591,7 @@ fn test_concurrent_session_operations() -> Result<()> {
     let (_temp_dir, repo_path) = create_test_git_repo()?;
 
     // Initialize sprite
-    AssertCommand::cargo_bin("sprite")?
+    AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
         .current_dir(&repo_path)
         .args(["init", "--force"])
         .assert()
@@ -610,7 +610,7 @@ fn test_concurrent_session_operations() -> Result<()> {
     let mut _guards: Vec<SessionGuard> = Vec::new();
 
     for session_name in &session_names {
-        AssertCommand::cargo_bin("sprite")?
+        AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
             .current_dir(&repo_path)
             .args(["start", "--session-name", session_name, "--detach"])
             .assert()
@@ -684,7 +684,7 @@ fn test_concurrent_session_operations() -> Result<()> {
     let mut status_stdout = String::new();
 
     while retries > 0 && !status_found {
-        let status_result = AssertCommand::cargo_bin("sprite")?
+        let status_result = AssertCommand::new(env!("CARGO_BIN_EXE_sprite"))
             .current_dir(&repo_path)
             .args(["status"])
             .assert()

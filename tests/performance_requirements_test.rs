@@ -48,8 +48,7 @@ fn test_simple_commands_performance() {
     // Test agents list command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["agents", "list"])
         .current_dir(temp_dir.path())
         .assert()
@@ -65,8 +64,7 @@ fn test_simple_commands_performance() {
     // Test status command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .arg("status")
         .current_dir(temp_dir.path())
         .assert()
@@ -82,8 +80,7 @@ fn test_simple_commands_performance() {
     // Test config show command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["config", "show"])
         .current_dir(temp_dir.path())
         .assert()
@@ -105,8 +102,7 @@ fn test_complex_commands_performance() {
     // Test init command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["init", "--agents", "5"])
         .current_dir(temp_dir.path())
         .assert()
@@ -122,8 +118,7 @@ fn test_complex_commands_performance() {
     // Test agents validate command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .arg("agents")
         .arg("validate")
         .current_dir(temp_dir.path())
@@ -147,8 +142,7 @@ fn test_speckit_commands_performance() {
     // Test /speckit.specify command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["/speckit.specify", "Add user authentication system"])
         .current_dir(temp_dir.path())
         .assert()
@@ -164,8 +158,7 @@ fn test_speckit_commands_performance() {
     // Test /speckit.plan command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .arg("/speckit.plan")
         .current_dir(temp_dir.path())
         .assert()
@@ -181,8 +174,7 @@ fn test_speckit_commands_performance() {
     // Test /speckit.tasks command
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .arg("/speckit.tasks")
         .current_dir(temp_dir.path())
         .assert()
@@ -205,24 +197,21 @@ fn test_concurrent_operations_performance() {
     let start = Instant::now();
 
     // agents list
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["agents", "list"])
         .current_dir(temp_dir.path())
         .assert()
         .success();
 
     // status
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .arg("status")
         .current_dir(temp_dir.path())
         .assert()
         .success();
 
     // config show
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["config", "show"])
         .current_dir(temp_dir.path())
         .assert()
@@ -244,8 +233,7 @@ fn test_large_agent_count_performance() {
     // Test with larger agent count
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["init", "--agents", "20"])
         .current_dir(temp_dir.path())
         .assert()
@@ -261,8 +249,7 @@ fn test_large_agent_count_performance() {
     // Test agents list with many agents
     let start = Instant::now();
 
-    Command::cargo_bin("sprite")
-        .unwrap()
+    Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["agents", "list"])
         .current_dir(temp_dir.path())
         .assert()

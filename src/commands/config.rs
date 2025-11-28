@@ -694,7 +694,7 @@ impl SpriteConfig {
 }
 
 /// Configuration change detection results
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ConfigChanges {
     pub file_modified: bool,
     pub old_version: u64,
@@ -706,24 +706,9 @@ pub struct ConfigChanges {
     pub sync_changed: bool,
 }
 
-impl Default for ConfigChanges {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ConfigChanges {
     pub fn new() -> Self {
-        Self {
-            file_modified: false,
-            old_version: 0,
-            new_version: 0,
-            added_agents: Vec::new(),
-            removed_agents: Vec::new(),
-            modified_agents: Vec::new(),
-            session_changed: false,
-            sync_changed: false,
-        }
+        Self::default()
     }
 
     pub fn has_changes(&self) -> bool {

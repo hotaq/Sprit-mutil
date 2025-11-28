@@ -25,7 +25,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("🧪 Setting up communication workflow test...");
 
     // Step 1: Initialize sprite environment with 3 agents
-    let mut sprite_init = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut sprite_init = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     sprite_init
         .args(["init", "--force", "--agents", "3"])
         .current_dir(fixture.temp_dir.path())
@@ -36,7 +36,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Sprite init successful");
 
     // Step 2: Test agents command - list agents
-    let mut agents_list = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_list = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let agents_result = agents_list
         .args(["agents", "list"])
         .current_dir(fixture.temp_dir.path())
@@ -52,7 +52,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Agents list command successful");
 
     // Step 3: Test agents command - show specific agent
-    let mut agents_show = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_show = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let show_result = agents_show
         .args(["agents", "show", "frontend"])
         .current_dir(fixture.temp_dir.path())
@@ -66,7 +66,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Agents show command successful");
 
     // Step 4 Test status command - before session
-    let mut status_before = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_before = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     status_before
         .args(["status"])
         .current_dir(fixture.temp_dir.path())
@@ -77,7 +77,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Status command (before session) successful");
 
     // Step 5: Start sprite session
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["start"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -99,7 +99,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     thread::sleep(Duration::from_secs(3));
 
     // Step 6: Test status command - after session
-    let mut status_after = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_after = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let after_result = status_after
         .args(["status"])
         .current_dir(fixture.temp_dir.path())
@@ -113,7 +113,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Status command (after session) successful");
 
     // Step 7: Test hey command - single agent
-    let mut hey_single = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_single = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let start_time = std::time::Instant::now();
     hey_single
         .args(["hey", "1", "echo", "\"Hello from agent 1\""])
@@ -137,7 +137,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     thread::sleep(Duration::from_secs(2));
 
     // Step 8: Test hey command - multiple agents
-    let mut hey_multiple = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_multiple = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let start_time = std::time::Instant::now();
     hey_multiple
         .args(["hey", "1,2,3", "echo", "\"Hello from multiple agents\""])
@@ -161,7 +161,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     thread::sleep(Duration::from_secs(2));
 
     // Step 9: Test hey command - broadcast to all
-    let mut hey_all = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_all = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let start_time = std::time::Instant::now();
     hey_all
         .args(["hey", "all", "echo", "\"Broadcast to all agents\""])
@@ -185,7 +185,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     thread::sleep(Duration::from_secs(2));
 
     // Step 10: Test hey command - with flags
-    let mut hey_flags = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_flags = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_flags
         .args([
             "hey",
@@ -207,7 +207,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     thread::sleep(Duration::from_secs(2));
 
     // Step 11: Test status command with --detailed flag
-    let mut status_detailed = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_detailed = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     status_detailed
         .args(["status", "--detailed"])
         .current_dir(fixture.temp_dir.path())
@@ -218,7 +218,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Detailed status command successful");
 
     // Step 12: Test agents command with validate
-    let mut agents_validate = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_validate = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     agents_validate
         .args(["agents", "validate"])
         .current_dir(fixture.temp_dir.path())
@@ -229,7 +229,7 @@ fn test_complete_communication_workflow() -> Result<(), Box<dyn std::error::Erro
     println!("✅ Agents validate command successful");
 
     // Step 13: Test agents command with provision
-    let mut agents_provision = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_provision = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     agents_provision
         .args(["agents", "provision"])
         .current_dir(fixture.temp_dir.path())
@@ -255,7 +255,7 @@ fn test_communication_commands_error_handling() -> Result<(), Box<dyn std::error
     println!("🧪 Setting up error handling test...");
 
     // Test 1: hey command without session
-    let mut hey_no_session = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_no_session = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_no_session
         .args(["hey", "1", "echo", "test"])
         .current_dir(fixture.temp_dir.path())
@@ -266,7 +266,7 @@ fn test_communication_commands_error_handling() -> Result<(), Box<dyn std::error
     println!("✅ Hey without session correctly fails");
 
     // Test 2: hey command with invalid agent
-    let mut hey_invalid = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_invalid = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_invalid
         .args(["hey", "99", "echo", "test"])
         .current_dir(fixture.temp_dir.path())
@@ -277,7 +277,7 @@ fn test_communication_commands_error_handling() -> Result<(), Box<dyn std::error
     println!("✅ Hey with invalid agent correctly fails");
 
     // Test 3: agents command with invalid agent_id
-    let mut agents_invalid = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_invalid = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     fixture.init_sprite_env()?;
 
     agents_invalid
@@ -290,7 +290,7 @@ fn test_communication_commands_error_handling() -> Result<(), Box<dyn std::error
     println!("✅ Agents with invalid ID correctly fails");
 
     // Test 4: status command with invalid scope (graceful error handling)
-    let mut status_invalid = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_invalid = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     let status_result = status_invalid
         .args(["status", "invalid-scope"])
         .current_dir(fixture.temp_dir.path())
@@ -328,7 +328,7 @@ fn test_communication_commands_performance() -> Result<(), Box<dyn std::error::E
     setup_comprehensive_agent_config(&fixture)?;
 
     // Initialize sprite with 2 agents
-    let mut sprite_init = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut sprite_init = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     sprite_init
         .args(["init", "--force", "--agents", "2"])
         .current_dir(fixture.temp_dir.path())
@@ -338,7 +338,7 @@ fn test_communication_commands_performance() -> Result<(), Box<dyn std::error::E
         .success();
 
     // Start session (force to replace any existing session)
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["start", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -350,7 +350,7 @@ fn test_communication_commands_performance() -> Result<(), Box<dyn std::error::E
 
     // Performance test 1: Simple hey command < 3 seconds
     let start_time = std::time::Instant::now();
-    let mut hey_perf = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut hey_perf = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     hey_perf
         .args(["hey", "1", "echo", "\"Performance test\""])
         .current_dir(fixture.temp_dir.path())
@@ -368,7 +368,7 @@ fn test_communication_commands_performance() -> Result<(), Box<dyn std::error::E
 
     // Performance test 2: Status command < 2 seconds
     let start_time = std::time::Instant::now();
-    let mut status_perf = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_perf = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     status_perf
         .args(["status"])
         .current_dir(fixture.temp_dir.path())
@@ -386,7 +386,7 @@ fn test_communication_commands_performance() -> Result<(), Box<dyn std::error::E
 
     // Performance test 3: Agents command < 2 seconds
     let start_time = std::time::Instant::now();
-    let mut agents_perf = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut agents_perf = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     agents_perf
         .args(["agents", "list"])
         .current_dir(fixture.temp_dir.path())
@@ -422,7 +422,7 @@ fn test_communication_commands_real_time() -> Result<(), Box<dyn std::error::Err
     setup_comprehensive_agent_config(&fixture)?;
 
     // Initialize sprite with 2 agents
-    let mut sprite_init = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut sprite_init = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     sprite_init
         .args(["init", "--force", "--agents", "2"])
         .current_dir(fixture.temp_dir.path())
@@ -432,7 +432,7 @@ fn test_communication_commands_real_time() -> Result<(), Box<dyn std::error::Err
         .success();
 
     // Start session (force to replace any existing session)
-    assert_cmd::Command::cargo_bin("sprite")?
+    assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"))
         .args(["start", "--force"])
         .current_dir(fixture.temp_dir.path())
         .env("SPRITE_DISABLE_EXE_DISCOVERY", "1")
@@ -446,7 +446,7 @@ fn test_communication_commands_real_time() -> Result<(), Box<dyn std::error::Err
     let mut times = Vec::new();
     for i in 1..=5 {
         let start_time = std::time::Instant::now();
-        let mut hey_rapid = assert_cmd::Command::cargo_bin("sprite")?;
+        let mut hey_rapid = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
         hey_rapid
             .args(["hey", "1", "echo", &format!("\"Rapid test {}\"", i)])
             .current_dir(fixture.temp_dir.path())
@@ -472,7 +472,7 @@ fn test_communication_commands_real_time() -> Result<(), Box<dyn std::error::Err
 
     // Real-time test: Check system remains responsive
     let start_time = std::time::Instant::now();
-    let mut status_under_load = assert_cmd::Command::cargo_bin("sprite")?;
+    let mut status_under_load = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
     status_under_load
         .args(["status", "--health"])
         .current_dir(fixture.temp_dir.path())
@@ -587,7 +587,7 @@ fn check_tmux_session_exists(session_name: &str) -> Result<bool, Box<dyn std::er
 
 impl TestFixture {
     fn init_sprite_env(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let mut sprite_init = assert_cmd::Command::cargo_bin("sprite")?;
+        let mut sprite_init = assert_cmd::Command::new(env!("CARGO_BIN_EXE_sprite"));
         sprite_init
             .args(["init", "--force"])
             .current_dir(self.temp_dir.path())
