@@ -242,7 +242,3 @@ sprite = { version = "0.2.3", registry = "github" }
 ---
 
 **That's it!** Start simple, learn as you go. 🎯
-
-## License
-
-MIT License - See LICENSE file
